@@ -145,7 +145,6 @@ router.post("/", verifyToken, async (req, res) => {
 });
 
 // UPDATE
-// UPDATE
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;

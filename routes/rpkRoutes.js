@@ -8,42 +8,41 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
     try {
         const guruId = req.params.id;
         const result = await pool.query(`
-            SELECT 
-                rpk.*,
-                r.name_rombel,
-                g.grade_lvl AS name_grade,
-                m.nama_mapel,
-                p.phase,
-                t.username AS teacher_name,
-                i.name AS instructor_name,
-                mem.memahami,
-                mem.asesmen_memahami,
-                mem.berkesadaran AS memahami_berkesadaran,
-                mem.bermakna AS memahami_bermakna,
-                mem.menggembirakan AS memahami_menggembirakan,
-                ma.mengaplikasikan,
-                ma.asesmen_mengaplikasikan,
-                ma.berkesadaran AS mengaplikasikan_berkesadaran,
-                ma.bermakna AS mengaplikasikan_bermakna,
-                ma.menggembirakan AS mengaplikasikan_menggembirakan,
-                me.merefleksi,
-                me.asesmen_merefleksi,
-                me.berkesadaran AS merefleksi_berkesadaran,
-                me.bermakna AS merefleksi_bermakna,
-                me.menggembirakan AS merefleksi_menggembirakan
-            FROM rpk_db rpk
-            JOIN db_mapel m ON rpk.mapel_id = m.id
-            JOIN rombel r ON rpk.rombel_id = r.id
-            JOIN grade_level g ON r.grade_id = g.id
-            JOIN db_phase p ON rpk.phase_id = p.id
-            LEFT JOIN users t ON rpk.guru_id = t.id
-            LEFT JOIN db_guru i ON rpk.instructor = i.id
-            LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
-            LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
-            LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
-            WHERE rpk.guru_id = $1`,
-            [guruId]);
-
+    SELECT 
+        rpk.*,
+        r.name_rombel,
+        g.grade_lvl AS name_grade,
+        m.nama_mapel,
+        p.phase,
+        t.username AS teacher_name,
+        i.name AS instructor_name,
+        mem.memahami,
+        mem.asesmen_memahami,
+        mem.berkesadaran AS memahami_berkesadaran,
+        mem.bermakna AS memahami_bermakna,
+        mem.menggembirakan AS memahami_menggembirakan,
+        ma.mengaplikasikan,
+        ma.asesmen_mengaplikasikan,
+        ma.berkesadaran AS mengaplikasikan_berkesadaran,
+        ma.bermakna AS mengaplikasikan_bermakna,
+        ma.menggembirakan AS mengaplikasikan_menggembirakan,
+        me.merefleksi,
+        me.asesmen_merefleksi,
+        me.berkesadaran AS merefleksi_berkesadaran,
+        me.bermakna AS merefleksi_bermakna,
+        me.menggembirakan AS merefleksi_menggembirakan
+    FROM rpk_db rpk
+    LEFT JOIN db_mapel m ON rpk.mapel_id = m.id
+    LEFT JOIN rombel r ON rpk.rombel_id = r.id
+    LEFT JOIN grade_level g ON r.grade_id = g.id
+    LEFT JOIN db_phase p ON rpk.phase_id = p.id
+    LEFT JOIN users t ON rpk.guru_id = t.id
+    LEFT JOIN db_guru i ON rpk.instructor = i.id
+    LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
+    LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
+    LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
+    WHERE rpk.guru_id = $1
+`, [guruId]);
         res.json(result.rows);
     } catch (err) {
         console.error("Error fetch all RPK :", err);
@@ -233,17 +232,35 @@ router.put("/:id", verifyToken, async (req, res) => {
             merefleksi_id = reflRes.rows[0].id;
         }
 
-        // === Update parent RPK ===
+        // === Update parent RPK (gunakan COALESCE agar FK tidak jadi NULL) ===
         const updateQuery = `
             UPDATE rpk_db 
-            SET tutor=$1, hari_tanggal=$2, waktu=$3, tujuan_pembelajaran=$4,
-                lintas_disiplin_ilmu=$5, pemanfaatan_digital=$6, kemitraan_pembelajaran=$7,
-                dpl_1=$8, dpl_2=$9, dpl_3=$10, dpl_4=$11,
-                dpl_5=$12, dpl_6=$13, dpl_7=$14, dpl_8=$15,
-                phase_id=$16, rombel_id=$17, guru_id=$18, instructor=$19, mapel_id=$20,
-                memahami_id=$21, mengaplikasikan_id=$22, merefleksi_id=$23
-            WHERE id=$24
-            RETURNING *`;
+            SET tutor = COALESCE($1, tutor),
+                hari_tanggal = COALESCE($2, hari_tanggal),
+                waktu = COALESCE($3, waktu),
+                tujuan_pembelajaran = COALESCE($4, tujuan_pembelajaran),
+                lintas_disiplin_ilmu = COALESCE($5, lintas_disiplin_ilmu),
+                pemanfaatan_digital = COALESCE($6, pemanfaatan_digital),
+                kemitraan_pembelajaran = COALESCE($7, kemitraan_pembelajaran),
+                dpl_1 = COALESCE($8, dpl_1),
+                dpl_2 = COALESCE($9, dpl_2),
+                dpl_3 = COALESCE($10, dpl_3),
+                dpl_4 = COALESCE($11, dpl_4),
+                dpl_5 = COALESCE($12, dpl_5),
+                dpl_6 = COALESCE($13, dpl_6),
+                dpl_7 = COALESCE($14, dpl_7),
+                dpl_8 = COALESCE($15, dpl_8),
+                phase_id = COALESCE($16, phase_id),
+                rombel_id = COALESCE($17, rombel_id),
+                guru_id = COALESCE($18, guru_id),
+                instructor = COALESCE($19, instructor),
+                mapel_id = COALESCE($20, mapel_id),
+                memahami_id = COALESCE($21, memahami_id),
+                mengaplikasikan_id = COALESCE($22, mengaplikasikan_id),
+                merefleksi_id = COALESCE($23, merefleksi_id)
+            WHERE id = $24
+            RETURNING *;
+        `;
 
         const result = await pool.query(updateQuery, [
             tutor, hari_tanggal, waktu, tujuan_pembelajaran,

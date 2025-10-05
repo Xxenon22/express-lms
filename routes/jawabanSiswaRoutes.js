@@ -207,6 +207,7 @@ router.get("/all-with-soal", async (req, res) => {
                     js.jawaban_essai,
                     js.refleksi_siswa,
                     js.nilai,
+                    js.file_jawaban_siswa,
                     sp.id AS soal_id,
                     sp.pertanyaan,
                     sp.pg_a,
@@ -225,27 +226,37 @@ router.get("/all-with-soal", async (req, res) => {
             [bank_soal_id]
         );
 
-        res.json(result.rows);
+
+        const data = result.rows.map(r => ({
+            ...r,
+            url_file_jawaban: r.file_jawaban_siswa
+                ? `${req.protocol}://${req.get("host")}/uploads/file-jawaban-siswa/${r.file_jawaban_siswa}`
+                : null
+        }));
+
+
+        res.json(data);
     } catch (error) {
         console.error("Gagal ambil jawaban + soal:", error);
         res.status(500).json({ message: "Gagal ambil jawaban + soal" });
     }
 });
 
-// GET semua file jawaban siswa by materi_id
+// GET semua file jawaban siswa by bank_soal_id (bisa untuk guru)
 router.get("/file/:bank_soal_id", verifyToken, async (req, res) => {
     try {
-        const userId = req.users.id; // user login
         const { bank_soal_id } = req.params;
+        const queryUserId = req.query.user_id; // bisa dari guru (frontend)
+        const userId = queryUserId || req.users.id; // fallback ke user login (siswa)
 
         const result = await pool.query(
             `SELECT id, file_jawaban_siswa, created_at
-     FROM jawaban_siswa
-     WHERE user_id = $1 AND bank_soal_id = $2
-     ORDER BY created_at DESC`,
+             FROM jawaban_siswa
+             WHERE user_id = $1 AND bank_soal_id = $2
+             ORDER BY created_at DESC`,
             [userId, bank_soal_id]
         );
-        // buat URL biar bisa diakses frontend
+
         const files = result.rows.map(row => ({
             id: row.id,
             nama_file: row.file_jawaban_siswa,

@@ -1,6 +1,5 @@
-// routes/authRoutes.js
 import express from "express";
-import { register, login } from "../controllers/authController.js";
+import { register, login, registerTeacher } from "../controllers/authController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { pool } from "../config/db.js";
 
@@ -8,21 +7,32 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/register-teacher", registerTeacher);
 
 // GET all profile
 router.get("/", async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT
-            p.*,
-            j.nama_jurusan,
-            g.grade_lvl,
-            r.name_rombel
-            FROM users p 
-            LEFT JOIN jurusan j  ON p.jurusan_id = j.id
-            LEFT JOIN grade_level g ON p.grade_id = g.id
-            LEFT JOIN rombel r ON p.rombel_id = r.id`
+        p.id,
+        p.username,
+        p.role,
+        p.phone_number,
+        p.photo_profiles_user,
+        p.teacher_subject,
+        p.jurusan_id,
+        p.grade_id,
+        p.rombel_id,
+        j.nama_jurusan,
+        g.grade_lvl,
+        r.name_rombel
+     FROM users p
+     LEFT JOIN jurusan j ON p.jurusan_id = j.id
+     LEFT JOIN grade_level g ON p.grade_id = g.id
+     LEFT JOIN rombel r ON p.rombel_id = r.id
+     ORDER BY p.id ASC`
         );
+
         res.json({ profiles: result.rows });   // <--- kirim hasil ke frontend
     } catch (error) {
         console.error("Get all profile error:", err);
@@ -43,6 +53,7 @@ router.get("/profile", verifyToken, async (req, res) => {
                 u.phone_number,
                 u.photo_profiles_user,
                 u.jurusan_id,
+                u.teacher_subject,
                 u.grade_id,
                 u.rombel_id,
                 j.nama_jurusan,
@@ -147,15 +158,15 @@ router.get("/student/:id", verifyToken, async (req, res) => {
 router.put("/profile", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
-        const { username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id } = req.body;
+        const { username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
 
         const result = await pool.query(
             `UPDATE users 
              SET username = $1, phone_number = $2, photo_profiles_user = $3,
-                 grade_id = $4, jurusan_id = $5, rombel_id = $6
-             WHERE id = $7
-             RETURNING id, username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id`,
-            [username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, userId]
+                 grade_id = $4, jurusan_id = $5, rombel_id = $6, teacher_subject = $7
+             WHERE id = $8
+             RETURNING id, username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject`,
+            [username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject, userId]
         );
 
         res.json(result.rows[0]);
@@ -165,5 +176,37 @@ router.put("/profile", verifyToken, async (req, res) => {
     }
 });
 
+// update profiles by ID user (SUPER ADMIN)
+router.put("/profile/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
+
+        const result = await pool.query(
+            `UPDATE users 
+             SET username = $1, phone_number = $2, photo_profiles_user = $3,
+                 grade_id = $4, jurusan_id = $5, rombel_id = $6, teacher_subject = $7
+             WHERE id = $8
+             RETURNING id, username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject`,
+            [username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject, id]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Update profile error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE
+router.delete("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+        res.json({ message: "user deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 export default router;
