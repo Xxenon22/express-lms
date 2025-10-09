@@ -72,7 +72,7 @@ app.use("/api/jawaban-siswa", jawabanSiswa);
 // ================== UPLOADS & STATIC FILES ==================
 // upload umum
 app.use("/api/uploads", uploadRoutes);
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // upload soal
 app.use("/api/gambar-soal", uploadGambarSoal);
