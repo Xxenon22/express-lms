@@ -85,7 +85,7 @@ app.use(
 app.use("/api/uploads/photo-profile", uploadProfileRoutes);
 app.use(
     "/uploads/photo-profile",
-    express.static(path.join(process.cwd(), "uploads/photo-profile"))
+    express.static(path.join(__dirname, "uploads/photo-profile"))
 );
 
 // timetables
