@@ -118,7 +118,7 @@ router.get("/:id", async (req, res) => {
 router.post("/", verifyToken, async (req, res) => {
     try {
         const { rombel_id, link_wallpaper_kelas, id_mapel } = req.body;
-        const guru_id = req.user.id;
+        const guru_id = req.users.id;
         const wallpaper = link_wallpaper_kelas || "default_wallpaper.jpg";
 
         const q = `
