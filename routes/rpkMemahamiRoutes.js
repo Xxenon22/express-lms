@@ -34,7 +34,7 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     const { id } = req.params;
     await pool.query(`DELETE FROM rpk_memahami WHERE id = $1`, [id]);
-    res.json({ message: "Memahami deleted" });
+    res.json({ message: "Success deleted" });
 });
 
 export default router;

@@ -63,7 +63,7 @@ router.put("/:id", async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Materi tidak ditemukan" });
+            return res.status(404).json({ message: "material not found" });
         }
 
         res.json(result.rows[0]);
@@ -111,7 +111,7 @@ router.delete("/:id", async (req, res) => {
         res.json({ message: "Materi berhasil dihapus" });
     } catch (error) {
         console.error("DELETE /module-pembelajaran/:id", error);
-        res.status(500).json({ message: "Gagal hapus materi" });
+        res.status(500).json({ message: "Failed to delted material" });
     }
 });
 
@@ -164,13 +164,13 @@ router.get("/:id", async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Materi tidak ditemukan" });
+            return res.status(404).json({ message: "Material not found" });
         }
 
         res.json(result.rows[0]); // ✅ kirim satu objek, bukan array
     } catch (error) {
         console.error("SELECT /module-pembelajaran/:id", error);
-        res.status(500).json({ message: "Gagal mengambil materi sesuai ID" });
+        res.status(500).json({ message: "Failed to retrieve material by ID" });
     }
 });
 
@@ -196,7 +196,7 @@ router.get("/kelas/:kelasId", async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error("Error GET /module-pembelajaran/kelas/:kelasId:", error);
-        res.status(500).json({ error: "Gagal ambil data module pembelajaran" });
+        res.status(500).json({ error: "Failed to retrieve learning module data" });
     }
 });
 
@@ -218,13 +218,13 @@ router.get("soal/:soalId", async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: "Soal not found" });
+            return res.status(404).json({ error: "Questions not found" });
         }
 
         res.json(result.rows[0]);
     } catch (error) {
         console.error("Error GET /module-pembelajaran/:soalId:", error);
-        res.status(500).json({ error: "Gagal ambil data soal" });
+        res.status(500).json({ error: "Failed to retrieve Questions" });
     }
 });
 

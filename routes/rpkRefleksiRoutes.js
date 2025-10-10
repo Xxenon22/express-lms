@@ -84,7 +84,7 @@ router.get("/:id", async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "RPK Refleksi not found" });
+            return res.status(404).json({ message: "Learning Reflection not found" });
         }
 
         res.json(result.rows[0]);
@@ -203,7 +203,7 @@ router.put("/:id", verifyToken, async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "RPK Refleksi not found" });
+            return res.status(404).json({ message: "Learning Reflection not found" });
         }
 
         res.json(result.rows[0]);
@@ -219,7 +219,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         await pool.query(`DELETE FROM rpk_refleksi WHERE id = $1`, [id]);
-        res.json({ message: "RPK Refleksi deleted" });
+        res.json({ message: "Learning Reflection deleted" });
     } catch (err) {
         console.error("Delete rpk_refleksi error:", err);
         res.status(500).json({ error: err.message });

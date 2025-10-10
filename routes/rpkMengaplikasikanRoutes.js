@@ -35,7 +35,7 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     const { id } = req.params;
     await pool.query(`DELETE FROM rpk_mengaplikasikan WHERE id = $1`, [id]);
-    res.json({ message: "Mengaplikasikan deleted" });
+    res.json({ message: "Success deleted" });
 });
 
 export default router;

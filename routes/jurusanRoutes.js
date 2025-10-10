@@ -10,10 +10,6 @@ router.get("/", async (req, res) => {
             "SELECT * FROM jurusan ORDER BY id ASC"
         );
 
-        // if (result.rows.length === 0) {
-        //     return res.status(404).json({ message: "User not found" });
-        // }
-
         res.json(result.rows);
     } catch (error) {
         console.error("Error fetching profile:", error);

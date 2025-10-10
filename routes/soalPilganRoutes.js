@@ -50,12 +50,12 @@ router.post("/", async (req, res) => {
         }
 
         res.status(201).json({
-            message: "Soal berhasil ditambahkan",
+            message: "Question added successfully",
             data: insertedSoal,
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Terjadi kesalahan saat menambah soal" });
+        res.status(500).json({ message: "An error occurred while adding the question" });
     }
 });
 
@@ -86,8 +86,8 @@ router.get("/:id", async (req, res) => {
         );
         res.json(result.rows);
     } catch (error) {
-        console.error("Gagal ambil soal:", error);
-        res.status(500).json({ error: "Gagal ambil soal" });
+        console.error("Failed to retrieve Questions:", error);
+        res.status(500).json({ error: "Failed to retrieve Questions" });
     }
 });
 
@@ -128,10 +128,10 @@ router.put("/:bank_soal_id", async (req, res) => {
             inserted.push(result.rows[0]);
         }
 
-        res.json({ message: "Soal berhasil diperbarui", data: inserted });
+        res.json({ message: "Question updated successfully", data: inserted });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Gagal update soal" });
+        res.status(500).json({ message: "Failed to update Questions" });
     }
 });
 export default router;

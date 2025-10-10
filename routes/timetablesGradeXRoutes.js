@@ -20,7 +20,7 @@ const fileFilter = (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
         cb(null, true);
     } else {
-        cb(new Error("Hanya file PDF yang diperbolehkan"), false);
+        cb(new Error("Only PDF files are allowed"), false);
     }
 };
 
@@ -65,7 +65,7 @@ router.delete("/:id", async (req, res) => {
         // ambil nama file dulu
         const fileRes = await pool.query("SELECT file_name FROM jadwal_x_db WHERE id = $1", [id]);
         if (fileRes.rowCount === 0) {
-            return res.status(404).json({ message: "Jadwal tidak ditemukan" });
+            return res.status(404).json({ message: "Timetable not found" });
         }
 
         const fileName = fileRes.rows[0].file_name;
@@ -81,7 +81,7 @@ router.delete("/:id", async (req, res) => {
             }
         });
 
-        res.json({ message: "Jadwal berhasil dihapus" });
+        res.json({ message: "Timetable deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

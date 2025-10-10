@@ -7,7 +7,7 @@ export const createSoal = async (req, res) => {
 
         if (!title || !soal_list || soal_list.length === 0) {
             return res.status(400).json({
-                message: "Judul dan soal_list wajib diisi",
+                message: "Title and question list are required",
             });
         }
 
@@ -28,7 +28,7 @@ export const createSoal = async (req, res) => {
         }
 
         res.status(201).json({
-            message: "Soal berhasil dibuat",
+            message: "Question created successfully",
             bank_soal_id: bankSoalId,
         });
     } catch (err) {

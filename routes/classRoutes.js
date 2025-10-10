@@ -74,7 +74,7 @@ router.get("/:id", async (req, res) => {
         const { rows } = await pool.query(q, [id]);
 
         if (rows.length === 0) {
-            return res.status(404).json({ error: "Kelas not found" });
+            return res.status(404).json({ error: "Class not found" });
         }
 
         // Format biar hasilnya rapi (1 kelas punya banyak module)
@@ -166,7 +166,7 @@ router.put("/:id", async (req, res) => {
         ]);
 
         if (rows.length === 0)
-            return res.status(404).json({ error: "Kelas not found" });
+            return res.status(404).json({ error: "Class not found" });
         res.json(rows[0]);
     } catch (err) {
         console.error("Error PUT /kelas/:id:", err);
@@ -181,7 +181,7 @@ router.delete("/:id", async (req, res) => {
         const q = "DELETE FROM kelas WHERE id = $1 RETURNING *";
         const { rows } = await pool.query(q, [id]);
         if (rows.length === 0)
-            return res.status(404).json({ error: "Kelas not found" });
+            return res.status(404).json({ error: "Class not found" });
         res.json({ message: "Deleted", deleted: rows[0] });
     } catch (err) {
         console.error("Error DELETE /kelas/:id:", err);

@@ -56,7 +56,7 @@ export const updatePenugasan = async (req, res) => {
     const { judul_penugasan } = req.body;
 
     if (!judul_penugasan) {
-        return res.status(400).json({ message: "Judul penugasan wajib diisi" });
+        return res.status(400).json({ message: "Assignment title is required" });
     }
 
     try {
@@ -70,11 +70,11 @@ export const updatePenugasan = async (req, res) => {
         );
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Penugasan tidak ditemukan" });
+            return res.status(404).json({ message: "Assignment not found" });
         }
 
         res.json({
-            message: "Penugasan berhasil diperbarui",
+            message: "Assignment updated successfully",
             data: result.rows[0],
         });
     } catch (error) {
@@ -137,9 +137,9 @@ export const deleteData = async (req, res) => {
             [id]
         );
         if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Penugasan tidak ditemukan" });
+            return res.status(404).json({ message: "Assignment not found" });
         }
-        res.json({ message: "Bank soal & semua soal terkait berhasil dihapus" });
+        res.json({ message: "Question bank and all related questions have been successfully deleted" });
     } catch (error) {
         res.status(500).json({ message: error.message });
         console.error("cant delete the data :", error)

@@ -45,7 +45,7 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
 `, [guruId]);
         res.json(result.rows);
     } catch (err) {
-        console.error("Error fetch all RPK :", err);
+        console.error("Error fetch all Learning Plan :", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -111,13 +111,13 @@ LIMIT 1
         const result = await pool.query(query, [id]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "RPK tidak ditemukan" });
+            return res.status(404).json({ message: "Learning Plan not found" });
         }
 
         res.json(result.rows[0]);
     } catch (error) {
         console.error("Error get detail RPK:", error);
-        res.status(500).json({ message: "Terjadi kesalahan server" });
+        res.status(500).json({ message: "Internal Server error" });
     }
 });
 
@@ -272,7 +272,7 @@ router.put("/:id", verifyToken, async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (err) {
-        console.error("Error updating RPK:", err);
+        console.error("Error updating Learning Plan:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -283,7 +283,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         await pool.query(`DELETE FROM rpk_db WHERE id = $1`, [id]);
-        res.json({ message: "RPK deleted" });
+        res.json({ message: "Learning Plan deleted" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

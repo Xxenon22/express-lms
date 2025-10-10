@@ -50,7 +50,7 @@ router.get("/:userId", verifyToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error("GET /progress-materi/:userId error:", err);
-        res.status(500).json({ message: "Gagal ambil progress materi" });
+        res.status(500).json({ message: "Failed to retrieve material progress" });
     }
 });
 

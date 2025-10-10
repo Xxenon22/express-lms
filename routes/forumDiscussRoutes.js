@@ -30,7 +30,7 @@ router.get("/", verifyToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error("GET /forum-discuss:", err);
-        res.status(500).json({ message: "Gagal mengambil data forum" });
+        res.status(500).json({ message: "Failed to retrieve forum data" });
     }
 });
 
@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
 
         // frontend kirim array (inserts)
         if (!Array.isArray(data)) {
-            return res.status(400).json({ message: "Data harus berupa array" });
+            return res.status(400).json({ message: "Data must be array" });
         }
 
         const inserted = [];
@@ -56,7 +56,7 @@ router.post("/", async (req, res) => {
         res.json(inserted);
     } catch (err) {
         console.error("POST /forum-discuss:", err);
-        res.status(500).json({ message: "Gagal menyimpan forum" });
+        res.status(500).json({ message: "Failed to save forum" });
     }
 });
 
@@ -94,7 +94,7 @@ router.get("/:kelasId", verifyToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error("GET /forum-discuss/:kelasId:", err);
-        res.status(500).json({ message: "Gagal mengambil forum discuss berdasarkan kelas" });
+        res.status(500).json({ message: "Failed to retrieve discussion forum based on class" });
     }
 });
 

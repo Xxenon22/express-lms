@@ -34,7 +34,7 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     const { id } = req.params;
     await pool.query("DELETE FROM db_mapel WHERE id=$1", [id]);
-    res.json({ message: "Mapel deleted" });
+    res.json({ message: "Subject deleted" });
 });
 
 export default router;

@@ -90,7 +90,7 @@ router.post("/", verifyToken, async (req, res) => {
         const userId = req.users.id;
 
         if (!Array.isArray(jawabanList)) {
-            return res.status(400).json({ message: "Jawaban harus berupa array" });
+            return res.status(400).json({ message: "Answer must be an Array" });
         }
 
         const inserted = [];
@@ -118,7 +118,7 @@ router.post("/", verifyToken, async (req, res) => {
             inserted.push(result.rows[0]);
         }
 
-        res.json({ message: "Jawaban berhasil disimpan", data: inserted });
+        res.json({ message: "Answer saved successfully", data: inserted });
     } catch (err) {
         console.error("Error simpan jawaban:", err);
         res.status(500).json({ message: err.message });
@@ -183,7 +183,7 @@ router.put("/nilai", verifyToken, async (req, res) => {
             [nilai, user_id, bank_soal_id]
         )
 
-        res.json({ message: "Nilai updated", data: result.rows[0] })
+        res.json({ message: "Score updated sucessfully", data: result.rows[0] })
     } catch (err) {
         console.error("Error update nilai:", err)
         res.status(500).json({ message: err.message })
@@ -237,8 +237,8 @@ router.get("/all-with-soal", async (req, res) => {
 
         res.json(data);
     } catch (error) {
-        console.error("Gagal ambil jawaban + soal:", error);
-        res.status(500).json({ message: "Gagal ambil jawaban + soal" });
+        console.error("Failed to retrieve answers and questions:", error);
+        res.status(500).json({ message: "Failed to retrieve answers and questions" });
     }
 });
 

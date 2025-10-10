@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
         res.json(rombel);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Error creating rombel" });
+        res.status(500).json({ message: "Error creating Class" });
     }
 });
 
@@ -35,7 +35,7 @@ router.put("/:id", async (req, res) => {
         res.json(rombel);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Error updating rombel" });
+        res.status(500).json({ message: "Error updating Class" });
     }
 });
 
@@ -47,7 +47,7 @@ router.delete("/:id", async (req, res) => {
         res.json(response);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Error deleting rombel" });
+        res.status(500).json({ message: "Error deleting Class" });
     }
 });
 
