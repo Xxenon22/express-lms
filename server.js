@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer";
 
 import authRoutes from "./routes/authRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
