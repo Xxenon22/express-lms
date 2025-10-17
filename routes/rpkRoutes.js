@@ -107,7 +107,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
         LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
         LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
-        WHERE rpk.id = $1 AND rpk.guru_id = $2
+        WHERE rpk.id = $1
         LIMIT 1
         `;
         const result = await pool.query(query, [id]);
