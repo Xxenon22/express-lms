@@ -56,8 +56,7 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
 router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-
-        console.log("✅ RPK routes loaded");
+        console.log("✅ Fetching detail RPK id:", id);
 
         const query = `
         SELECT 
@@ -112,13 +111,12 @@ router.get("/:id", verifyToken, async (req, res) => {
         `;
         const result = await pool.query(query, [id]);
 
-
+        console.log("✅ Query result:", result.rows);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Learning Plan not found or not authorized" });
         }
 
         res.json(result.rows[0]);
-        console.log("QUERY RESULT:", result.rows); // ✅ Tambahkan di sini
     } catch (error) {
         console.error("Error get detail RPK:", error);
         res.status(500).json({ message: "Internal Server error" });
