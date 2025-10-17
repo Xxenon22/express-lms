@@ -56,7 +56,6 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
 router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const guruId = req.users.id; // Ambil dari token hasil decode di middleware
 
         console.log("✅ RPK routes loaded");
 
@@ -111,7 +110,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         WHERE rpk.id = $1 AND rpk.guru_id = $2
         LIMIT 1
         `;
-        const result = await pool.query(query, [id, guruId]);
+        const result = await pool.query(query, [id]);
 
 
         if (result.rows.length === 0) {
