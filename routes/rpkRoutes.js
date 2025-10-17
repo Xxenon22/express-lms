@@ -43,6 +43,8 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
     LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
     WHERE rpk.guru_id = $1
 `, [guruId]);
+
+
         res.json(result.rows);
     } catch (err) {
         console.error("Error fetch all Learning Plan :", err);
@@ -55,6 +57,8 @@ router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
         const guruId = req.users.id; // Ambil dari token hasil decode di middleware
+
+        console.log("✅ RPK routes loaded");
 
         const query = `
         SELECT 
@@ -107,14 +111,15 @@ router.get("/:id", verifyToken, async (req, res) => {
         WHERE rpk.id = $1 AND rpk.guru_id = $2
         LIMIT 1
         `;
-
         const result = await pool.query(query, [id, guruId]);
+
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Learning Plan not found or not authorized" });
         }
 
         res.json(result.rows[0]);
+        console.log("QUERY RESULT:", result.rows); // ✅ Tambahkan di sini
     } catch (error) {
         console.error("Error get detail RPK:", error);
         res.status(500).json({ message: "Internal Server error" });
