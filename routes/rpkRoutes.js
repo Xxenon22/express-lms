@@ -50,68 +50,68 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
     }
 });
 
-// GET detail RPK by id
+// GET detail RPK by id & guru_id
 router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
+        const guruId = req.users.id; // Ambil dari token hasil decode di middleware
 
         const query = `
-      SELECT 
-    rpk.id,
-    rpk.rombel_id,
-    rpk.mapel_id,
-    rpk.phase_id,
-    rpk.guru_id,
-    rpk.instructor,
-    rpk.tutor,
-    rpk.hari_tanggal,
-    rpk.waktu,
-    rpk.tujuan_pembelajaran,
-    rpk.lintas_disiplin_ilmu,
-    rpk.pemanfaatan_digital,
-    rpk.kemitraan_pembelajaran,
-    rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
-    rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
-    m.nama_mapel,
-    r.name_rombel,
-    g.grade_lvl,
-    p.phase,
-    t.username AS teacher_name,
-    i.name AS instructor_name,
-    mem.memahami,
-    mem.asesmen_memahami,
-    mem.berkesadaran AS memahami_berkesadaran,
-    mem.bermakna AS memahami_bermakna,
-    mem.menggembirakan AS memahami_menggembirakan,
-    ma.mengaplikasikan,
-    ma.asesmen_mengaplikasikan,
-    ma.berkesadaran AS mengaplikasikan_berkesadaran,
-    ma.bermakna AS mengaplikasikan_bermakna,
-    ma.menggembirakan AS mengaplikasikan_menggembirakan,
-    me.merefleksi,
-    me.asesmen_merefleksi,
-    me.berkesadaran AS merefleksi_berkesadaran,
-    me.bermakna AS merefleksi_bermakna,
-    me.menggembirakan AS merefleksi_menggembirakan
-FROM rpk_db rpk
-JOIN db_mapel m ON rpk.mapel_id = m.id
-JOIN rombel r ON rpk.rombel_id = r.id
-JOIN grade_level g ON r.grade_id = g.id
-JOIN db_phase p ON rpk.phase_id = p.id
-LEFT JOIN users t ON rpk.guru_id = t.id
-LEFT JOIN db_guru i ON rpk.instructor = i.id
-LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
-LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
-LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
-WHERE rpk.id = $1
-LIMIT 1
+        SELECT 
+            rpk.id,
+            rpk.rombel_id,
+            rpk.mapel_id,
+            rpk.phase_id,
+            rpk.guru_id,
+            rpk.instructor,
+            rpk.tutor,
+            rpk.hari_tanggal,
+            rpk.waktu,
+            rpk.tujuan_pembelajaran,
+            rpk.lintas_disiplin_ilmu,
+            rpk.pemanfaatan_digital,
+            rpk.kemitraan_pembelajaran,
+            rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
+            rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
+            m.nama_mapel,
+            r.name_rombel,
+            g.grade_lvl,
+            p.phase,
+            t.username AS teacher_name,
+            i.name AS instructor_name,
+            mem.memahami,
+            mem.asesmen_memahami,
+            mem.berkesadaran AS memahami_berkesadaran,
+            mem.bermakna AS memahami_bermakna,
+            mem.menggembirakan AS memahami_menggembirakan,
+            ma.mengaplikasikan,
+            ma.asesmen_mengaplikasikan,
+            ma.berkesadaran AS mengaplikasikan_berkesadaran,
+            ma.bermakna AS mengaplikasikan_bermakna,
+            ma.menggembirakan AS mengaplikasikan_menggembirakan,
+            me.merefleksi,
+            me.asesmen_merefleksi,
+            me.berkesadaran AS merefleksi_berkesadaran,
+            me.bermakna AS merefleksi_bermakna,
+            me.menggembirakan AS merefleksi_menggembirakan
+        FROM rpk_db rpk
+        JOIN db_mapel m ON rpk.mapel_id = m.id
+        JOIN rombel r ON rpk.rombel_id = r.id
+        JOIN grade_level g ON r.grade_id = g.id
+        JOIN db_phase p ON rpk.phase_id = p.id
+        LEFT JOIN users t ON rpk.guru_id = t.id
+        LEFT JOIN db_guru i ON rpk.instructor = i.id
+        LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
+        LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
+        LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
+        WHERE rpk.id = $1 AND rpk.guru_id = $2
+        LIMIT 1
+        `;
 
-    `;
-
-        const result = await pool.query(query, [id]);
+        const result = await pool.query(query, [id, guruId]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Learning Plan not found" });
+            return res.status(404).json({ message: "Learning Plan not found or not authorized" });
         }
 
         res.json(result.rows[0]);
