@@ -147,9 +147,9 @@ router.post("/", verifyToken, async (req, res) => {
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const guruId = req.users.id; // dari JWT
+        const guruId = req.users.id;
 
-        const {
+        let {
             mapel_id,
             rombel_id,
             hari_tanggal,
@@ -163,6 +163,17 @@ router.put("/:id", verifyToken, async (req, res) => {
             pendampingan_siswa,
             keterangan
         } = req.body;
+
+        // Pastikan hari_tanggal dalam format yang bisa diterima PostgreSQL
+        if (hari_tanggal) {
+            const parsed = new Date(hari_tanggal);
+            if (isNaN(parsed.getTime())) {
+                return res.status(400).json({ message: "Invalid date format" });
+            }
+            hari_tanggal = parsed.toISOString().split("T")[0];
+        } else {
+            hari_tanggal = null;
+        }
 
         const result = await pool.query(
             `
