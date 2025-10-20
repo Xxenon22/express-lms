@@ -52,13 +52,11 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
     }
 });
 
-// GET detail RPK by id & guru_id
+// GET detail RPK by id
 router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        console.log("✅ Fetching detail RPK id:", id);
-
-        const query = `
+        const result = await pool.query(`
         SELECT 
             rpk.id,
             rpk.rombel_id,
@@ -108,13 +106,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
         WHERE rpk.id = $1
         LIMIT 1
-        `;
-        const result = await pool.query(query, [id]);
-
-        console.log("✅ Query result:", result.rows);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Learning Plan not found or not authorized" });
-        }
+        `, [id]);
 
         res.json(result.rows[0]);
     } catch (error) {
