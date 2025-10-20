@@ -5,20 +5,22 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// 🧭 Helper: konversi tanggal agar tidak mundur 1 hari
 function toLocalDateString(dateInput) {
     if (!dateInput) return null;
     const date = new Date(dateInput);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`; // hasil: "2025-10-23"
+    return `${year}-${month}-${day}`; // contoh: "2025-10-23"
 }
 
-
-// GET all refleksi by teacher id
+// =========================================================
+// GET semua refleksi berdasarkan guru login
+// =========================================================
 router.get("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id
+        const guruId = req.users.id;
         const result = await pool.query(`
       SELECT rr.*,
              rb.name_rombel,
@@ -40,10 +42,12 @@ router.get("/", verifyToken, async (req, res) => {
     }
 });
 
-// GET all refleksi (untuk halaman admin)
+// =========================================================
+// GET semua refleksi untuk admin
+// =========================================================
 router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
     try {
-        const guruId = req.params.id
+        const guruId = req.params.id;
         const result = await pool.query(`
       SELECT rr.*,
              rb.name_rombel,
@@ -67,34 +71,31 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
     }
 });
 
+// =========================================================
 // GET by ID
+// =========================================================
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const result = await pool.query(`
+      SELECT rr.*,
+             rb.name_rombel,
+             dm.nama_mapel AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade
+      FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.rombel_id = rb.id
+      LEFT JOIN db_mapel dm ON k.id_mapel = dm.id
+      LEFT JOIN users u ON rr.guru_id = u.id
+      LEFT JOIN db_guru dg ON rr.instructor = dg.id
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      WHERE rr.id = $1
+    `, [id]);
 
-        const result = await pool.query(
-            `
-            SELECT rr.*,
-                   rb.name_rombel,
-                   dm.nama_mapel AS subject,
-                   u.username AS teacher_name,
-                   dg.name AS instructor_name,
-                   g.grade_lvl AS name_grade
-            FROM rpk_refleksi rr
-            LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.rombel_id = rb.id      -- ✅ tambahkan join ke kelas
-            LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
-            LEFT JOIN users u ON rr.guru_id = u.id
-            LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN grade_level g ON rb.grade_id = g.id
-            WHERE rr.id = $1
-            `,
-            [id]
-        );
-
-        if (result.rows.length === 0) {
+        if (result.rows.length === 0)
             return res.status(404).json({ message: "Learning Reflection not found" });
-        }
 
         res.json(result.rows[0]);
     } catch (error) {
@@ -103,11 +104,13 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// =========================================================
 // CREATE
+// =========================================================
 router.post("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id; // dari JWT
-        const {
+        const guruId = req.users.id;
+        let {
             mapel_id,
             rombel_id,
             hari_tanggal,
@@ -121,6 +124,8 @@ router.post("/", verifyToken, async (req, res) => {
             pendampingan_siswa,
             keterangan
         } = req.body;
+
+        if (hari_tanggal) hari_tanggal = toLocalDateString(hari_tanggal);
 
         const result = await pool.query(
             `INSERT INTO rpk_refleksi (
@@ -153,32 +158,14 @@ router.post("/", verifyToken, async (req, res) => {
     }
 });
 
+// =========================================================
 // UPDATE
-// CREATE
-router.post("/", async (req, res) => {
-    try {
-        let { hari_tanggal, waktu, ...fields } = req.body;
-        if (hari_tanggal) hari_tanggal = toLocalDateString(hari_tanggal);
-
-        const result = await pool.query(
-            `INSERT INTO rpk_refleksi (hari_tanggal, waktu, ${Object.keys(fields).join(", ")})
-       VALUES ($1, $2, ${Object.keys(fields).map((_, i) => `$${i + 3}`).join(", ")})
-       RETURNING *`,
-            [hari_tanggal, waktu, ...Object.values(fields)]
-        );
-
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Insert error" });
-    }
-});
-
-// UPDATE
-router.put("/:id", async (req, res) => {
+// =========================================================
+router.put("/:id", verifyToken, async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const updates = { ...req.body };
+        const guruId = req.users.id;
+        const updates = { ...req.body, guru_id: guruId };
 
         if (updates.hari_tanggal) {
             updates.hari_tanggal = toLocalDateString(updates.hari_tanggal);
@@ -201,12 +188,14 @@ router.put("/:id", async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err);
+        console.error("Update rpk_refleksi error:", err);
         res.status(500).json({ message: "Update error" });
     }
 });
 
+// =========================================================
 // DELETE
+// =========================================================
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
