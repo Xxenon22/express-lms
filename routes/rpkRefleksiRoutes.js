@@ -72,7 +72,7 @@ router.get("/:id", async (req, res) => {
                    g.grade_lvl AS name_grade
             FROM rpk_refleksi rr
             LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.rombel_id = r.id      -- ✅ tambahkan join ke kelas
+            LEFT JOIN kelas k ON k.rombel_id = rb.id      -- ✅ tambahkan join ke kelas
             LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
             LEFT JOIN users u ON rr.guru_id = u.id
             LEFT JOIN db_guru dg ON rr.instructor = dg.id
