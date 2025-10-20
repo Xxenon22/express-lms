@@ -179,7 +179,7 @@ router.put("/:id", verifyToken, async (req, res) => {
       UPDATE rpk_db 
       SET tutor = $1,
           hari_tanggal = $2,
-          waktu = $3, waktu),
+          waktu = $3,
           tujuan_pembelajaran = $4,
           lintas_disiplin_ilmu = $5,
           pemanfaatan_digital = $6,
