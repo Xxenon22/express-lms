@@ -146,82 +146,37 @@ router.post("/", verifyToken, async (req, res) => {
 // UPDATE
 router.put("/:id", verifyToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const guruId = req.users.id;
+        const id = parseInt(req.params.id);
+        const fields = Object.keys(req.body);
 
-        let {
-            mapel_id,
-            rombel_id,
-            hari_tanggal,
-            instructor,
-            waktu,
-            refleksi_siswa,
-            refleksi_guru,
-            tngkt_pencapaian,
-            desk_pencapaian,
-            follow_up,
-            pendampingan_siswa,
-            keterangan
-        } = req.body;
+        if (fields.length === 0)
+            return res.status(400).json({ message: "No fields to update" });
 
-        // Pastikan hari_tanggal dalam format yang bisa diterima PostgreSQL
-        if (hari_tanggal) {
-            const parsed = new Date(hari_tanggal);
-            if (isNaN(parsed.getTime())) {
-                return res.status(400).json({ message: "Invalid date format" });
-            }
-            hari_tanggal = parsed.toISOString().split("T")[0];
-        } else {
-            hari_tanggal = null;
+        const values = Object.values(req.body);
+
+        // ✅ Pastikan hari_tanggal diformat sebagai date string
+        if (req.body.hari_tanggal) {
+            const dateObj = new Date(req.body.hari_tanggal);
+            req.body.hari_tanggal = dateObj.toISOString().split("T")[0]; // hasil: "2025-10-22"
         }
+
+        const setQuery = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
 
         const result = await pool.query(
-            `
-            UPDATE rpk_refleksi
-            SET mapel_id = $1,
-                rombel_id = $2,
-                hari_tanggal = $3,
-                instructor = $4,
-                waktu = $5,
-                refleksi_siswa = $6,
-                refleksi_guru = $7,
-                tngkt_pencapaian = $8,
-                desk_pencapaian = $9,
-                follow_up = $10,
-                pendampingan_siswa = $11,
-                keterangan = $12,
-                guru_id = $13
-            WHERE id = $14
-            RETURNING *
-            `,
-            [
-                mapel_id,
-                rombel_id,
-                hari_tanggal,
-                instructor,
-                waktu,
-                refleksi_siswa,
-                refleksi_guru,
-                tngkt_pencapaian,
-                desk_pencapaian,
-                follow_up,
-                pendampingan_siswa,
-                keterangan,
-                guruId,
-                id
-            ]
+            `UPDATE rpk_refleksi SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
+            [...Object.values(req.body), id]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Learning Reflection not found" });
-        }
+        if (result.rowCount === 0)
+            return res.status(404).json({ message: "Data not found" });
 
         res.json(result.rows[0]);
     } catch (err) {
-        console.error("Update rpk_refleksi error:", err);
-        res.status(500).json({ error: err.message });
+        console.error("❌ Update error:", err);
+        res.status(500).json({ message: "Update error" });
     }
 });
+
 
 
 // DELETE
