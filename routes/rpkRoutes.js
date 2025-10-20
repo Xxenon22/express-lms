@@ -102,7 +102,6 @@ router.get("/:id", verifyToken, async (req, res) => {
         me.menggembirakan AS merefleksi_menggembirakan
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
-      LEFT JOIN db_mapel m ON r.id_mapel = m.id
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
       LEFT JOIN users t ON rpk.guru_id = t.id
