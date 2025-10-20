@@ -122,6 +122,17 @@ app.use("/uploads/file-jawaban-siswa", express.static("uploads/file-jawaban-sisw
 
 // ================== SERVER START ==================
 const PORT = process.env.PORT || 5000;
+
+// Serve frontend Vue build
+const vueDistPath = path.join(__dirname, "../clp-view-teacher/dist");
+app.use(express.static(vueDistPath));
+
+// Fallback ke index.html untuk semua route non-API
+app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(vueDistPath, "index.html"));
+});
+
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
 app.listen(PORT, "0.0.0.0", () => console.log(` Server running on port ${PORT}`));
 
 app.get("/api", (req, res) => {
