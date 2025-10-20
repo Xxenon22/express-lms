@@ -80,6 +80,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
         rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
         r.name_rombel,
+        dm.nama_mapel AS subject,  -- ✅ ambil subject dari kelas
         g.grade_lvl,
         p.phase,
         t.username AS teacher_name,
@@ -101,6 +102,8 @@ router.get("/:id", verifyToken, async (req, res) => {
         me.menggembirakan AS merefleksi_menggembirakan
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
+      LEFT JOIN kelas k ON k.rombel_id = r.id      -- ✅ tambahkan join ke kelas
+      LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
       LEFT JOIN users t ON rpk.guru_id = t.id
