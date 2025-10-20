@@ -9,11 +9,17 @@ const router = express.Router();
 function toLocalDateString(dateInput) {
     if (!dateInput) return null;
     const date = new Date(dateInput);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`; // contoh: "2025-10-23"
+
+    // Konversi manual ke zona waktu WIB (GMT+7)
+    const offsetDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+    const year = offsetDate.getFullYear();
+    const month = String(offsetDate.getMonth() + 1).padStart(2, "0");
+    const day = String(offsetDate.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 }
+
 
 // =========================================================
 // GET semua refleksi berdasarkan guru login
