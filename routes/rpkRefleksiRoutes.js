@@ -5,6 +5,16 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+function toLocalDateString(dateInput) {
+    if (!dateInput) return null;
+    const date = new Date(dateInput);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`; // hasil: "2025-10-23"
+}
+
+
 // GET all refleksi by teacher id
 router.get("/", verifyToken, async (req, res) => {
     try {
@@ -144,27 +154,46 @@ router.post("/", verifyToken, async (req, res) => {
 });
 
 // UPDATE
-router.put("/:id", verifyToken, async (req, res) => {
+// CREATE
+router.post("/", async (req, res) => {
+    try {
+        let { hari_tanggal, waktu, ...fields } = req.body;
+        if (hari_tanggal) hari_tanggal = toLocalDateString(hari_tanggal);
+
+        const result = await pool.query(
+            `INSERT INTO rpk_refleksi (hari_tanggal, waktu, ${Object.keys(fields).join(", ")})
+       VALUES ($1, $2, ${Object.keys(fields).map((_, i) => `$${i + 3}`).join(", ")})
+       RETURNING *`,
+            [hari_tanggal, waktu, ...Object.values(fields)]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Insert error" });
+    }
+});
+
+// UPDATE
+router.put("/:id", async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const fields = Object.keys(req.body);
+        const updates = { ...req.body };
 
+        if (updates.hari_tanggal) {
+            updates.hari_tanggal = toLocalDateString(updates.hari_tanggal);
+        }
+
+        const fields = Object.keys(updates);
         if (fields.length === 0)
             return res.status(400).json({ message: "No fields to update" });
 
-        const values = Object.values(req.body);
-
-        // ✅ Pastikan hari_tanggal diformat sebagai date string
-        if (req.body.hari_tanggal) {
-            const dateObj = new Date(req.body.hari_tanggal);
-            req.body.hari_tanggal = dateObj.toISOString().split("T")[0]; // hasil: "2025-10-22"
-        }
-
+        const values = Object.values(updates);
         const setQuery = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
 
         const result = await pool.query(
             `UPDATE rpk_refleksi SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
-            [...Object.values(req.body), id]
+            [...values, id]
         );
 
         if (result.rowCount === 0)
@@ -172,12 +201,10 @@ router.put("/:id", verifyToken, async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (err) {
-        console.error("❌ Update error:", err);
+        console.error(err);
         res.status(500).json({ message: "Update error" });
     }
 });
-
-
 
 // DELETE
 router.delete("/:id", async (req, res) => {
