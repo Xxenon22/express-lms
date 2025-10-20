@@ -16,7 +16,6 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         rpk.*,
         r.name_rombel,
         g.grade_lvl AS name_grade,
-        m.nama_mapel,  -- mapel diambil dari rombel
         p.phase,
         t.username AS teacher_name,
         i.name AS instructor_name,
@@ -37,7 +36,6 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         me.menggembirakan AS merefleksi_menggembirakan
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
-      LEFT JOIN db_mapel m ON r.id_mapel = m.id
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
       LEFT JOIN users t ON rpk.guru_id = t.id
