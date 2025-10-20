@@ -80,7 +80,6 @@ router.get("/:id", verifyToken, async (req, res) => {
         rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
         rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
         r.name_rombel,
-        m.nama_mapel,
         g.grade_lvl,
         p.phase,
         t.username AS teacher_name,
