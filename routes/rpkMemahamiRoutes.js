@@ -2,39 +2,67 @@ import express from "express";
 import { pool } from "../config/db.js";
 const router = express.Router();
 
-// CRUD rpk_memahami
+// GET all
 router.get("/", async (req, res) => {
-    const result = await pool.query("SELECT * FROM rpk_memahami ORDER BY id DESC");
-    res.json(result.rows);
+    try {
+        const result = await pool.query("SELECT * FROM rpk_memahami ORDER BY id DESC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Database error" });
+    }
 });
 
+// CREATE
 router.post("/", async (req, res) => {
-    const { memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami } = req.body;
-    const result = await pool.query(
-        `INSERT INTO rpk_memahami (memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-        [memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami]
-    );
-    res.json(result.rows[0]);
+    try {
+        const { memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami } = req.body;
+        const result = await pool.query(
+            `INSERT INTO rpk_memahami (memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+            [memahami, berkesadaran, bermakna, menggembirakan, asesmen_memahami]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Insert error" });
+    }
 });
 
+// UPDATE
 router.put("/:id", async (req, res) => {
-    const { id } = req.params;
-    const fields = Object.keys(req.body);
-    const values = Object.values(req.body);
-    const setQuery = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
+    try {
+        const id = parseInt(req.params.id);
+        const fields = Object.keys(req.body);
+        if (fields.length === 0) return res.status(400).json({ message: "No fields to update" });
 
-    const result = await pool.query(
-        `UPDATE rpk_memahami SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
-        [...values, id]
-    );
-    res.json(result.rows[0]);
+        const values = Object.values(req.body);
+        const setQuery = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
+
+        const result = await pool.query(
+            `UPDATE rpk_memahami SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
+            [...values, id]
+        );
+
+        if (result.rowCount === 0) return res.status(404).json({ message: "Data not found" });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Update error" });
+    }
 });
 
+// DELETE
 router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
-    await pool.query(`DELETE FROM rpk_memahami WHERE id = $1`, [id]);
-    res.json({ message: "Success deleted" });
+    try {
+        const id = parseInt(req.params.id);
+        const result = await pool.query(`DELETE FROM rpk_memahami WHERE id = $1`, [id]);
+        if (result.rowCount === 0) return res.status(404).json({ message: "Data not found" });
+        res.json({ message: "Deleted successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Delete error" });
+    }
 });
 
 export default router;
