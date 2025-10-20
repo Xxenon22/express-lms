@@ -124,6 +124,6 @@ app.use("/uploads/file-jawaban-siswa", express.static("uploads/file-jawaban-sisw
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => console.log(` Server running on port ${PORT}`));
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
     res.send("Backend is running 🚀");
 });
