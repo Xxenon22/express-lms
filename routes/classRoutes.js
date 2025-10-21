@@ -305,6 +305,12 @@ router.get("/students/:kelasId", verifyToken, async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.error("Error GET /kelas/students/:kelasId:", err);
+        if (err.code === "23503") {
+            return res.status(400).json({
+                error: "Cannot delete this class because it still has related data (modules, assignments, or students). Please remove those first."
+            });
+        }
+
         res.status(500).json({ error: "Server error" });
     }
 });
