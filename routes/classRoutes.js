@@ -285,39 +285,50 @@ router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
 
 });
 
-// Ambil semua siswa yang mengikuti kelas tertentu
-// DELETE class
 router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+
     try {
-        const { id } = req.params;
-        const q = "DELETE FROM kelas WHERE id = $1 RETURNING *";
-        const { rows } = await pool.query(q, [id]);
+        const query = "DELETE FROM kelas WHERE id = $1 RETURNING *";
+        const { rows } = await pool.query(query, [id]);
 
-        if (rows.length === 0)
-            return res.status(404).json({ error: "Class not found." });
+        if (rows.length === 0) {
+            return res.status(404).json({
+                error: "Class not found. Please refresh the page and try again.",
+            });
+        }
 
-        res.json({ message: "Class deleted successfully.", deleted: rows[0] });
+        res.json({
+            message: "Class deleted successfully.",
+            deleted: rows[0],
+        });
     } catch (err) {
-        console.error("Error DELETE /kelas/:id:", err);
+        console.error("❌ DELETE /kelas/:id error:", err);
 
-        // 🧩 Detect PostgreSQL foreign key constraint violation
+        // Foreign key constraint
         if (err.code === "23503") {
             return res.status(400).json({
                 error:
-                    "This class cannot be deleted because it is still linked to other data (such as materials, assignments, or enrolled students). Please remove those first."
+                    "This class cannot be deleted because it is linked to other data (materials, students, or assignments). Please remove them first.",
             });
         }
 
-        // 🧩 Detect general constraint or relational errors
-        if (err.message.includes("foreign key") || err.message.includes("constraint")) {
+        // Other database constraint
+        if (
+            err.message.includes("foreign key") ||
+            err.message.includes("constraint")
+        ) {
             return res.status(400).json({
                 error:
-                    "Unable to delete this class. It is still connected to related data (materials, students, or assignments)."
+                    "Unable to delete this class because it is still related to other records.",
             });
         }
 
-        // 🧩 Fallback error
-        res.status(500).json({ error: "An unexpected server error occurred while deleting the class." });
+        // Generic fallback
+        return res.status(500).json({
+            error:
+                "Internal server error while deleting class. Please contact the administrator.",
+        });
     }
 });
 
