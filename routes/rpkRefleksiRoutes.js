@@ -76,7 +76,6 @@ router.get("/:id", async (req, res) => {
             LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
             LEFT JOIN users u ON rr.guru_id = u.id
             LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN db_mapel dm ON rr.mapel_id = dm.id
             LEFT JOIN grade_level g ON rb.grade_id = g.id
             WHERE rr.id = $1
             `,
