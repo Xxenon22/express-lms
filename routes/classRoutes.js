@@ -285,51 +285,27 @@ router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
 
 });
 
-router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
-
+// Ambil semua siswa yang mengikuti kelas tertentu
+router.get("/students/:kelasId", verifyToken, async (req, res) => {
     try {
-        const query = "DELETE FROM kelas WHERE id = $1 RETURNING *";
-        const { rows } = await pool.query(query, [id]);
+        const { kelasId } = req.params;
 
-        if (rows.length === 0) {
-            return res.status(404).json({
-                error: "Kelas tidak ditemukan. Silakan refresh halaman dan coba lagi.",
-            });
-        }
+        const query = `
+            SELECT 
+                kd.user_id,
+                u.username AS name,
+                u.photo_profiles_user
+            FROM kelas_diikuti kd
+            JOIN users u ON u.id = kd.user_id
+            WHERE kd.kelas_id = $1
+            ORDER BY u.username ASC
+        `;
 
-        res.json({
-            message: "Kelas berhasil dihapus.",
-            deleted: rows[0],
-        });
-
+        const { rows } = await pool.query(query, [kelasId]);
+        res.json(rows);
     } catch (err) {
-        console.error("❌ Error DELETE /kelas/:id:", err);
-
-        // 🧩 Deteksi error foreign key constraint (kode: 23503)
-        if (err.code === "23503") {
-            return res.status(400).json({
-                error:
-                    "Kelas ini tidak dapat dihapus karena masih memiliki data yang terhubung — seperti modul pembelajaran, siswa, atau tugas. Silakan hapus data tersebut terlebih dahulu sebelum menghapus kelas.",
-            });
-        }
-
-        // 🔍 Jika ada pesan lain yang berhubungan dengan foreign key
-        if (
-            err.message.includes("foreign key") ||
-            err.message.includes("constraint")
-        ) {
-            return res.status(400).json({
-                error:
-                    "Tidak dapat menghapus kelas ini karena masih terhubung dengan data lain.",
-            });
-        }
-
-        // ⚠️ Jika error lain (bukan foreign key)
-        return res.status(500).json({
-            error:
-                "Terjadi kesalahan pada server saat menghapus kelas. Silakan hubungi administrator.",
-        });
+        console.error("Error GET /kelas/students/:kelasId:", err);
+        res.status(500).json({ error: "Server error" });
     }
 });
 
