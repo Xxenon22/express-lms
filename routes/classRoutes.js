@@ -294,32 +294,44 @@ router.delete("/:id", async (req, res) => {
 
         if (rows.length === 0) {
             return res.status(404).json({
-                error: "Class not found. Please refresh the page and try again.",
+                error: "Kelas tidak ditemukan. Silakan refresh halaman dan coba lagi.",
             });
         }
 
         res.json({
-            message: "Class deleted successfully.",
+            message: "Kelas berhasil dihapus.",
             deleted: rows[0],
         });
 
     } catch (err) {
-        console.error("❌ DELETE /kelas/:id error:", err);
+        console.error("❌ Error DELETE /kelas/:id:", err);
 
-        // Foreign key constraint (linked data)
+        // 🧩 Deteksi error foreign key constraint (kode: 23503)
         if (err.code === "23503") {
-            const relatedTable = err.table || "other tables";
             return res.status(400).json({
-                error: `This class cannot be deleted because it is still linked to "${relatedTable}". Please remove or reassign the related data first.`,
+                error:
+                    "Kelas ini tidak dapat dihapus karena masih memiliki data yang terhubung — seperti modul pembelajaran, siswa, atau tugas. Silakan hapus data tersebut terlebih dahulu sebelum menghapus kelas.",
             });
         }
 
-        // Other constraint or unknown error
+        // 🔍 Jika ada pesan lain yang berhubungan dengan foreign key
+        if (
+            err.message.includes("foreign key") ||
+            err.message.includes("constraint")
+        ) {
+            return res.status(400).json({
+                error:
+                    "Tidak dapat menghapus kelas ini karena masih terhubung dengan data lain.",
+            });
+        }
+
+        // ⚠️ Jika error lain (bukan foreign key)
         return res.status(500).json({
             error:
-                "Internal server error while deleting class. Please contact the administrator.",
+                "Terjadi kesalahan pada server saat menghapus kelas. Silakan hubungi administrator.",
         });
     }
 });
+
 
 export default router;
