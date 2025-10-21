@@ -286,34 +286,39 @@ router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
 });
 
 // Ambil semua siswa yang mengikuti kelas tertentu
-router.get("/students/:kelasId", verifyToken, async (req, res) => {
+// DELETE class
+router.delete("/:id", async (req, res) => {
     try {
-        const { kelasId } = req.params;
+        const { id } = req.params;
+        const q = "DELETE FROM kelas WHERE id = $1 RETURNING *";
+        const { rows } = await pool.query(q, [id]);
 
-        const query = `
-            SELECT 
-                kd.user_id,
-                u.username AS name,
-                u.photo_profiles_user
-            FROM kelas_diikuti kd
-            JOIN users u ON u.id = kd.user_id
-            WHERE kd.kelas_id = $1
-            ORDER BY u.username ASC
-        `;
+        if (rows.length === 0)
+            return res.status(404).json({ error: "Class not found." });
 
-        const { rows } = await pool.query(query, [kelasId]);
-        res.json(rows);
+        res.json({ message: "Class deleted successfully.", deleted: rows[0] });
     } catch (err) {
-        console.error("Error GET /kelas/students/:kelasId:", err);
+        console.error("Error DELETE /kelas/:id:", err);
+
+        // 🧩 Detect PostgreSQL foreign key constraint violation
         if (err.code === "23503") {
             return res.status(400).json({
-                error: "Cannot delete this class because it still has related data (modules, assignments, or students). Please remove those first."
+                error:
+                    "This class cannot be deleted because it is still linked to other data (such as materials, assignments, or enrolled students). Please remove those first."
             });
         }
 
-        res.status(500).json({ error: "Server error" });
+        // 🧩 Detect general constraint or relational errors
+        if (err.message.includes("foreign key") || err.message.includes("constraint")) {
+            return res.status(400).json({
+                error:
+                    "Unable to delete this class. It is still connected to related data (materials, students, or assignments)."
+            });
+        }
+
+        // 🧩 Fallback error
+        res.status(500).json({ error: "An unexpected server error occurred while deleting the class." });
     }
 });
-
 
 export default router;
