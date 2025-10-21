@@ -302,29 +302,19 @@ router.delete("/:id", async (req, res) => {
             message: "Class deleted successfully.",
             deleted: rows[0],
         });
+
     } catch (err) {
         console.error("❌ DELETE /kelas/:id error:", err);
 
-        // Foreign key constraint
+        // Foreign key constraint (linked data)
         if (err.code === "23503") {
+            const relatedTable = err.table || "other tables";
             return res.status(400).json({
-                error:
-                    "This class cannot be deleted because it is linked to other data (materials, students, or assignments). Please remove them first.",
+                error: `This class cannot be deleted because it is still linked to "${relatedTable}". Please remove or reassign the related data first.`,
             });
         }
 
-        // Other database constraint
-        if (
-            err.message.includes("foreign key") ||
-            err.message.includes("constraint")
-        ) {
-            return res.status(400).json({
-                error:
-                    "Unable to delete this class because it is still related to other records.",
-            });
-        }
-
-        // Generic fallback
+        // Other constraint or unknown error
         return res.status(500).json({
             error:
                 "Internal server error while deleting class. Please contact the administrator.",
