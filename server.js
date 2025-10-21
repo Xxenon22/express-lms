@@ -127,3 +127,12 @@ app.listen(PORT, "0.0.0.0", () => console.log(` Server running on port ${PORT}`)
 app.get("/api", (req, res) => {
     res.send("Backend is running 🚀");
 });
+
+// Pastikan ini ditaruh PALING BAWAH setelah semua route
+app.use((err, req, res, next) => {
+    console.error("🔥 Unhandled Error:", err);
+
+    res.status(500).json({
+        error: "An unexpected error occurred on the server. Please try again later.",
+    });
+});
