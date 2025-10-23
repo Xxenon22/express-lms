@@ -193,26 +193,52 @@ router.delete("/:id", async (req, res) => {
 // GET semua kelas (untuk admin / siswa browsing)
 router.get("/all/list", async (req, res) => {
     try {
-        const result = await pool.query(`
+        const q = `
             SELECT 
-                k.*, 
-                r.name_rombel, 
-                g.grade_lvl, 
+                k.id,
+                k.link_wallpaper_kelas,
+                k.guru_id,
+                k.rombel_id,
+                k.id_mapel,
                 m.nama_mapel,
-                u.username AS guru_name
+                r.name_rombel,
+                g.grade_lvl,
+                u.username AS guru_name,
+                u.photo_profiles_user AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
             ORDER BY k.id ASC
-        `);
-        res.json(result.rows);
+        `;
+
+        const { rows } = await pool.query(q);
+
+        // Format hasil biar lebih clean dan nested
+        const formatted = rows.map(row => ({
+            id: row.id,
+            nama_mapel: row.nama_mapel,
+            guru_id: row.guru_id,
+            teacher: {
+                username: row.guru_name,
+                photo_profiles_user: row.guru_photo
+            },
+            rombel: {
+                id: row.rombel_id,
+                name_rombel: row.name_rombel,
+                grade_lvl: row.grade_lvl
+            },
+            link_wallpaper_kelas: row.link_wallpaper_kelas
+        }));
+
+        res.json(formatted);
     } catch (err) {
         console.error("Error GET /kelas/all/list:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 // GET kelas yang diikuti oleh user
 router.get("/followed/me", verifyToken, async (req, res) => {
