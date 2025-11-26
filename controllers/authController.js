@@ -1,138 +1,259 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { createUser, findUserByEmail } from "../models/userModel.js";
+import { createUser, findUserByEmail, updateUser } from "../models/userModel.js";
+import sendEmail from "../utils/sendEmail.js";
 
-// === Register (Student) ===
+// Generate 6-digit OTP
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+// =============================
+//      REGISTER STUDENT
+// =============================
 export const register = async (req, res) => {
     try {
-        const { email, username, password, confirmPassword, role } = req.body;
+        const { email, username, password, confirmPassword } = req.body;
 
-        // Check for missing fields
-        if (!email || !username || !password || !confirmPassword) {
+        if (!email || !username || !password || !confirmPassword)
             return res.status(400).json({ message: "All fields are required" });
-        }
 
-        //  Validate password confirmation
-        if (password !== confirmPassword) {
+        if (password !== confirmPassword)
             return res.status(400).json({ message: "Passwords do not match" });
-        }
 
-        // Basic password strength validation
-        if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters long" });
-        }
-
-        // Check if user already exists
         const userExist = await findUserByEmail(email);
-        if (userExist) {
+        if (userExist)
             return res.status(400).json({ message: "User already exists" });
-        }
 
-        // Hash and create user
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await createUser(email, username, hashedPassword, role || "student");
 
-        // Generate JWT
-        const token = jwt.sign(
-            { id: newUser.id, email: newUser.email, username: newUser.username, role: newUser.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+        const code = generateCode();
+        const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+        const newUser = await createUser(
+            email,
+            username,
+            hashedPassword,
+            "student",
+            code,
+            expires
         );
 
-        // Respond success
-        res.json({
-            message: "Success Sign up",
-            users: {
-                id: newUser.id,
-                username: newUser.username,
-                email: newUser.email,
-                role: newUser.role,
-            },
-            token,
+        // Send email in a separate try/catch
+        try {
+            await sendEmail({
+                to: email,
+                subject: "Verify Your Account",
+                text: `Your verification code is: ${code}`
+            });
+        } catch (emailErr) {
+            console.error("EMAIL SEND ERROR:", emailErr);
+        }
+
+        return res.json({
+            message: "Signup success, please verify your email",
+            email: newUser.email
         });
+
     } catch (err) {
-        console.error("Register error:", err);
-        res.status(500).json({ message: "Server error", error: err.message });
+        console.error("REGISTER ERROR:", err);
+        return res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
-// === Register (Teacher) ===
+// =============================
+//      REGISTER TEACHER
+// =============================
 export const registerTeacher = async (req, res) => {
     try {
         const { email, username, password, confirmPassword, role } = req.body;
 
-        if (!email || !username || !password || !confirmPassword) {
+        if (!email || !username || !password || !confirmPassword)
             return res.status(400).json({ message: "All fields are required" });
-        }
 
-        if (password !== confirmPassword) {
+        if (password !== confirmPassword)
             return res.status(400).json({ message: "Passwords do not match" });
-        }
-
-        if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters long" });
-        }
 
         const userExist = await findUserByEmail(email);
-        if (userExist) return res.status(400).json({ message: "User already exists" });
+        if (userExist)
+            return res.status(400).json({ message: "User already exists" });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await createUser(email, username, hashedPassword, role || "teacher");
 
-        const token = jwt.sign(
-            { id: newUser.id, email: newUser.email, username: newUser.username, role: newUser.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+        const code = generateCode();
+        const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+        const newUser = await createUser(
+            email,
+            username,
+            hashedPassword,
+            role || "teacher",
+            code,
+            expires
         );
 
-        res.json({
-            message: "Successfully added account",
-            users: {
-                id: newUser.id,
-                username: newUser.username,
-                email: newUser.email,
-                role: newUser.role,
-            },
-            token,
+        try {
+            await sendEmail({
+                to: email,
+                subject: "Verify Your Teacher Account",
+                text: `Your verification code is: ${code}`
+            });
+        } catch (emailErr) {
+            console.error("EMAIL SEND ERROR:", emailErr);
+        }
+
+        return res.json({
+            message: "Teacher registered, verification required",
+            email: newUser.email
         });
+
     } catch (err) {
+        console.error("REGISTER TEACHER ERROR:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
-// === Login ===
-export const login = async (req, res) => {
+// =============================
+//         VERIFY EMAIL
+// =============================
+export const verifyEmail = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, code } = req.body;
 
-        // Check fields
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
-        }
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
 
-        const users = await findUserByEmail(email);
-        if (!users) return res.status(400).json({ message: "User not found" });
+        if (user.verification_code !== code)
+            return res.status(400).json({ message: "Invalid code" });
 
-        const isMatch = await bcrypt.compare(password, users.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+        if (user.verification_expires < new Date())
+            return res.status(400).json({ message: "Code expired" });
+
+        await updateUser(email, {
+            is_verified: true,
+            verification_code: null,
+            verification_expires: null
+        });
 
         const token = jwt.sign(
-            { id: users.id, role: users.role, username: users.username },
+            {
+                id: user.id,
+                role: user.role,
+                username: user.username,
+                email: user.email
+            },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
-        res.json({
-            message: "Login successful",
+        return res.json({
+            message: "Email verified successfully",
             token,
-            users: {
-                id: users.id,
-                email: users.email,
-                role: users.role,
-                username: users.username,
-            },
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                username: user.username
+            }
         });
+
     } catch (err) {
+        console.error("VERIFY ERROR:", err);
+        return res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+// =============================
+//            LOGIN
+// =============================
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password)
+            return res.status(400).json({ message: "Email and password are required" });
+
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(400).json({ message: "User not found" });
+
+        // Cek password dulu
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+        // ============ OTP LOGIN =============
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+        // simpan code untuk login
+        await updateUser(email, {
+            verification_code: code,
+            verification_expires: expires
+        });
+
+        try {
+            await sendEmail({
+                to: email,
+                subject: "Your Login Code",
+                text: `Your login code is: ${code}`
+            });
+        } catch (emailErr) {
+            console.error("LOGIN EMAIL ERROR:", emailErr);
+        }
+
+        return res.json({
+            message: "OTP sent to your email",
+            email: user.email,
+            nextStep: "verify-login-code"
+        });
+
+    } catch (err) {
+        console.error("LOGIN ERROR:", err);
         res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+export const verifyLoginCode = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.verification_code !== code)
+            return res.status(400).json({ message: "Invalid code" });
+
+        if (user.verification_expires < new Date())
+            return res.status(400).json({ message: "Code expired" });
+
+        // reset code
+        await updateUser(email, {
+            verification_code: null,
+            verification_expires: null
+        });
+
+        // buat JWT
+        const token = jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                username: user.username
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        return res.json({
+            message: "Login success",
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                username: user.username
+            }
+        });
+
+    } catch (err) {
+        console.error("VERIFY LOGIN ERROR:", err);
+        return res.status(500).json({ message: "Server error", error: err.message });
     }
 };
