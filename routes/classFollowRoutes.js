@@ -10,7 +10,7 @@ router.get("/diikuti/:studentId", verifyToken, async (req, res) => {
         const { studentId } = req.params;
 
         const q = `
-            SELECT k.*, r.name_rombel, g.grade_lvl, m.nama_mapel, u.username AS guru_name
+            SELECT k.*, r.rombel, g.grade_lvl, m.nama_mapel, u.username AS guru_name
             FROM kelas k
             JOIN kelas_diikuti kd ON kd.kelas_id = k.id
             LEFT JOIN rombel r ON k.rombel_id = r.id
@@ -22,7 +22,7 @@ router.get("/diikuti/:studentId", verifyToken, async (req, res) => {
         `;
 
         const { rows } = await pool.query(q, [studentId]);
-        res.json(rows);
+        res.json(rows)
     } catch (err) {
         console.error("Error GET /kelas-diikuti/diikuti/:studentId:", err);
         res.status(500).json({ error: "Server error" });

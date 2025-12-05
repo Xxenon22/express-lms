@@ -5,28 +5,33 @@ export const RombelModel = {
         const result = await pool.query(`
       SELECT 
         r.id, 
-        r.name_rombel, 
+        n.id As name_rombel, 
+        n.number As rombel_number,
         g.id AS grade_id, 
-        g.grade_lvl AS grade_name
+        g.grade_lvl AS grade_name,
+        j.id AS jurusan_id,
+        j.nama_jurusan AS major
       FROM rombel r
       LEFT JOIN grade_level g ON r.grade_id = g.id
+      LEFT JOIN jurusan j ON r.jurusan_id = j.id
+      LEFT JOIN number_rombel n ON r.name_rombel = n.id
       ORDER BY r.id ASC
     `);
         return result.rows;
     },
 
-    async create(name_rombel, grade_id) {
+    async create(name_rombel, grade_id, jurusan_id) {
         const result = await pool.query(
-            "INSERT INTO rombel (name_rombel, grade_id) VALUES ($1, $2) RETURNING *",
-            [name_rombel, grade_id]
+            "INSERT INTO rombel (name_rombel, grade_id, jurusan_id) VALUES ($1, $2, $3) RETURNING *",
+            [name_rombel, grade_id, jurusan_id]
         );
         return result.rows[0];
     },
 
-    async update(id, name_rombel, grade_id) {
+    async update(id, name_rombel, grade_id, jurusan_id) {
         const result = await pool.query(
-            "UPDATE rombel SET name_rombel=$1, grade_id=$2 WHERE id=$3 RETURNING *",
-            [name_rombel, grade_id, id]
+            "UPDATE rombel SET name_rombel=$1, grade_id=$2, jurusan_id=$3 WHERE id=$4 RETURNING *",
+            [name_rombel, grade_id, jurusan_id, id]
         );
         return result.rows[0];
     },

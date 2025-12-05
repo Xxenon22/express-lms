@@ -8,7 +8,7 @@ export const createUser = async (
     username,
     hashedPassword,
     role = "student",
-    verificationCode,
+    verifiscationCode,
     verificationExpires
 ) => {
     const result = await pool.query(

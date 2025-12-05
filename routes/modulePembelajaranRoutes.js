@@ -85,11 +85,10 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
                 b.id AS bank_soal_id, 
                 b.judul_penugasan AS bank_soal_nama,
                 u.photo_profiles_user AS guru_foto
-             FROM module_pembelajaran m
+                FROM module_pembelajaran m 
              LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
              LEFT JOIN users u ON m.guru_id = u.id
-             LEFT JOIN progress_materi jm 
-                ON jm.materi_id = m.id AND jm.user_id = $2
+             LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
              WHERE m.kelas_id = $1
                AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
              ORDER BY m.created_at DESC`,
@@ -121,29 +120,31 @@ router.get("/siswa/:id", async (req, res) => {
 
     try {
         const query = `
-     SELECT 
-            mp.id,
-            mp.judul_penugasan,
-            mp.kelas_id,
-            r.name_rombel,
-            m.nama_mapel,
-            p.pdf_selesai,
-            p.video_selesai,
-            j.nilai,
-            u.photo_profiles_user AS guru_foto
-        FROM module_pembelajaran mp
-        INNER JOIN kelas k ON k.id = mp.kelas_id
-        INNER JOIN rombel r ON r.id = k.rombel_id
-        INNER JOIN db_mapel m ON m.id = k.id_mapel
-        INNER JOIN kelas_diikuti kd ON kd.kelas_id = k.id
-        LEFT JOIN users u ON u.id = mp.guru_id
-        LEFT JOIN progress_materi p ON p.materi_id = mp.id AND p.user_id = $1
-        LEFT JOIN jawaban_siswa j 
-                ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
+    SELECT 
+        mp.id,
+        mp.judul_penugasan,
+        mp.kelas_id,
+        mp.bank_soal_id, 
+        r.name_rombel,
+        m.nama_mapel,
+        p.pdf_selesai,
+        p.video_selesai,
+        j.nilai,
+        u.photo_profiles_user AS guru_foto
+    FROM module_pembelajaran mp
+    INNER JOIN kelas k ON k.id = mp.kelas_id
+    INNER JOIN rombel r ON r.id = k.rombel_id
+    INNER JOIN db_mapel m ON m.id = k.id_mapel
+    INNER JOIN kelas_diikuti kd ON kd.kelas_id = k.id
+    LEFT JOIN users u ON u.id = mp.guru_id
+    LEFT JOIN progress_materi p ON p.materi_id = mp.id AND p.user_id = $1
+    LEFT JOIN jawaban_siswa j 
+            ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
 
-        WHERE kd.user_id = $1
-        ORDER BY mp.created_at DESC;
-    `;
+    WHERE kd.user_id = $1
+    ORDER BY mp.created_at DESC;
+`;
+
 
         const { rows } = await pool.query(query, [siswaId]);
 

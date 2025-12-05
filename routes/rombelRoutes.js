@@ -1,5 +1,5 @@
 import express from "express";
-import { RombelModel } from "../models/rombelModel.js"; // pastikan import modelnya
+import { RombelModel } from "../models/rombelModel.js";
 
 const router = express.Router();
 
@@ -17,8 +17,8 @@ router.get("/", async (req, res) => {
 // Create
 router.post("/", async (req, res) => {
     try {
-        const { name_rombel, grade_id } = req.body;
-        const rombel = await RombelModel.create(name_rombel, grade_id);
+        const { name_rombel, jurusan_id, grade_id } = req.body;
+        const rombel = await RombelModel.create(name_rombel, jurusan_id, grade_id);
         res.json(rombel);
     } catch (err) {
         console.error(err);
@@ -30,8 +30,8 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { name_rombel, grade_id } = req.body;
-        const rombel = await RombelModel.update(id, name_rombel, grade_id);
+        const { name_rombel, jurusan_id, grade_id } = req.body;
+        const rombel = await RombelModel.update(id, name_rombel, jurusan_id, grade_id);
         res.json(rombel);
     } catch (err) {
         console.error(err);

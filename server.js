@@ -32,6 +32,7 @@ import timetableXI from "./routes/timetablesGradeXIRoutes.js";
 import classFollowRoutes from "./routes/classFollowRoutes.js";
 import progressMateri from "./routes/progressRoutes.js";
 import jawabanSiswa from "./routes/jawabanSiswaRoutes.js";
+import rombelNumber from "./routes/rombelNumRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/kelas", classRoutes);
 app.use("/api/mapel", mapel);
 app.use("/api/rombel", rombel);
+app.use("/api/number-rombel", rombelNumber);
 app.use("/api/grade-level", gradeLevel);
 app.use("/api/teacher", teachers);
 app.use("/api/phase", phase);
