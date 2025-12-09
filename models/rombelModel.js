@@ -1,43 +1,102 @@
-import { pool } from "../config/db.js";
+import express from "express";
+import pool from "../db.js";
 
-export const RombelModel = {
-    async getAll() {
+const router = express.Router();
+
+// =========================
+// GET ALL ROMBEL
+// =========================
+router.get("/", async (req, res) => {
+    try {
         const result = await pool.query(`
-      SELECT 
-        r.id, 
-        n.id As name_rombel, 
-        n.number As rombel_number,
-        g.id AS grade_id, 
-        g.grade_lvl AS grade_name,
-        j.id AS jurusan_id,
-        j.nama_jurusan AS major
-      FROM rombel r
-      LEFT JOIN grade_level g ON r.grade_id = g.id
-      LEFT JOIN jurusan j ON r.jurusan_id = j.id
-      LEFT JOIN number_rombel n ON r.name_rombel = n.id
-      ORDER BY r.id ASC
-    `);
-        return result.rows;
-    },
+            SELECT
+                r.id,
+                r.name_rombel,
+                r.grade_id,
+                r.jurusan_id,
+                g.grade_lvl AS grade_name,
+                j.nama_jurusan AS major,
+                num.number AS rombel_number
+            FROM rombel r
+            LEFT JOIN grade_level g ON g.id = r.grade_id
+            LEFT JOIN jurusan j ON j.id = r.jurusan_id
+            LEFT JOIN number_rombel num ON num.id = r.name_rombel
+            ORDER BY r.id ASC;
+        `);
 
-    async create(name_rombel, grade_id, jurusan_id) {
-        const result = await pool.query(
-            "INSERT INTO rombel (name_rombel, grade_id, jurusan_id) VALUES ($1, $2, $3) RETURNING *",
-            [name_rombel, grade_id, jurusan_id]
-        );
-        return result.rows[0];
-    },
+        res.json(result.rows);
+    } catch (err) {
+        console.error("GET ROMBEL ERROR:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
 
-    async update(id, name_rombel, grade_id, jurusan_id) {
-        const result = await pool.query(
-            "UPDATE rombel SET name_rombel=$1, grade_id=$2, jurusan_id=$3 WHERE id=$4 RETURNING *",
+// =========================
+// UPDATE ROMBEL
+// =========================
+router.put("/:id", async (req, res) => {
+    const { id } = req.params;
+    const { name_rombel, grade_id, jurusan_id } = req.body;
+
+    if (!name_rombel || !grade_id || !jurusan_id) {
+        return res.status(400).json({
+            message: "name_rombel, grade_id, jurusan_id are required"
+        });
+    }
+
+    try {
+        // Cek apakah rombel ada
+        const check = await pool.query(`SELECT * FROM rombel WHERE id = $1`, [id]);
+
+        if (check.rowCount === 0) {
+            return res.status(404).json({ message: "Rombel not found" });
+        }
+
+        // Update
+        await pool.query(
+            `UPDATE rombel
+             SET name_rombel = $1, grade_id = $2, jurusan_id = $3
+             WHERE id = $4`,
             [name_rombel, grade_id, jurusan_id, id]
         );
-        return result.rows[0];
-    },
 
-    async delete(id) {
-        await pool.query("DELETE FROM rombel WHERE id=$1", [id]);
-        return { message: "Rombel deleted" };
-    },
-};
+        return res.json({
+            message: "Rombel updated successfully",
+            data: {
+                id,
+                name_rombel,
+                grade_id,
+                jurusan_id,
+            }
+        });
+
+    } catch (err) {
+        console.error("UPDATE ROMBEL ERROR:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// =========================
+// DELETE ROMBEL
+// =========================
+router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const check = await pool.query("SELECT * FROM rombel WHERE id = $1", [id]);
+
+        if (check.rowCount === 0) {
+            return res.status(404).json({ message: "Rombel not found" });
+        }
+
+        await pool.query(`DELETE FROM rombel WHERE id = $1`, [id]);
+
+        return res.json({ message: "Rombel deleted successfully" });
+
+    } catch (err) {
+        console.error("DELETE ROMBEL ERROR:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
+export default router;
