@@ -37,12 +37,12 @@ export const register = async (req, res) => {
             expires
         );
 
-        // Send email in a separate try/catch
+        // Kirim email OTP dengan HTML
         try {
             await sendEmail({
                 to: email,
                 subject: "Verify Your Account",
-                text: `Your verification code is: ${code}`
+                code: code
             });
         } catch (emailErr) {
             console.error("EMAIL SEND ERROR:", emailErr);
@@ -94,7 +94,7 @@ export const registerTeacher = async (req, res) => {
             await sendEmail({
                 to: email,
                 subject: "Verify Your Teacher Account",
-                text: `Your verification code is: ${code}`
+                code: code
             });
         } catch (emailErr) {
             console.error("EMAIL SEND ERROR:", emailErr);
@@ -174,25 +174,25 @@ export const login = async (req, res) => {
         const user = await findUserByEmail(email);
         if (!user) return res.status(400).json({ message: "User not found" });
 
-        // Cek password dulu
+        // Cek password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        // ============ OTP LOGIN =============
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate OTP login
+        const code = generateCode();
         const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-        // simpan code untuk login
         await updateUser(email, {
             verification_code: code,
             verification_expires: expires
         });
 
+        // Kirim OTP dengan HTML
         try {
             await sendEmail({
                 to: email,
                 subject: "Your Login Code",
-                text: `Your login code is: ${code}`
+                code: code
             });
         } catch (emailErr) {
             console.error("LOGIN EMAIL ERROR:", emailErr);
@@ -210,6 +210,9 @@ export const login = async (req, res) => {
     }
 };
 
+// =============================
+//      VERIFY LOGIN CODE
+// =============================
 export const verifyLoginCode = async (req, res) => {
     try {
         const { email, code } = req.body;
@@ -223,13 +226,13 @@ export const verifyLoginCode = async (req, res) => {
         if (user.verification_expires < new Date())
             return res.status(400).json({ message: "Code expired" });
 
-        // reset code
+        // Reset code
         await updateUser(email, {
             verification_code: null,
             verification_expires: null
         });
 
-        // buat JWT
+        // Buat JWT
         const token = jwt.sign(
             {
                 id: user.id,
