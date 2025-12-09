@@ -4,26 +4,31 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET all kelas
+/* ============================================
+   GET All kelas (Guru)
+============================================ */
 router.get("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
+
         const result = await pool.query(`
-      SELECT 
-    k.id,
-    k.nama_mapel,
-    g.grade_lvl,
-    nr.number AS name_rombel,
-    u.username AS guru_name,
-    u.photo_profiles_user AS guru_photo
-FROM kelas k
-LEFT JOIN rombel r ON k.rombel_id = r.id
-LEFT JOIN grade_level g ON r.grade_id = g.id
-LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-LEFT JOIN users u ON k.guru_id = u.id
-ORDER BY k.id ASC`,
-            [guruId]
-        );
+            SELECT 
+                k.*, 
+                nr.number AS name_rombel,
+                g.grade_lvl,
+                m.nama_mapel,
+                u.username AS guru_name,
+                u.photo_profiles_user AS guru_photo
+            FROM kelas k
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN grade_level g ON r.grade_id = g.id
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN users u ON k.guru_id = u.id
+            WHERE k.guru_id = $1
+            ORDER BY k.id ASC
+        `, [guruId]);
+
         res.json(result.rows);
     } catch (err) {
         console.error("Error GET /kelas:", err);
@@ -31,25 +36,28 @@ ORDER BY k.id ASC`,
     }
 });
 
-// GET single kelas by ID + module pembelajaran
+
+/* ============================================
+   GET Single kelas + modules
+============================================ */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validasi ID harus angka
-        if (isNaN(id)) {
-            return res.status(400).json({ error: "Invalid ID format" });
-        }
+        if (isNaN(id)) return res.status(400).json({ error: "Invalid ID format" });
 
         const q = `
             SELECT 
                 k.id AS kelas_id, 
                 k.link_wallpaper_kelas,
                 m.nama_mapel, 
-                r.name_rombel, 
+
+                nr.number AS name_rombel,
                 gl.grade_lvl,
+
                 u.username AS guru_name,
                 u.photo_profiles_user AS guru_photo,
+
                 mp.id AS module_id,
                 mp.judul AS module_judul,
                 mp.judul_penugasan,
@@ -57,10 +65,12 @@ router.get("/:id", async (req, res) => {
                 mp.video_url,
                 mp.file_url,
                 mp.created_at AS module_created_at,
+
                 bs.id AS bank_soal_id,
                 bs.judul_penugasan AS bank_soal_judul
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level gl ON r.grade_id = gl.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
@@ -76,7 +86,6 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Class not found" });
         }
 
-        // Format biar hasilnya rapi (1 kelas punya banyak module)
         const kelasData = {
             kelas_id: rows[0].kelas_id,
             nama_mapel: rows[0].nama_mapel,
@@ -86,7 +95,7 @@ router.get("/:id", async (req, res) => {
             guru_photo: rows[0].guru_photo,
             link_wallpaper_kelas: rows[0].link_wallpaper_kelas,
             modules: rows
-                .filter(r => r.module_id) // ambil hanya kalau ada module
+                .filter(r => r.module_id)
                 .map(r => ({
                     module_id: r.module_id,
                     judul: r.module_judul,
@@ -95,15 +104,12 @@ router.get("/:id", async (req, res) => {
                     video_url: r.video_url,
                     file_url: r.file_url,
                     created_at: r.module_created_at,
-                    bank_soal: r.bank_soal_id
-                        ? {
-                            id: r.bank_soal_id,
-                            judul: r.bank_soal_judul
-                        }
-                        : null
+                    bank_soal: r.bank_soal_id ? {
+                        id: r.bank_soal_id,
+                        judul: r.bank_soal_judul
+                    } : null
                 }))
         };
-        console.log("Query rows:", rows);
 
         res.status(200).json(kelasData);
 
@@ -113,18 +119,22 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// CREATE kelas
+
+/* ============================================
+   CREATE kelas
+============================================ */
 router.post("/", verifyToken, async (req, res) => {
     try {
         const { rombel_id, link_wallpaper_kelas, id_mapel } = req.body;
         const guru_id = req.users.id;
+
         const wallpaper = link_wallpaper_kelas || "default_wallpaper.jpg";
 
         const q = `
-      INSERT INTO kelas (guru_id, link_wallpaper_kelas, rombel_id, id_mapel)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `;
+            INSERT INTO kelas (guru_id, link_wallpaper_kelas, rombel_id, id_mapel)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `;
 
         const { rows } = await pool.query(q, [
             guru_id,
@@ -140,21 +150,24 @@ router.post("/", verifyToken, async (req, res) => {
     }
 });
 
-// UPDATE kelas
+
+/* ============================================
+   UPDATE kelas (COALESCE)
+============================================ */
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const { guru_id, link_wallpaper_kelas, rombel_id, id_mapel } = req.body;
 
         const q = `
-      UPDATE kelas
-      SET guru_id = COALESCE($1, guru_id),
-          link_wallpaper_kelas = COALESCE($2, link_wallpaper_kelas),
-          rombel_id = COALESCE($3, rombel_id),
-          id_mapel = COALESCE($4, id_mapel)
-      WHERE id = $5
-      RETURNING *
-    `;
+            UPDATE kelas
+            SET guru_id = COALESCE($1, guru_id),
+                link_wallpaper_kelas = COALESCE($2, link_wallpaper_kelas),
+                rombel_id = COALESCE($3, rombel_id),
+                id_mapel = COALESCE($4, id_mapel)
+            WHERE id = $5
+            RETURNING *
+        `;
 
         const { rows } = await pool.query(q, [
             guru_id || null,
@@ -166,6 +179,7 @@ router.put("/:id", async (req, res) => {
 
         if (rows.length === 0)
             return res.status(404).json({ error: "Class not found" });
+
         res.json(rows[0]);
     } catch (err) {
         console.error("Error PUT /kelas/:id:", err);
@@ -173,15 +187,23 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// DELETE kelas
+
+/* ============================================
+   DELETE kelas
+============================================ */
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+
         const q = "DELETE FROM kelas WHERE id = $1 RETURNING *";
+
         const { rows } = await pool.query(q, [id]);
+
         if (rows.length === 0)
             return res.status(404).json({ error: "Class not found" });
+
         res.json({ message: "Deleted", deleted: rows[0] });
+
     } catch (err) {
         console.error("Error DELETE /kelas/:id:", err);
         res.status(500).json({ error: "Server error" });
@@ -189,7 +211,9 @@ router.delete("/:id", async (req, res) => {
 });
 
 
-// GET semua kelas (untuk admin / siswa browsing)
+/* ============================================
+   GET All kelas (Untuk siswa / admin)
+============================================ */
 router.get("/all/list", async (req, res) => {
     try {
         const q = `
@@ -200,12 +224,13 @@ router.get("/all/list", async (req, res) => {
                 k.rombel_id,
                 k.id_mapel,
                 m.nama_mapel,
-                r.name_rombel,
+                nr.number AS name_rombel,
                 g.grade_lvl,
                 u.username AS guru_name,
                 u.photo_profiles_user AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
@@ -214,7 +239,6 @@ router.get("/all/list", async (req, res) => {
 
         const { rows } = await pool.query(q);
 
-        // Format hasil biar lebih clean dan nested
         const formatted = rows.map(row => ({
             id: row.id,
             nama_mapel: row.nama_mapel,
@@ -239,12 +263,17 @@ router.get("/all/list", async (req, res) => {
 });
 
 
-// GET kelas yang diikuti oleh user
+/* ============================================
+   GET kelas diikuti user
+============================================ */
 router.get("/followed/me", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
+
         const result = await pool.query(`
-            SELECT kd.*, k.rombel_id, k.id_mapel, m.nama_mapel, u.username AS guru_name
+            SELECT kd.*, k.rombel_id, k.id_mapel, 
+                   m.nama_mapel, 
+                   u.username AS guru_name
             FROM kelas_diikuti kd
             INNER JOIN kelas k ON kd.kelas_id = k.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
@@ -259,17 +288,20 @@ router.get("/followed/me", verifyToken, async (req, res) => {
     }
 });
 
-// Follow kelas
+
+/* ============================================
+   FOLLOW kelas
+============================================ */
 router.post("/follow/:kelasId", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
         const { kelasId } = req.params;
 
-        // cek apakah sudah ada
         const cek = await pool.query(
             "SELECT * FROM kelas_diikuti WHERE user_id = $1 AND kelas_id = $2",
             [userId, kelasId]
         );
+
         if (cek.rows.length > 0) {
             return res.status(400).json({ error: "Already followed this class" });
         }
@@ -279,15 +311,21 @@ router.post("/follow/:kelasId", verifyToken, async (req, res) => {
             VALUES ($1, $2)
             RETURNING *
         `;
+
         const { rows } = await pool.query(q, [userId, kelasId]);
+
         res.status(201).json(rows[0]);
+
     } catch (err) {
         console.error("Error POST /kelas/follow:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
 
-// Unfollow kelas
+
+/* ============================================
+   UNFOLLOW kelas
+============================================ */
 router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
@@ -298,19 +336,24 @@ router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
             WHERE user_id = $1 AND kelas_id = $2
             RETURNING *
         `;
+
         const { rows } = await pool.query(q, [userId, kelasId]);
 
-        if (rows.length === 0) return res.status(404).json({ error: "Not following this class" });
+        if (rows.length === 0)
+            return res.status(404).json({ error: "Not following this class" });
 
         res.json({ message: "Unfollowed", unfollow: rows[0] });
+
     } catch (err) {
         console.error("Error DELETE /kelas/unfollow:", err);
         res.status(500).json({ error: "Server error" });
     }
-
 });
 
-// Ambil semua siswa yang mengikuti kelas tertentu
+
+/* ============================================
+   GET Siswa yang mengikuti kelas
+============================================ */
 router.get("/students/:kelasId", verifyToken, async (req, res) => {
     try {
         const { kelasId } = req.params;
@@ -328,11 +371,11 @@ router.get("/students/:kelasId", verifyToken, async (req, res) => {
 
         const { rows } = await pool.query(query, [kelasId]);
         res.json(rows);
+
     } catch (err) {
         console.error("Error GET /kelas/students/:kelasId:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
-
 
 export default router;
