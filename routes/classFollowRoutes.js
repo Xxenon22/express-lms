@@ -10,10 +10,14 @@ router.get("/diikuti/:studentId", verifyToken, async (req, res) => {
         const { studentId } = req.params;
 
         const q = `
-            SELECT k.*, r.rombel, g.grade_lvl, m.nama_mapel, u.username AS guru_name
+            SELECT k.*, 
+            r.rombel, 
+            g.grade_lvl, 
+            m.nama_mapel, 
+            u.username AS guru_name
             FROM kelas k
             JOIN kelas_diikuti kd ON kd.kelas_id = k.id
-            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN rombel r ON k.name_rombel = r.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
