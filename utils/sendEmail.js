@@ -4,7 +4,7 @@ export default async function sendEmail({ to, subject, text }) {
     try {
         const transporter = nodemailer.createTransport({
             host: "smtp-relay.brevo.com",
-            port: 587,
+            port: 2525,
             secure: false,
             auth: {
                 user: process.env.EMAIL,
