@@ -14,7 +14,7 @@ export default async function sendEmail({ to, subject, text }) {
                 rejectUnauthorized: false // supaya tidak gagal di server VPS dengan sertifikat tertentu
             },
             connectionTimeout: 10000, // 10 detik timeout
-
+            family: 4   // paksa pakai IPv4
         });
 
         const info = await transporter.sendMail({
