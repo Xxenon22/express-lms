@@ -10,19 +10,18 @@ router.get("/", verifyToken, async (req, res) => {
         const guruId = req.users.id;
         const result = await pool.query(`
       SELECT 
-        k.*, 
-        r.name_rombel, 
-        g.grade_lvl, 
-        m.nama_mapel,
-        u.username AS guru_name,
-        u.photo_profiles_user AS guru_photo
-      FROM kelas k
-      LEFT JOIN rombel r ON k.rombel_id = r.id
-      LEFT JOIN grade_level g ON r.grade_id = g.id
-      LEFT JOIN db_mapel m ON k.id_mapel = m.id
-      LEFT JOIN users u ON k.guru_id = u.id
-      WHERE k.guru_id = $1
-      ORDER BY k.id ASC`,
+    k.id,
+    k.nama_mapel,
+    g.grade_lvl,
+    nr.number AS name_rombel,
+    u.username AS guru_name,
+    u.photo_profiles_user AS guru_photo
+FROM kelas k
+LEFT JOIN rombel r ON k.rombel_id = r.id
+LEFT JOIN grade_level g ON r.grade_id = g.id
+LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+LEFT JOIN users u ON k.guru_id = u.id
+ORDER BY k.id ASC`,
             [guruId]
         );
         res.json(result.rows);
