@@ -50,28 +50,19 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { name_rombel, grade_id, jurusan_id } = req.body;
 
-        if (!name_rombel || !grade_id || !jurusan_id) {
-            return res.status(400).json({
-                message: "name_rombel, grade_id, jurusan_id are required"
-            });
-        }
+        // BODY opsional
+        const data = {
+            name_rombel: req.body.name_rombel,
+            grade_id: req.body.grade_id,
+            jurusan_id: req.body.jurusan_id,
+        };
 
-        const rombel = await RombelModel.update(id, {
-            name_rombel,
-            grade_id,
-            jurusan_id
-        });
-
-        if (!rombel) {
-            return res.status(404).json({ message: "Rombel not found" });
-        }
-
+        const rombel = await RombelModel.update(id, data);
         res.json(rombel);
 
     } catch (err) {
-        console.error("UPDATE ROMBEL ERROR:", err);
+        console.error(err);
         res.status(500).json({ message: "Error updating Class" });
     }
 });

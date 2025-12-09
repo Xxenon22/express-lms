@@ -43,19 +43,36 @@ export const RombelModel = {
     // ========================
     // UPDATE
     // ========================
-    async update(id, { name_rombel, grade_id, jurusan_id }) {
+    async update(id, data) {
+        const fields = [];
+        const values = [];
+        let index = 1;
 
-        // Validasi minimal biar tidak null/undefined
-        if (!id) throw new Error("ID is required");
+        // Loop data yang dikirim, hanya update yang ada
+        for (const key in data) {
+            if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
+                fields.push(`${key} = $${index}`);
+                values.push(data[key]);
+                index++;
+            }
+        }
 
-        const result = await pool.query(
-            `UPDATE rombel 
-             SET name_rombel = $1, grade_id = $2, jurusan_id = $3
-             WHERE id = $4
-             RETURNING *`,
-            [name_rombel, grade_id, jurusan_id, id]
-        );
+        // Jika tidak ada field yang diupdate
+        if (fields.length === 0) {
+            return { message: "No fields to update" };
+        }
 
+        // Tambahkan ID untuk WHERE
+        values.push(id);
+
+        const query = `
+        UPDATE rombel 
+        SET ${fields.join(", ")}
+        WHERE id = $${index}
+        RETURNING *;
+    `;
+
+        const result = await pool.query(query, values);
         return result.rows[0];
     },
 
