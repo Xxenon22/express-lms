@@ -1,5 +1,5 @@
 import express from "express";
-import { RombelModel } from "../models/rombel.model.js";
+import { RombelModel } from "../models/rombelModel.js";
 
 const router = express.Router();
 
