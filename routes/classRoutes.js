@@ -227,12 +227,14 @@ router.get("/all/list", async (req, res) => {
                 nr.number AS name_rombel,
                 g.grade_lvl,
                 u.username AS guru_name,
+                nj.nama_jurusan AS major,
                 u.photo_profiles_user AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN nama_jurusan nj ON r.jurusan_id = nj.id
             LEFT JOIN users u ON k.guru_id = u.id
             ORDER BY k.id ASC
         `;
