@@ -95,6 +95,7 @@ router.get("/:id", async (req, res) => {
             nama_mapel: rows[0].nama_mapel,
             name_rombel: rows[0].name_rombel,
             grade_lvl: rows[0].grade_lvl,
+            major: rows[0].major,
             guru_name: rows[0].guru_name,
             guru_photo: rows[0].guru_photo,
             link_wallpaper_kelas: rows[0].link_wallpaper_kelas,
