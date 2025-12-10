@@ -252,7 +252,8 @@ router.get("/all/list", async (req, res) => {
             rombel: {
                 id: row.rombel_id,
                 name_rombel: row.name_rombel,
-                grade_lvl: row.grade_lvl
+                grade_lvl: row.grade_lvl,
+                major: row.major
             },
             link_wallpaper_kelas: row.link_wallpaper_kelas
         }));
