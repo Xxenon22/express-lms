@@ -60,7 +60,7 @@ router.get("/profile", verifyToken, async (req, res) => {
                 u.rombel_id,
                 j.nama_jurusan,
                 g.grade_lvl,
-                r.name_rombel
+                r.number
             FROM users u
             LEFT JOIN jurusan j ON u.jurusan_id = j.id
             LEFT JOIN grade_level g ON u.grade_id = g.id
