@@ -17,6 +17,7 @@ router.get("/", verifyToken, async (req, res) => {
                 nr.number AS name_rombel,
                 g.grade_lvl,
                 m.nama_mapel,
+                mj.nama_jurusan AS major,
                 u.username AS guru_name,
                 u.photo_profiles_user AS guru_photo
             FROM kelas k
@@ -24,6 +25,7 @@ router.get("/", verifyToken, async (req, res) => {
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
             LEFT JOIN users u ON k.guru_id = u.id
             WHERE k.guru_id = $1
             ORDER BY k.id ASC
@@ -54,6 +56,7 @@ router.get("/:id", async (req, res) => {
 
                 nr.number AS name_rombel,
                 gl.grade_lvl,
+                mj.nama_jurusan AS major,
 
                 u.username AS guru_name,
                 u.photo_profiles_user AS guru_photo,
@@ -72,6 +75,7 @@ router.get("/:id", async (req, res) => {
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level gl ON r.grade_id = gl.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
             LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
