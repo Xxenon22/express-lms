@@ -14,12 +14,14 @@ router.get("/", verifyToken, async (req, res) => {
              rb.name_rombel,
              u.username AS teacher_name,
              dg.name AS instructor_name,
-             g.grade_lvl AS name_grade
+             g.grade_lvl AS name_grade,
+             m.nama_jurusan AS major
       FROM rpk_refleksi rr
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
@@ -40,13 +42,15 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
              dm.nama_mapel,
              u.username AS teacher_name,
              dg.name AS instructor_name,
-             g.grade_lvl AS name_grade
+             g.grade_lvl AS name_grade,
+             m.nama_jurusan AS major
       FROM rpk_refleksi rr
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
       LEFT JOIN db_mapel dm ON rr.mapel_id = dm.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
@@ -69,7 +73,8 @@ router.get("/:id", async (req, res) => {
                    dm.nama_mapel AS subject,
                    u.username AS teacher_name,
                    dg.name AS instructor_name,
-                   g.grade_lvl AS name_grade
+                   g.grade_lvl AS name_grade,
+                     m.nama_jurusan AS major
             FROM rpk_refleksi rr
             LEFT JOIN rombel rb ON rr.rombel_id = rb.id
             LEFT JOIN kelas k ON k.rombel_id = rb.id      -- ✅ tambahkan join ke kelas
@@ -77,6 +82,7 @@ router.get("/:id", async (req, res) => {
             LEFT JOIN users u ON rr.guru_id = u.id
             LEFT JOIN db_guru dg ON rr.instructor = dg.id
             LEFT JOIN grade_level g ON rb.grade_id = g.id
+            LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
             WHERE rr.id = $1
             `,
             [id]
