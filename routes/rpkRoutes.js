@@ -124,7 +124,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 // ===========================
 // CREATE (hapus mapel_id)
 // ===========================
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
         const {
