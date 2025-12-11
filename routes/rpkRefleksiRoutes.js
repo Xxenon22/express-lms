@@ -21,7 +21,7 @@ router.get("/", verifyToken, async (req, res) => {
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
-      LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
+      LEFT JOIN jurusan m ON rb.jurusan_id = m.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
@@ -50,7 +50,7 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
       LEFT JOIN db_mapel dm ON rr.mapel_id = dm.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
-      LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
+      LEFT JOIN jurusan m ON rb.jurusan_id = m.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
@@ -82,7 +82,7 @@ router.get("/:id", async (req, res) => {
             LEFT JOIN users u ON rr.guru_id = u.id
             LEFT JOIN db_guru dg ON rr.instructor = dg.id
             LEFT JOIN grade_level g ON rb.grade_id = g.id
-            LEFT JOIN db_jurusan m ON rb.jurusan_id = m.id
+            LEFT JOIN jurusan m ON rb.jurusan_id = m.id
             WHERE rr.id = $1
             `,
             [id]
