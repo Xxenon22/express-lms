@@ -104,7 +104,7 @@ router.get("/:id", verifyToken, async (req, res) => {
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
       LEFT JOIN kelas k ON k.rombel_id = r.id      -- ✅ tambahkan join ke kelas
-      LEFT JOIN db_mapel dm ON dm.id_mapel = dm.id  -- ✅ ambil subject
+      LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN jurusan m ON r.jurusan_id = m.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
@@ -177,7 +177,7 @@ router.put("/:id", verifyToken, async (req, res) => {
             lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
             phase_id, rombel_id, guru_id, instructor,
-            memahami_id, mengaplikasikan_id, merefleksi_id
+            memahami_id, mengaplikasikan_id, merefleksi_id, kelas_id
         } = req.body;
 
         const updateQuery = `
@@ -214,7 +214,7 @@ router.put("/:id", verifyToken, async (req, res) => {
             lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
             phase_id, rombel_id, guru_id, instructor,
-            memahami_id, mengaplikasikan_id, merefleksi_id, id
+            memahami_id, mengaplikasikan_id, merefleksi_id, kelas_id, id
         ]);
 
         res.json(result.rows[0]);
