@@ -19,6 +19,7 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         p.phase,
         t.username AS teacher_name,
         i.name AS instructor_name,
+        m.nama_jurusan AS major,
         mem.memahami,
         mem.asesmen_memahami,
         mem.berkesadaran AS memahami_berkesadaran,
@@ -43,6 +44,7 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
       LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
       LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
       LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
+      LEFT JOIN jurusan m ON r.jurusan_id = m.id
       WHERE rpk.guru_id = $1
     `, [guruId]);
 
@@ -83,6 +85,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         p.phase,
         t.username AS teacher_name,
         i.name AS instructor_name,
+        m.nama_jurusan AS major,
         mem.memahami,
         mem.asesmen_memahami,
         mem.berkesadaran AS memahami_berkesadaran,
@@ -103,6 +106,7 @@ router.get("/:id", verifyToken, async (req, res) => {
       LEFT JOIN kelas k ON k.rombel_id = r.id      -- ✅ tambahkan join ke kelas
       LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
       LEFT JOIN grade_level g ON r.grade_id = g.id
+      LEFT JOIN jurusan m ON r.jurusan_id = m.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
       LEFT JOIN users t ON rpk.guru_id = t.id
       LEFT JOIN db_guru i ON rpk.instructor = i.id
