@@ -104,7 +104,7 @@ router.get("/:id", verifyToken, async (req, res) => {
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
       LEFT JOIN kelas k ON k.rombel_id = r.id      -- ✅ tambahkan join ke kelas
-      LEFT JOIN db_mapel dm ON k.id_mapel = dm.id  -- ✅ ambil subject
+      LEFT JOIN db_mapel dm ON dm.id_mapel = dm.id  -- ✅ ambil subject
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN jurusan m ON r.jurusan_id = m.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
@@ -132,7 +132,7 @@ router.post("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
         const {
-            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+            kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
             lintas_disiplin_ilmu, pemanfaatan_digital,
             kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
@@ -142,7 +142,7 @@ router.post("/", verifyToken, async (req, res) => {
 
         const result = await pool.query(
             `INSERT INTO rpk_db 
-      (tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+      (kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
       lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
       dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
       phase_id, rombel_id, guru_id, instructor,
@@ -151,7 +151,7 @@ router.post("/", verifyToken, async (req, res) => {
               $8,$9,$10,$11,$12,$13,$14,$15,
               $16,$17,$18,$19,$20,$21,$22)
       RETURNING *`,
-            [tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+            [kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
                 lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
                 dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
                 phase_id, rombel_id, guruId, instructor,
@@ -203,8 +203,9 @@ router.put("/:id", verifyToken, async (req, res) => {
           instructor = COALESCE($19, instructor),
           memahami_id = COALESCE($20, memahami_id),
           mengaplikasikan_id = COALESCE($21, mengaplikasikan_id),
-          merefleksi_id = COALESCE($22, merefleksi_id)
-      WHERE id = $23
+          merefleksi_id = COALESCE($22, merefleksi_id),
+          kelas_id = COALESCE($23, kelas_id)
+      WHERE id = $24
       RETURNING *;
     `;
 
