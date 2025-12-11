@@ -126,6 +126,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 // ===========================
 router.post("/", async (req, res) => {
     try {
+        const guruId = req.users.id;
         const {
             tutor, hari_tanggal, waktu, tujuan_pembelajaran,
             lintas_disiplin_ilmu, pemanfaatan_digital,
