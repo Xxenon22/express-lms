@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
         p.rombel_id,
         j.nama_jurusan,
         g.grade_lvl,
-        r.name_rombel
+        r.number
      FROM users p
      LEFT JOIN jurusan j ON p.jurusan_id = j.id
      LEFT JOIN grade_level g ON p.grade_id = g.id
