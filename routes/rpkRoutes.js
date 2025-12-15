@@ -132,7 +132,7 @@ router.post("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
         const {
-            kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
             lintas_disiplin_ilmu, pemanfaatan_digital,
             kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
@@ -141,8 +141,7 @@ router.post("/", verifyToken, async (req, res) => {
         } = req.body;
 
         const result = await pool.query(
-            `
-            INSERT INTO rpk_db (
+            `INSERT INTO rpk_db (
                 tutor, hari_tanggal, waktu, tujuan_pembelajaran,
                 lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
                 dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
@@ -153,7 +152,7 @@ router.post("/", verifyToken, async (req, res) => {
               $8,$9,$10,$11,$12,$13,$14,$15,
               $16,$17,$18,$19,$20,$21,$22)
       RETURNING *`,
-            [kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+            [tutor, hari_tanggal, waktu, tujuan_pembelajaran,
                 lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
                 dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
                 phase_id, rombel_id, guruId, instructor,
