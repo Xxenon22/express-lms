@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
      FROM users p
      LEFT JOIN jurusan j ON p.jurusan_id = j.id
      LEFT JOIN grade_level g ON p.grade_id = g.id
-     LEFT JOIN rombel r ON p.rombel_id = r.id
+     LEFT JOIN number_rombel r ON p.rombel_id = r.id
      ORDER BY p.id ASC`
         );
 

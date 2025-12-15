@@ -8,7 +8,6 @@ export const createUser = async (
     username,
     hashedPassword,
     role = "student",
-    verifiscationCode,
     verificationExpires
 ) => {
     const result = await pool.query(
@@ -16,7 +15,7 @@ export const createUser = async (
             (email, username, password, role, verification_code, verification_expires, is_verified)
          VALUES ($1, $2, $3, $4, $5, $6, false)
          RETURNING id, email, username, role, verification_code`,
-        [email, username, hashedPassword, role, verificationCode, verificationExpires]
+        [email, username, hashedPassword, role, verificationExpires]
     );
     return result.rows[0];
 };
