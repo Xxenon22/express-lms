@@ -141,12 +141,14 @@ router.post("/", verifyToken, async (req, res) => {
         } = req.body;
 
         const result = await pool.query(
-            `INSERT INTO rpk_db 
-      (kelas_id, tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-      lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-      dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-      phase_id, rombel_id, guru_id, instructor,
-      memahami_id, mengaplikasikan_id, merefleksi_id)
+            `
+            INSERT INTO rpk_db (
+                tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+                lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
+                dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
+                phase_id, rombel_id, guru_id, instructor,
+                memahami_id, mengaplikasikan_id, merefleksi_id
+            )
       VALUES ($1,$2,$3,$4,$5,$6,$7,
               $8,$9,$10,$11,$12,$13,$14,$15,
               $16,$17,$18,$19,$20,$21,$22)
