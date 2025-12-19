@@ -78,27 +78,27 @@ export const registerTeacher = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const code = generateCode();
-        const expires = new Date(Date.now() + 10 * 60 * 1000);
+        // const code = generateCode();
+        // const expires = new Date(Date.now() + 10 * 60 * 1000);
 
         const newUser = await createUser(
             email,
             username,
             hashedPassword,
-            role || "teacher",
-            code,
-            expires
+            role || "teacher"
+            // code,
+            // expires
         );
 
-        try {
-            await sendEmail({
-                to: email,
-                subject: "Verify Your Teacher Account",
-                text: `Your verification code is: ${code}`
-            });
-        } catch (emailErr) {
-            console.error("EMAIL SEND ERROR:", emailErr);
-        }
+        // try {
+        //     await sendEmail({
+        //         to: email,
+        //         subject: "Verify Your Teacher Account",
+        //         text: `Your verification code is: ${code}`
+        //     });
+        // } catch (emailErr) {
+        //     console.error("EMAIL SEND ERROR:", emailErr);
+        // }
 
         return res.json({
             message: "Teacher registered, verification required",
