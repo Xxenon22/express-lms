@@ -16,45 +16,30 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         rpk.*,
         r.name_rombel,
         g.grade_lvl AS name_grade,
+        dm.nama_mapel AS subject,
         p.phase,
         t.username AS teacher_name,
         i.name AS instructor_name,
-        m.nama_jurusan AS major,
-        mem.memahami,
-        mem.asesmen_memahami,
-        mem.berkesadaran AS memahami_berkesadaran,
-        mem.bermakna AS memahami_bermakna,
-        mem.menggembirakan AS memahami_menggembirakan,
-        ma.mengaplikasikan,
-        ma.asesmen_mengaplikasikan,
-        ma.berkesadaran AS mengaplikasikan_berkesadaran,
-        ma.bermakna AS mengaplikasikan_bermakna,
-        ma.menggembirakan AS mengaplikasikan_menggembirakan,
-        me.merefleksi,
-        me.asesmen_merefleksi,
-        me.berkesadaran AS merefleksi_berkesadaran,
-        me.bermakna AS merefleksi_bermakna,
-        me.menggembirakan AS merefleksi_menggembirakan
+        m.nama_jurusan AS major
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
+      LEFT JOIN kelas k ON k.id = rpk.kelas_id
+      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
       LEFT JOIN grade_level g ON r.grade_id = g.id
+      LEFT JOIN jurusan m ON r.jurusan_id = m.id
       LEFT JOIN db_phase p ON rpk.phase_id = p.id
       LEFT JOIN users t ON rpk.guru_id = t.id
       LEFT JOIN db_guru i ON rpk.instructor = i.id
-      LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
-      LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
-      LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
-      LEFT JOIN jurusan m ON r.jurusan_id = m.id
       WHERE rpk.guru_id = $1
+      ORDER BY rpk.created_at DESC
     `, [guruId]);
 
         res.json(result.rows);
     } catch (err) {
-        console.error("Error fetch all Learning Plan :", err);
+        console.error("Error fetch all Learning Plan:", err);
         res.status(500).json({ error: err.message });
     }
 });
-
 
 // ===========================
 // GET DETAIL RPK BY ID
@@ -136,28 +121,31 @@ router.post("/", verifyToken, async (req, res) => {
             lintas_disiplin_ilmu, pemanfaatan_digital,
             kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-            phase_id, rombel_id, instructor,
+            phase_id, rombel_id, kelas_id, instructor,
             memahami_id, mengaplikasikan_id, merefleksi_id
         } = req.body;
 
-        const result = await pool.query(
-            `INSERT INTO rpk_db (
-                tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-                lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-                dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-                phase_id, rombel_id, guru_id, instructor,
-                memahami_id, mengaplikasikan_id, merefleksi_id
-            )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,
-              $8,$9,$10,$11,$12,$13,$14,$15,
-              $16,$17,$18,$19,$20,$21,$22)
-      RETURNING *`,
-            [tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-                lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-                dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-                phase_id, rombel_id, guruId, instructor,
-                memahami_id, mengaplikasikan_id, merefleksi_id]
-        );
+        const result = await pool.query(`
+      INSERT INTO rpk_db (
+        tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+        lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
+        dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
+        phase_id, rombel_id, kelas_id, guru_id, instructor,
+        memahami_id, mengaplikasikan_id, merefleksi_id
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,
+        $8,$9,$10,$11,$12,$13,$14,$15,
+        $16,$17,$18,$19,$20,$21,$22,$23
+      )
+      RETURNING *
+    `, [
+            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+            lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
+            dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
+            phase_id, rombel_id, kelas_id, guruId, instructor,
+            memahami_id, mengaplikasikan_id, merefleksi_id
+        ]);
 
         res.json(result.rows[0]);
     } catch (err) {
