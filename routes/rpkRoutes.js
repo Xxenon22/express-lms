@@ -103,7 +103,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         me.menggembirakan AS merefleksi_menggembirakan
       FROM rpk_db rpk
       LEFT JOIN rombel r ON rpk.rombel_id = r.id
-      LEFT JOIN kelas k ON k.rombel_id = r.id
+      LEFT JOIN kelas k ON k.id = rpk.kelas_id
       LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
       LEFT JOIN grade_level g ON r.grade_id = g.id
       LEFT JOIN jurusan m ON r.jurusan_id = m.id
