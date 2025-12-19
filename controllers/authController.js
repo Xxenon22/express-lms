@@ -100,10 +100,10 @@ export const registerTeacher = async (req, res) => {
         //     console.error("EMAIL SEND ERROR:", emailErr);
         // }
 
-        return res.json({
-            message: "Teacher registered, verification required",
-            email: newUser.email
-        });
+        // return res.json({
+        //     message: "Teacher registered, verification required",
+        //     email: newUser.email
+        // });
 
     } catch (err) {
         console.error("REGISTER TEACHER ERROR:", err);
