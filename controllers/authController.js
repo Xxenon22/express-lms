@@ -85,9 +85,9 @@ export const registerTeacher = async (req, res) => {
             email,
             username,
             hashedPassword,
-            role || "teacher"
-            // code,
-            // expires
+            role || "teacher",
+            null,
+            null
         );
 
         // try {
