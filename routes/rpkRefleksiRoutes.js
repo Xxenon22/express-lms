@@ -1,30 +1,33 @@
-// routes/rpkRefleksi.js
 import express from "express";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET all refleksi by teacher id
+/* =====================================================
+   GET ALL BY TEACHER (USER)
+===================================================== */
 router.get("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id
+        const guruId = req.users.id;
+
         const result = await pool.query(`
       SELECT rr.*,
              rb.name_rombel,
-             dm.nama_mapel AS subject,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
              u.username AS teacher_name,
              dg.name AS instructor_name,
              g.grade_lvl AS name_grade,
-             m.nama_jurusan AS major
+             j.nama_jurusan AS major
       FROM rpk_refleksi rr
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
       LEFT JOIN kelas k ON k.id = rr.kelas_id
-      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
-      LEFT JOIN jurusan m ON rb.jurusan_id = m.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
@@ -35,65 +38,68 @@ router.get("/", verifyToken, async (req, res) => {
     }
 });
 
-// GET all refleksi (untuk halaman admin)
+/* =====================================================
+   GET ALL BY TEACHER (ADMIN)
+===================================================== */
 router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
     try {
-        const guruId = req.params.id
+        const guruId = req.params.id;
+
         const result = await pool.query(`
       SELECT rr.*,
              rb.name_rombel,
-             dm.nama_mapel AS subject,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
              u.username AS teacher_name,
              dg.name AS instructor_name,
              g.grade_lvl AS name_grade,
-             m.nama_jurusan AS major
+             j.nama_jurusan AS major
       FROM rpk_refleksi rr
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
       LEFT JOIN kelas k ON k.id = rr.kelas_id
-      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
-      LEFT JOIN db_mapel dm ON rr.mapel_id = dm.id
       LEFT JOIN grade_level g ON rb.grade_id = g.id
-      LEFT JOIN jurusan m ON rb.jurusan_id = m.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
       WHERE rr.guru_id = $1
     `, [guruId]);
 
         res.json(result.rows);
     } catch (error) {
-        console.error("Fetch rpk_refleksi2 error:", error);
+        console.error("Fetch rpk_refleksi admin error:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET by ID
+/* =====================================================
+   GET BY ID
+===================================================== */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query(
-            `
-            SELECT rr.*,
-                   rb.name_rombel,
-                   dm.nama_mapel AS subject,
-                   u.username AS teacher_name,
-                   dg.name AS instructor_name,
-                   g.grade_lvl AS name_grade,
-                     m.nama_jurusan AS major
-            FROM rpk_refleksi rr
-            LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.id = rr.kelas_id      -- ✅ tambahkan join ke kelas
-            LEFT JOIN db_mapel dm ON dm.id = k.id_mapel  -- ✅ ambil subject
-            LEFT JOIN users u ON rr.guru_id = u.id
-            LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN grade_level g ON rb.grade_id = g.id
-            LEFT JOIN jurusan m ON rb.jurusan_id = m.id
-            WHERE rr.id = $1
-            `,
-            [id]
-        );
+        const result = await pool.query(`
+      SELECT rr.*,
+             rb.name_rombel,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade,
+             j.nama_jurusan AS major
+      FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.id = rr.kelas_id
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
+      LEFT JOIN users u ON rr.guru_id = u.id
+      LEFT JOIN db_guru dg ON rr.instructor = dg.id
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
+      WHERE rr.id = $1
+    `, [id]);
 
-        if (result.rows.length === 0) {
+        if (!result.rows.length) {
             return res.status(404).json({ message: "Learning Reflection not found" });
         }
 
@@ -104,10 +110,13 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// CREATE
+/* =====================================================
+   CREATE
+===================================================== */
 router.post("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id; // dari JWT
+        const guruId = req.users.id;
+
         const {
             kelas_id,
             rombel_id,
@@ -123,29 +132,30 @@ router.post("/", verifyToken, async (req, res) => {
             keterangan
         } = req.body;
 
-        const result = await pool.query(
-            `INSERT INTO rpk_refleksi (
+        const result = await pool.query(`
+      INSERT INTO rpk_refleksi (
         kelas_id, rombel_id, hari_tanggal, instructor, waktu,
-        refleksi_siswa, refleksi_guru, tngkt_pencapaian, desk_pencapaian,
-        follow_up, pendampingan_siswa, keterangan, guru_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-      RETURNING *`,
-            [
-                kelas_id,
-                rombel_id,
-                hari_tanggal,
-                instructor,
-                waktu,
-                refleksi_siswa,
-                refleksi_guru,
-                tngkt_pencapaian,
-                desk_pencapaian,
-                follow_up,
-                pendampingan_siswa,
-                keterangan,
-                guruId
-            ]
-        );
+        refleksi_siswa, refleksi_guru, tngkt_pencapaian,
+        desk_pencapaian, follow_up, pendampingan_siswa,
+        keterangan, guru_id
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      RETURNING *
+    `, [
+            kelas_id,
+            rombel_id,
+            hari_tanggal,
+            instructor,
+            waktu,
+            refleksi_siswa,
+            refleksi_guru,
+            tngkt_pencapaian,
+            desk_pencapaian,
+            follow_up,
+            pendampingan_siswa,
+            keterangan,
+            guruId
+        ]);
 
         res.json(result.rows[0]);
     } catch (err) {
@@ -154,10 +164,13 @@ router.post("/", verifyToken, async (req, res) => {
     }
 });
 
-// UPDATE
+/* =====================================================
+   UPDATE
+===================================================== */
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
+
         const {
             kelas_id,
             rombel_id,
@@ -211,8 +224,9 @@ router.put("/:id", verifyToken, async (req, res) => {
     }
 });
 
-
-// DELETE
+/* =====================================================
+   DELETE
+===================================================== */
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
