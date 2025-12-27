@@ -9,7 +9,7 @@ router.post("/", async (req, res) => {
         const guru_id = req.users.id;
 
         if (!bank_soal_id || !Array.isArray(soal_list)) {
-            return res.status(400).json({ message: "bank_soal_id dan soal_list wajib diisi" });
+            return res.status(400).json({ message: "bank_soal_id dan soal_list are required" });
         }
 
         const bankSoalCheck = await pool.query(
@@ -119,12 +119,14 @@ router.get("/:id", async (req, res) => {
 router.put("/:bank_soal_id", async (req, res) => {
     try {
         const { bank_soal_id } = req.params;
-        const { soal_list } = req.body;
+        const { soal_list, judul_penugasan } = req.body;
         const guru_id = req.users.id;
 
         if (!Array.isArray(soal_list)) {
-            return res.status(400).json({ message: "soal_list harus berupa array" });
+            return res.status(400).json({ message: "soal_list must be array" });
         }
+
+        await client.query("BEGIN");
 
         // 🔐 validasi kepemilikan bank soal
         const bankSoalCheck = await pool.query(
@@ -137,6 +139,14 @@ router.put("/:bank_soal_id", async (req, res) => {
                 message: "Unauthorized access to bank soal",
             });
         }
+
+        if (judul_penugasan && judul_penugasan.trim() !== "") {
+            await client.query(
+                "UPDATE bank_soal SET judul_penugasan = $1 WHERE id = $2",
+                [judul_penugasan, bank_soal_id]
+            );
+        }
+
 
         // hapus semua soal lama
         await pool.query("DELETE FROM soal_pilgan WHERE bank_soal_id = $1", [bank_soal_id]);
