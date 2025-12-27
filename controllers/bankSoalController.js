@@ -33,7 +33,7 @@ export const getPenugasan = [
 
 
 // Buat penugasan baru
-export const buatPenugasanBaru = async (req, res) => {
+export const buatPenugasanBaru = [verifyToken, async (req, res) => {
     const { judul_penugasan } = req.body;
     const guru_id = req.users.id;
 
@@ -50,7 +50,7 @@ export const buatPenugasanBaru = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
+}];
 
 // Update penugasan berdasarkan id
 export const updatePenugasan = async (req, res) => {
