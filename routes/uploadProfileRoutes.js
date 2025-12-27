@@ -38,12 +38,12 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             ]
         );
 
-        console.log("DB NAME:", (await pool.query("SELECT current_database()")).rows[0]);
-        console.log("UPDATED ROW:", result.rowCount);
-        console.log("BUFFER TYPE:", Buffer.isBuffer(req.file.buffer));
-        console.log("BUFFER LENGTH:", req.file.buffer.length);
-        console.log("MIME:", req.file.mimetype);
-        console.log("USER ID:", req.users.id);
+        // console.log("DB NAME:", (await pool.query("SELECT current_database()")).rows[0]);
+        // console.log("UPDATED ROW:", result.rowCount);
+        // console.log("BUFFER TYPE:", Buffer.isBuffer(req.file.buffer));
+        // console.log("BUFFER LENGTH:", req.file.buffer.length);
+        // console.log("MIME:", req.file.mimetype);
+        // console.log("USER ID:", req.users.id);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ message: "User not found" });

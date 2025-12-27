@@ -19,7 +19,7 @@ router.get("/", verifyToken, async (req, res) => {
                 m.nama_mapel,
                 mj.nama_jurusan AS major,
                 u.username AS guru_name,
-                u.photo_profiles_user AS guru_photo
+                u.photo_profile AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
@@ -59,7 +59,7 @@ router.get("/:id", async (req, res) => {
                 mj.nama_jurusan AS major,
 
                 u.username AS guru_name,
-                u.photo_profiles_user AS guru_photo,
+                u.photo_profile AS guru_photo,
 
                 mp.id AS module_id,
                 mp.judul AS module_judul,
@@ -233,7 +233,7 @@ router.get("/all/list", async (req, res) => {
                 g.grade_lvl,
                 u.username AS guru_name,
                 nj.nama_jurusan AS major,
-                u.photo_profiles_user AS guru_photo
+                u.photo_profile AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
@@ -252,7 +252,7 @@ router.get("/all/list", async (req, res) => {
             guru_id: row.guru_id,
             teacher: {
                 username: row.guru_name,
-                photo_profiles_user: row.guru_photo
+                photo_profile: row.guru_photo
             },
             rombel: {
                 id: row.rombel_id,
@@ -370,7 +370,7 @@ router.get("/students/:kelasId", verifyToken, async (req, res) => {
             SELECT 
                 kd.user_id,
                 u.username AS name,
-                u.photo_profiles_user
+                u.photo_profile
             FROM kelas_diikuti kd
             JOIN users u ON u.id = kd.user_id
             WHERE kd.kelas_id = $1

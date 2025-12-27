@@ -84,7 +84,7 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
                 m.*, 
                 b.id AS bank_soal_id, 
                 b.judul_penugasan AS bank_soal_nama,
-                u.photo_profiles_user AS guru_foto
+                u.photo_profile AS guru_foto
                 FROM module_pembelajaran m 
              LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
              LEFT JOIN users u ON m.guru_id = u.id
@@ -130,7 +130,7 @@ router.get("/siswa/:id", async (req, res) => {
         p.pdf_selesai,
         p.video_selesai,
         j.nilai,
-        u.photo_profiles_user AS guru_foto
+        u.photo_profile AS guru_foto
     FROM module_pembelajaran mp
     INNER JOIN kelas k ON k.id = mp.kelas_id
     INNER JOIN rombel r ON r.id = k.rombel_id
