@@ -117,6 +117,7 @@ router.get("/:id", async (req, res) => {
 
 // Update soal pilgan berdasarkan id
 router.put("/:bank_soal_id", async (req, res) => {
+    const client = await pool.connect();
     try {
         const { bank_soal_id } = req.params;
         const { soal_list, judul_penugasan } = req.body;
@@ -187,6 +188,8 @@ router.put("/:bank_soal_id", async (req, res) => {
             );
             inserted.push(result.rows[0]);
         }
+
+        await client.query("COMMIT");
 
         res.json({ message: "Question updated successfully", data: inserted });
     } catch (error) {
