@@ -25,16 +25,25 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
         const userId = req.users.id;
 
         const result = await pool.query(
-            `UPDATE users
-             SET photo_profile = $1,
-                 photo_mime = $2
-             WHERE id = $3
-             RETURNING id, octet_length(photo_profile) AS size`,
-            [req.file.buffer, req.file.mimetype, userId]
+            `
+  UPDATE users
+  SET photo_profile = $1,
+      photo_mime = $2
+  WHERE id = $3
+  `,
+            [
+                req.file.buffer,     // ✅ BYTEA
+                req.file.mimetype,   // ✅ TEXT
+                req.users.id         // ✅ dari JWT
+            ]
         );
 
         console.log("DB NAME:", (await pool.query("SELECT current_database()")).rows[0]);
         console.log("UPDATED ROW:", result.rowCount);
+        console.log("BUFFER TYPE:", Buffer.isBuffer(req.file.buffer));
+        console.log("BUFFER LENGTH:", req.file.buffer.length);
+        console.log("MIME:", req.file.mimetype);
+        console.log("USER ID:", req.users.id);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ message: "User not found" });
