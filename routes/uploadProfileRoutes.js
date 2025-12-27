@@ -22,17 +22,24 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const userId = req.users.id; // pastikan pakai verifyToken
+        const userId = req.users.id;
 
-        await pool.query(
-            `UPDATE users 
-             SET photo_profile = $1, photo_mime = $2
-             WHERE id = $3`,
-            [req.file.buffer, req.file.mimetype, userId]);
+        const result = await pool.query(
+            `UPDATE users
+             SET photo_profile = $1,
+                 photo_mime = $2
+             WHERE id = $3
+             RETURNING id`,
+            [req.file.buffer, req.file.mimetype, userId]
+        );
 
-        res.json({ message: "Photo profile updated successfully" });
-        console.log("USER ID:", userId);
-        console.log("FILE SIZE:", req.file?.size);
+        console.log("UPDATED ROW:", result.rowCount);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({ message: "Photo profile updated", userId });
     } catch (err) {
         console.error("Upload profile error:", err);
         res.status(500).json({ error: err.message });
