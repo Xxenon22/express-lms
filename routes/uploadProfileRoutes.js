@@ -31,6 +31,8 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             [req.file.buffer, req.file.mimetype, userId]);
 
         res.json({ message: "Photo profile updated successfully" });
+        console.log("USER ID:", userId);
+        console.log("FILE SIZE:", req.file?.size);
     } catch (err) {
         console.error("Upload profile error:", err);
         res.status(500).json({ error: err.message });
