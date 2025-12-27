@@ -160,15 +160,34 @@ router.get("/student/:id", verifyToken, async (req, res) => {
 router.put("/profile", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
-        const { username, phone_number, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
+        const {
+            username,
+            phone_number,
+            grade_id,
+            jurusan_id,
+            rombel_id,
+            teacher_subject
+        } = req.body;
 
         const result = await pool.query(
-            `UPDATE users 
-             SET username = $1, phone_number = $2,
-                 grade_id = $3, jurusan_id = $4, rombel_id = $5, teacher_subject = $8
-             WHERE id = $9
-             RETURNING id, username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject`,
-            [username, phone_number, grade_id, jurusan_id, rombel_id, teacher_subject, userId]
+            `UPDATE users
+             SET username = $1,
+                 phone_number = $2,
+                 grade_id = $3,
+                 jurusan_id = $4,
+                 rombel_id = $5,
+                 teacher_subject = $6
+             WHERE id = $7
+             RETURNING id, username, phone_number, teacher_subject`,
+            [
+                username,
+                phone_number,
+                grade_id,
+                jurusan_id,
+                rombel_id,
+                teacher_subject,
+                userId
+            ]
         );
 
         res.json(result.rows[0]);
