@@ -75,7 +75,7 @@ router.post("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const guruId = req.users.id;
+        const guru_id = req.users.id;
 
         // 🔐 validasi kepemilikan
         const bankSoalCheck = await pool.query(
