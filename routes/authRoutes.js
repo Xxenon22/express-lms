@@ -200,6 +200,8 @@ router.put("/profile/:id", verifyToken, async (req, res) => {
     }
 });
 
+
+
 // DELETE
 router.delete("/:id", async (req, res) => {
     try {

@@ -91,10 +91,10 @@ app.use(
 
 // upload profile
 app.use("/api/uploads/photo-profile", uploadProfileRoutes);
-app.use(
-    "/uploads/photo-profile",
-    express.static(path.join(__dirname, "uploads/photo-profile"))
-);
+// app.use(
+//     "/uploads/photo-profile",
+//     express.static(path.join(__dirname, "uploads/photo-profile"))
+// );
 
 // timetables
 app.use(

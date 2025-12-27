@@ -1,63 +1,71 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
+import pool from "../config/db.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Setup __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Folder upload
-const uploadDir = path.join(__dirname, "../uploads/photo-profile");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Setup multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
-        cb(null, uniqueName);
-    },
-});
-
+// Multer simpan ke memory (RAM)
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 5 MB
     fileFilter(req, file, cb) {
-        const allowed = /jpeg|jpg|png/;
-        const valid = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype);
-        cb(valid ? null : new Error("Only JPG, JPEG, PNG allowed"), valid);
+        const allowed = ["image/jpeg", "image/png", "image/jpg"];
+        cb(null, allowed.includes(file.mimetype));
     },
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
-//  UPDATE photo profile
-router.put("/", upload.single("profile"), async (req, res) => {
+// UPDATE photo profile → SIMPAN KE DATABASE
+router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-        const newFileUrl = `/uploads/photo-profile/${req.file.filename}`;
-        const { oldImagePath } = req.body;
-
-        // Hapus foto lama (kalau ada)
-        if (oldImagePath) {
-            const oldFilePath = path.join(__dirname, "..", oldImagePath);
-            if (fs.existsSync(oldFilePath)) {
-                fs.unlinkSync(oldFilePath);
-                console.log("Old profile photo deleted:", oldFilePath);
-            }
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
         }
 
-        res.json({ imageUrl: newFileUrl });
+        const userId = req.users.id; // pastikan pakai verifyToken
+
+        await pool.query(
+            `UPDATE users 
+             SET photo_profile = $1, photo_mime = $2 
+             updated_at = NOW()
+             WHERE id = $3`,
+            [req.file.buffer, req.file.mimetype, userId]);
+
+        res.json({ message: "Photo profile updated successfully" });
     } catch (err) {
-        console.error("Error updating profile photo:", err);
+        console.error("Upload profile error:", err);
         res.status(500).json({ error: err.message });
     }
+});
+
+router.get("/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const result = await pool.query(
+            "SELECT photo_profile, photo_mime FROM users WHERE id = $1",
+            [userId]
+        );
+
+        if (!result.rows.length || !result.rows[0].photo_profile) {
+            return res.status(404).send("Image not found");
+        }
+
+        res.set("Content-Type", result.rows[0].photo_mime);
+        res.send(result.rows[0].photo_profile);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error fetching image");
+    }
+});
+
+router.use((err, req, res, next) => {
+    if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({
+            message: "Maximum photo size is 10 MB",
+        });
+    }
+    next(err);
 });
 
 export default router;
