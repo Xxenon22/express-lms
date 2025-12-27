@@ -34,9 +34,11 @@ export const getPenugasan = [
 
 // Buat penugasan baru
 export const buatPenugasanBaru = async (req, res) => {
-    const { judul_penugasan, guru_id } = req.body;
-    if (!judul_penugasan || !guru_id) {
-        return res.status(400).json({ message: "Judul dan guru_id wajib diisi" });
+    const { judul_penugasan } = req.body;
+    const guru_id = req.users.id;
+
+    if (!judul_penugasan) {
+        return res.status(400).json({ message: "Title is required" });
     }
 
     try {
