@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
         p.username,
         p.role,
         p.phone_number,
-        p.photo_profiles_user,
+        p.photo_profile,
         p.teacher_subject,
         p.jurusan_id,
         p.grade_id,
@@ -53,7 +53,7 @@ router.get("/profile", verifyToken, async (req, res) => {
                 u.id,
                 u.username,
                 u.phone_number,
-                u.photo_profiles_user,
+                u.photo_profile,
                 u.jurusan_id,
                 u.teacher_subject,
                 u.grade_id,
@@ -85,7 +85,7 @@ router.get("/profile", verifyToken, async (req, res) => {
 router.get("/teacher", async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT id, username, role, teacher_subject, photo_profiles_user
+            `SELECT id, username, role, teacher_subject, photo_profile
        FROM users
        WHERE role = 'teacher'
        ORDER BY id ASC`
@@ -103,7 +103,7 @@ router.get("/teacher/:id", verifyToken, async (req, res) => {
         const guruId = req.params.id;
 
         const result = await pool.query(
-            `SELECT id, username, teacher_subject, photo_profiles_user, phone_number
+            `SELECT id, username, teacher_subject, photo_profile, phone_number
              FROM users
              WHERE id = $1
              LIMIT 1`,
@@ -130,7 +130,7 @@ router.get("/student/:id", verifyToken, async (req, res) => {
             `SELECT 
             u.id, 
             u.username, 
-            u.photo_profiles_user, 
+            u.photo_profile, 
             u.phone_number,
             j.nama_jurusan,
             r.name_rombel,
@@ -160,15 +160,15 @@ router.get("/student/:id", verifyToken, async (req, res) => {
 router.put("/profile", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
-        const { username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
+        const { username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
 
         const result = await pool.query(
             `UPDATE users 
-             SET username = $1, phone_number = $2, photo_profiles_user = $3,
+             SET username = $1, phone_number = $2, photo_profile = $3,
                  grade_id = $4, jurusan_id = $5, rombel_id = $6, teacher_subject = $7
              WHERE id = $8
-             RETURNING id, username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject`,
-            [username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject, userId]
+             RETURNING id, username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject`,
+            [username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject, userId]
         );
 
         res.json(result.rows[0]);
@@ -182,15 +182,15 @@ router.put("/profile", verifyToken, async (req, res) => {
 router.put("/profile/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
+        const { username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject } = req.body;
 
         const result = await pool.query(
             `UPDATE users 
-             SET username = $1, phone_number = $2, photo_profiles_user = $3,
+             SET username = $1, phone_number = $2, photo_profile = $3,
                  grade_id = $4, jurusan_id = $5, rombel_id = $6, teacher_subject = $7
              WHERE id = $8
-             RETURNING id, username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject`,
-            [username, phone_number, photo_profiles_user, grade_id, jurusan_id, rombel_id, teacher_subject, id]
+             RETURNING id, username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject`,
+            [username, phone_number, photo_profile, grade_id, jurusan_id, rombel_id, teacher_subject, id]
         );
 
         res.json(result.rows[0]);
