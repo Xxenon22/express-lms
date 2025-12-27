@@ -26,7 +26,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
 
         await pool.query(
             `UPDATE users 
-             SET photo_profile = $1, photo_mime = $2 
+             SET photo_profile = $1, photo_mime = $2, 
              updated_at = NOW()
              WHERE id = $3`,
             [req.file.buffer, req.file.mimetype, userId]);
