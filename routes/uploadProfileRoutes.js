@@ -29,10 +29,11 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
              SET photo_profile = $1,
                  photo_mime = $2
              WHERE id = $3
-             RETURNING id`,
+             RETURNING id, octet_length(photo_profile) AS size`,
             [req.file.buffer, req.file.mimetype, userId]
         );
 
+        console.log("DB NAME:", (await pool.query("SELECT current_database()")).rows[0]);
         console.log("UPDATED ROW:", result.rowCount);
 
         if (result.rowCount === 0) {
