@@ -27,8 +27,8 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
         const result = await pool.query(
             `
   UPDATE users
-  SET photo_profile = $1,
-      photo_mime = $2
+  SET photo_profile = $1::bytea,
+  photo_mime = $2
   WHERE id = $3
   `,
             [
