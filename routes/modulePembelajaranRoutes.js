@@ -2,8 +2,22 @@
 import express from "express";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
+import multer from "multer";
 
 const router = express.Router();
+
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype !== "application/pdf") {
+            cb(new Error("Only PDF allowed"), false);
+        } else {
+            cb(null, true);
+        }
+    }
+});
 
 // GET semua module (filter by guru_id)
 router.get("/", verifyToken, async (req, res) => {
@@ -21,12 +35,11 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // POST tambah module
-router.post("/", async (req, res) => {
+router.post("/", upload.single("file"), async (req, res) => {
     try {
         const {
             judul,
             video_url,
-            file_url,
             deskripsi,
             guru_id,
             bank_soal_id,
@@ -36,15 +49,50 @@ router.post("/", async (req, res) => {
             pass_code
         } = req.body;
 
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ message: "PDF file is required" });
+        }
+
         const result = await pool.query(
-            `INSERT INTO module_pembelajaran 
-      (judul, video_url, file_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code) 
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-            [judul, video_url, file_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code]
+            `INSERT INTO module_pembelajaran
+            (
+                judul,
+                video_url,
+                deskripsi,
+                guru_id,
+                bank_soal_id,
+                judul_penugasan,
+                link_zoom,
+                kelas_id,
+                pass_code,
+                file_pdf,
+                file_name,
+                file_mime
+            )
+            VALUES
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            RETURNING *`,
+            [
+                judul,
+                video_url,
+                deskripsi,
+                guru_id,
+                bank_soal_id,
+                judul_penugasan,
+                link_zoom,
+                kelas_id,
+                pass_code,
+                file.buffer,       // ✅ BYTEA
+                file.originalname, // nama file
+                file.mimetype      // application/pdf
+            ]
         );
 
         res.json(result.rows[0]);
     } catch (err) {
+        console.error("POST module pembelajaran:", err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -228,6 +276,26 @@ router.get("soal/:soalId", async (req, res) => {
         res.status(500).json({ error: "Failed to retrieve Questions" });
     }
 });
+
+router.get("/:id/pdf", async (req, res) => {
+    const { id } = req.params;
+
+    const result = await pool.query(
+        "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
+        [id]
+    );
+
+    if (!result.rows.length) {
+        return res.status(404).json({ message: "File not found" });
+    }
+
+    const file = result.rows[0];
+
+    res.setHeader("Content-Type", file.file_mime);
+    res.setHeader("Content-Disposition", `inline; filename="${file.file_name}"`);
+    res.send(file.file_pdf);
+});
+
 
 
 export default router;
