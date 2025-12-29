@@ -16,17 +16,17 @@ router.post("/", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        // const { originalname, mimetype, buffer } = req.file;
+        const { originalname, mimetype, buffer } = req.file;
 
         // contoh simpan ke tabel module_pembelajaran
-        //     const result = await pool.query(
-        //         `
-        //   INSERT INTO module_pembelajaran (file_pdf, file_name, file_mime)
-        //   VALUES ($1, $2, $3)
-        //   RETURNING id
-        //   `,
-        //         [buffer, originalname, mimetype]
-        //     );
+        const result = await pool.query(
+            `
+          INSERT INTO module_pembelajaran (file_pdf, file_name, file_mime)
+          VALUES ($1, $2, $3)
+          RETURNING id
+          `,
+            [buffer, originalname, mimetype]
+        );
 
         res.json({
             filename: req.file.originalname,

@@ -66,10 +66,11 @@ router.post("/", async (req, res) => {
 
 
 // Ambil semua soal berdasarkan bank_soal_id (PG + Essai)
-router.get("/:id", async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
         const guru_id = req.users.id;
+
 
         const bankSoalCheck = await pool.query(
             "SELECT id FROM bank_soal WHERE id = $1 AND guru_id = $2",
