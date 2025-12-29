@@ -19,6 +19,8 @@ const upload = multer({
 // upload pdf → langsung ke DB
 router.post("/", upload.single("file"), async (req, res) => {
     try {
+        console.log("REQ.BODY:", req.body);   // <<< cek semua field
+        console.log("REQ.FILE:", req.file);   // <<< cek file
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded" });
         }
