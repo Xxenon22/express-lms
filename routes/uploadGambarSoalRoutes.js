@@ -3,26 +3,20 @@ import multer from "multer";
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/gambar-soal/"); // folder lokal
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
-    },
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 },
 });
 
-const uploadGambar = multer({ storage });
-
-// 🔹 Upload hanya simpan file
-router.post("/", uploadGambar.single("gambar"), (req, res) => {
+// upload → return buffer + mimetype (TIDAK SIMPAN KE FOLDER)
+router.post("/", upload.single("gambar"), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
     }
 
     res.json({
-        message: "File uploaded successfully",
-        filePath: req.file.filename, // relative path untuk DB
+        buffer: req.file.buffer.toString("base64"),
+        mimetype: req.file.mimetype,
     });
 });
 

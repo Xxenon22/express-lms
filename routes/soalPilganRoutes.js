@@ -39,22 +39,30 @@ router.post("/", async (req, res) => {
                 gambar_soal_essai = null,
             } = soal;
 
-            const result = await pool.query(
+            await pool.query(
                 `INSERT INTO soal_pilgan 
-        (pertanyaan, pg_a, pg_b, pg_c, pg_d, pg_e, kunci_jawaban, gambar, bank_soal_id, pertanyaan_essai, gambar_soal_essai) 
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    (
+        pertanyaan,
+        pg_a, pg_b, pg_c, pg_d, pg_e,
+        kunci_jawaban,
+        gambar,
+        gambar_mimetype,
+        bank_soal_id,
+        pertanyaan_essai,
+        gambar_soal_essai,
+        gambar_essai_mimetype
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
                 [
                     pertanyaan,
-                    pg_a,
-                    pg_b,
-                    pg_c,
-                    pg_d,
-                    pg_e,
+                    pg_a, pg_b, pg_c, pg_d, pg_e,
                     kunci_jawaban,
-                    gambar,
+                    gambar ? Buffer.from(gambar, "base64") : null,
+                    gambar_mimetype,
                     bank_soal_id,
                     pertanyaan_essai,
-                    gambar_soal_essai,
+                    gambar_soal_essai ? Buffer.from(gambar_soal_essai, "base64") : null,
+                    gambar_essai_mimetype,
                 ]
             );
 
@@ -197,4 +205,22 @@ router.put("/:bank_soal_id", async (req, res) => {
         res.status(500).json({ message: "Failed to update Questions" });
     }
 });
+
+// untuk menampilkan gambar soal
+router.get("/gambar/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const result = await pool.query(
+        "SELECT gambar, gambar_mimetype FROM soal_pilgan WHERE id = $1",
+        [id]
+    );
+
+    if (!result.rows.length || !result.rows[0].gambar) {
+        return res.status(404).end();
+    }
+
+    res.setHeader("Content-Type", result.rows[0].gambar_mimetype);
+    res.send(result.rows[0].gambar);
+});
+
 export default router;
