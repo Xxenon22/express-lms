@@ -16,21 +16,22 @@ router.post("/", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const { originalname, mimetype, buffer } = req.file;
+        // const { originalname, mimetype, buffer } = req.file;
 
         // contoh simpan ke tabel module_pembelajaran
-        const result = await pool.query(
-            `
-      INSERT INTO module_pembelajaran (file_pdf, file_name, file_mime)
-      VALUES ($1, $2, $3)
-      RETURNING id
-      `,
-            [buffer, originalname, mimetype]
-        );
+        //     const result = await pool.query(
+        //         `
+        //   INSERT INTO module_pembelajaran (file_pdf, file_name, file_mime)
+        //   VALUES ($1, $2, $3)
+        //   RETURNING id
+        //   `,
+        //         [buffer, originalname, mimetype]
+        //     );
 
         res.json({
-            message: "PDF saved to database",
-            module_id: result.rows[0].id,
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            url: `/uploads/${req.file.filename}` // atau endpoint pdf
         });
     } catch (err) {
         console.error("UPLOAD PDF ERROR:", err);
