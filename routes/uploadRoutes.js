@@ -24,7 +24,7 @@ router.post("/", upload.single("file"), async (req, res) => {
         }
 
         const { judul, video_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code } = req.body;
-
+        const { buffer, originalname, mimetype } = req.file;
         const result = await pool.query(
             `
   INSERT INTO module_pembelajaran
