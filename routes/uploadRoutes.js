@@ -23,16 +23,16 @@ router.post("/", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const { originalname, mimetype, buffer } = req.file;
+        const { judul, video_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code } = req.body;
 
-        // contoh simpan ke tabel module_pembelajaran
         const result = await pool.query(
             `
-          INSERT INTO module_pembelajaran (file_pdf, file_name, file_mime)
-          VALUES ($1, $2, $3)
-          RETURNING id
-          `,
-            [buffer, originalname, mimetype]
+  INSERT INTO module_pembelajaran
+  (judul, video_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code, file_pdf, file_name, file_mime)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+  RETURNING id
+  `,
+            [judul, video_url, deskripsi, guru_id, bank_soal_id, judul_penugasan, link_zoom, kelas_id, pass_code, buffer, originalname, mimetype]
         );
 
         res.json({
