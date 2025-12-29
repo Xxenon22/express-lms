@@ -26,47 +26,56 @@ router.post("/", async (req, res) => {
         const insertedSoal = [];
 
         for (let soal of soal_list) {
-            const {
-                pertanyaan,
-                pg_a,
-                pg_b,
-                pg_c,
-                pg_d,
-                pg_e,
-                kunci_jawaban,
-                gambar = null,
-                pertanyaan_essai = null,
-                gambar_soal_essai = null,
-            } = soal;
 
-            await pool.query(
-                `INSERT INTO soal_pilgan 
-    (
-        pertanyaan,
-        pg_a, pg_b, pg_c, pg_d, pg_e,
-        kunci_jawaban,
-        gambar,
-        gambar_mimetype,
-        bank_soal_id,
-        pertanyaan_essai,
-        gambar_soal_essai,
-        gambar_essai_mimetype
-    )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+            console.log("📝 Saving question:", {
+                hasImage: !!soal.gambar,
+                mimetype: soal.gambar_mimetype,
+            });
+
+            const result = await pool.query(
+                `INSERT INTO soal_pilgan (
+            pertanyaan,
+            pg_a, pg_b, pg_c, pg_d, pg_e,
+            kunci_jawaban,
+            gambar,
+            gambar_mimetype,
+            bank_soal_id,
+            pertanyaan_essai,
+            gambar_soal_essai,
+            gambar_essai_mimetype
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        RETURNING id`,
                 [
-                    pertanyaan,
-                    pg_a, pg_b, pg_c, pg_d, pg_e,
-                    kunci_jawaban,
-                    gambar ? Buffer.from(gambar, "base64") : null,
-                    gambar_mimetype,
+                    soal.pertanyaan,
+                    soal.pg_a,
+                    soal.pg_b,
+                    soal.pg_c,
+                    soal.pg_d,
+                    soal.pg_e,
+                    soal.kunci_jawaban,
+
+                    // ✅ GAMBAR PG
+                    soal.gambar ? Buffer.from(soal.gambar, "base64") : null,
+                    soal.gambar_mimetype || null,
+
                     bank_soal_id,
-                    pertanyaan_essai,
-                    gambar_soal_essai ? Buffer.from(gambar_soal_essai, "base64") : null,
-                    gambar_essai_mimetype,
+
+                    soal.pertanyaan_essai,
+
+                    // ✅ GAMBAR ESSAI
+                    soal.gambar_soal_essai
+                        ? Buffer.from(soal.gambar_soal_essai, "base64")
+                        : null,
+                    soal.gambar_essai_mimetype || null,
                 ]
             );
 
-            insertedSoal.push(result.rows[0]);
+            console.log("✅ Question saved:", {
+                soal_id: result.rows[0].id,
+                imageSaved: !!soal.gambar,
+                mimetype: soal.gambar_mimetype,
+            });
         }
 
         res.status(201).json({
