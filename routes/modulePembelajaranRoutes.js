@@ -258,8 +258,8 @@ router.get("soal/:soalId", async (req, res) => {
 
 router.get("/:id/pdf", async (req, res) => {
     try {
-        const { id } = req.params;
         console.log("PDF REQUEST ID:", req.params.id);
+        const { id } = req.params;
         const result = await pool.query(
             "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
             [id]
