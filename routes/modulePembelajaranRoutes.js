@@ -155,30 +155,6 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Gagal ambil modul berdasarkan kelas" });
     }
 });
-// router.get("/kelas/:kelasId", async (req, res) => {
-//     try {
-//         const { kelasId } = req.params;
-//         const result = await pool.query(
-//             `SELECT 
-//                 mp.id,
-//                 mp.kelas_id,
-//                 mp.judul_penugasan,
-//                 mp.created_at,
-//                 bs.id AS bank_soal_id
-//              FROM module_pembelajaran mp
-//              LEFT JOIN bank_soal bs ON mp.bank_soal_id = bs.id
-//              WHERE mp.kelas_id = $1
-//              ORDER BY mp.created_at DESC`,
-//             [kelasId]
-//         );
-
-//         res.json(result.rows);
-//     } catch (error) {
-//         console.error("Error GET /module-pembelajaran/kelas/:kelasId:", error);
-//         res.status(500).json({ error: "Failed to retrieve learning module data" });
-//     }
-// });
-
 
 // DELETE materi by id
 router.delete("/:id", async (req, res) => {
@@ -198,40 +174,39 @@ router.get("/siswa/:id", async (req, res) => {
 
     try {
         const query = `
-    SELECT 
-        mp.id,
-        mp.judul_penugasan,
-        mp.kelas_id,
-        mp.bank_soal_id, 
-        r.name_rombel,
-        m.nama_mapel,
-        p.pdf_selesai,
-        p.video_selesai,
-        j.nilai,
-        u.photo_profile AS guru_foto
-    FROM module_pembelajaran mp
-    INNER JOIN kelas k ON k.id = mp.kelas_id
-    INNER JOIN rombel r ON r.id = k.rombel_id
-    INNER JOIN db_mapel m ON m.id = k.id_mapel
-    INNER JOIN kelas_diikuti kd ON kd.kelas_id = k.id
-    LEFT JOIN users u ON u.id = mp.guru_id
-    LEFT JOIN progress_materi p ON p.materi_id = mp.id AND p.user_id = $1
-    LEFT JOIN jawaban_siswa j 
-            ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
-
-    WHERE kd.user_id = $1
-    ORDER BY mp.created_at DESC;
-`;
-
+            SELECT 
+                mp.id,
+                mp.judul_penugasan,
+                mp.kelas_id,
+                mp.bank_soal_id,
+                mp.created_at,
+                r.name_rombel,
+                m.nama_mapel,
+                p.pdf_selesai,
+                p.video_selesai,
+                j.nilai,
+                u.photo_profile AS guru_foto
+            FROM module_pembelajaran mp
+            INNER JOIN kelas k ON k.id = mp.kelas_id
+            INNER JOIN rombel r ON r.id = k.rombel_id
+            INNER JOIN db_mapel m ON m.id = k.id_mapel
+            INNER JOIN kelas_diikuti kd ON kd.kelas_id = k.id
+            LEFT JOIN users u ON u.id = mp.guru_id
+            LEFT JOIN progress_materi p ON p.materi_id = mp.id AND p.user_id = $1
+            LEFT JOIN jawaban_siswa j 
+                ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
+            WHERE kd.user_id = $1
+            ORDER BY mp.created_at DESC
+        `;
 
         const { rows } = await pool.query(query, [siswaId]);
-
         res.json(rows);
     } catch (error) {
         console.error("Error fetch materi siswa:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 // GET MATERI BY ID
 router.get("/:id", async (req, res) => {
@@ -282,23 +257,29 @@ router.get("soal/:soalId", async (req, res) => {
 });
 
 router.get("/:id/pdf", async (req, res) => {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
+        console.log("PDF REQUEST ID:", req.params.id);
+        const result = await pool.query(
+            "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
+            [id]
+        );
 
-    const result = await pool.query(
-        "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
-        [id]
-    );
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "File not found" });
+        }
 
-    if (!result.rows.length) {
-        return res.status(404).json({ message: "File not found" });
+        const file = result.rows[0];
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader("Content-Disposition", `inline; filename="${file.file_name}"`);
+        res.send(file.file_pdf);
+    } catch (err) {
+        console.error("PDF error:", err);
+        res.status(500).json({ message: "Gagal load PDF" });
     }
-
-    const file = result.rows[0];
-
-    res.setHeader("Content-Type", file.file_mime);
-    res.setHeader("Content-Disposition", `inline; filename="${file.file_name}"`);
-    res.send(file.file_pdf);
 });
+
 
 
 
