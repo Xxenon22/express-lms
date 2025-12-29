@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import pool from "../config/db.js"; // sesuaikan koneksi PG kamu
+import { pool } from "../config/db.js"; // sesuaikan koneksi PG kamu
 
 const router = express.Router();
 
