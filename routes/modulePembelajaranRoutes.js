@@ -254,11 +254,8 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-
-
-
 // Ambil 1 module pembelajaran berdasarkan soalId
-router.get("soal/:soalId", async (req, res) => {
+router.get("/soal/:soalId", async (req, res) => {
     try {
         const { soalId } = req.params;
         const result = await pool.query(
