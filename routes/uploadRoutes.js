@@ -38,12 +38,24 @@ router.post("/", upload.single("file"), async (req, res) => {
         res.json({
             filename: req.file.originalname,
             mimetype: req.file.mimetype,
-            url: `/uploads/${req.file.filename}` // atau endpoint pdf
+            url: `/api/module-pembelajaran/${result.rows[0].id}/download`
         });
     } catch (err) {
         console.error("UPLOAD PDF ERROR:", err);
         res.status(500).json({ message: "Failed to upload PDF" });
     }
+});
+
+router.get("/:id/download", async (req, res) => {
+    const result = await pool.query(
+        "SELECT file_name, file_mime, file_pdf FROM module_pembelajaran WHERE id=$1",
+        [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).send("File not found");
+    const file = result.rows[0];
+    res.setHeader("Content-Type", file.file_mime);
+    res.setHeader("Content-Disposition", `attachment; filename="${file.file_name}"`);
+    res.send(file.file_pdf);
 });
 
 export default router;
