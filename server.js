@@ -36,15 +36,20 @@ import rombelNumber from "./routes/rombelNumRoutes.js";
 
 dotenv.config();
 const app = express();
-
 app.use(cors({
-    origin: "*", // atau domain frontend
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// tangani preflight
-app.options("*", cors());
+// handle preflight OPTIONS untuk semua route
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        res.sendStatus(204);
+    } else {
+        next();
+    }
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
