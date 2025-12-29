@@ -91,6 +91,12 @@ router.post("/", upload.single("file"), async (req, res) => {
         );
 
         res.json(result.rows[0]);
+        console.log("FILE RECEIVED:", {
+            name: file?.originalname,
+            size: file?.size,
+            mime: file?.mimetype,
+        });
+
     } catch (err) {
         console.error("POST module pembelajaran:", err);
         res.status(500).json({ message: err.message });
@@ -122,33 +128,58 @@ router.put("/:id", async (req, res) => {
 });
 
 // GET materi by kelasId (hanya yang BELUM selesai)
-router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
+// router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
+//     try {
+//         const { kelasId } = req.params;
+//         const userId = req.users.id; // ambil dari token user yang login
+
+//         const result = await pool.query(
+//             `SELECT 
+//                 m.*, 
+//                 b.id AS bank_soal_id, 
+//                 b.judul_penugasan AS bank_soal_nama,
+//                 u.photo_profile AS guru_foto
+//                 FROM module_pembelajaran m 
+//              LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
+//              LEFT JOIN users u ON m.guru_id = u.id
+//              LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
+//              WHERE m.kelas_id = $1
+//                AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
+//              ORDER BY m.created_at DESC`,
+//             [kelasId, userId]
+//         );
+
+//         res.json(result.rows || []);
+//     } catch (error) {
+//         console.error("GET /module-pembelajaran/kelas/:kelasId", error);
+//         res.status(500).json({ message: "Gagal ambil modul berdasarkan kelas" });
+//     }
+// });
+// Ambil semua module pembelajaran berdasarkan kelasId
+router.get("/kelas/:kelasId", async (req, res) => {
     try {
         const { kelasId } = req.params;
-        const userId = req.users.id; // ambil dari token user yang login
-
         const result = await pool.query(
             `SELECT 
-                m.*, 
-                b.id AS bank_soal_id, 
-                b.judul_penugasan AS bank_soal_nama,
-                u.photo_profile AS guru_foto
-                FROM module_pembelajaran m 
-             LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
-             LEFT JOIN users u ON m.guru_id = u.id
-             LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
-             WHERE m.kelas_id = $1
-               AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
-             ORDER BY m.created_at DESC`,
-            [kelasId, userId]
+                mp.id,
+                mp.kelas_id,
+                mp.judul_penugasan,
+                mp.created_at,
+                bs.id AS bank_soal_id
+             FROM module_pembelajaran mp
+             LEFT JOIN bank_soal bs ON mp.id = bs.module_id
+             WHERE mp.kelas_id = $1
+             ORDER BY mp.created_at DESC`,
+            [kelasId]
         );
 
-        res.json(result.rows || []);
+        res.json(result.rows);
     } catch (error) {
-        console.error("GET /module-pembelajaran/kelas/:kelasId", error);
-        res.status(500).json({ message: "Gagal ambil modul berdasarkan kelas" });
+        console.error("Error GET /module-pembelajaran/kelas/:kelasId:", error);
+        res.status(500).json({ error: "Failed to retrieve learning module data" });
     }
 });
+
 
 // DELETE materi by id
 router.delete("/:id", async (req, res) => {
@@ -224,30 +255,7 @@ router.get("/:id", async (req, res) => {
 });
 
 
-// Ambil semua module pembelajaran berdasarkan kelasId
-router.get("/kelas/:kelasId", async (req, res) => {
-    try {
-        const { kelasId } = req.params;
-        const result = await pool.query(
-            `SELECT 
-                mp.id,
-                mp.kelas_id,
-                mp.judul_penugasan,
-                mp.created_at,
-                bs.id AS bank_soal_id
-             FROM module_pembelajaran mp
-             LEFT JOIN bank_soal bs ON mp.id = bs.module_id
-             WHERE mp.kelas_id = $1
-             ORDER BY mp.created_at DESC`,
-            [kelasId]
-        );
 
-        res.json(result.rows);
-    } catch (error) {
-        console.error("Error GET /module-pembelajaran/kelas/:kelasId:", error);
-        res.status(500).json({ error: "Failed to retrieve learning module data" });
-    }
-});
 
 // Ambil 1 module pembelajaran berdasarkan soalId
 router.get("soal/:soalId", async (req, res) => {
