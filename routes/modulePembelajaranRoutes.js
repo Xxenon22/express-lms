@@ -167,7 +167,7 @@ router.get("/kelas/:kelasId", async (req, res) => {
                 mp.created_at,
                 bs.id AS bank_soal_id
              FROM module_pembelajaran mp
-             LEFT JOIN bank_soal bs ON mp.id = bs.bank_soal_id
+             LEFT JOIN bank_soal bs ON mp.bank_soal_id = bs.id
              WHERE mp.kelas_id = $1
              ORDER BY mp.created_at DESC`,
             [kelasId]
@@ -269,7 +269,7 @@ router.get("soal/:soalId", async (req, res) => {
                 mp.created_at,
                 bs.id AS bank_soal_id
              FROM module_pembelajaran mp
-             LEFT JOIN bank_soal bs ON mp.id = bs.module_id
+             LEFT JOIN bank_soal bs ON mp.bank_soal_id = bs.id
              WHERE mp.id = $1`,
             [soalId]
         );
