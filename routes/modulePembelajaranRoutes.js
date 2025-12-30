@@ -300,6 +300,34 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
     }
 });
 
+// ✅ PDF HARUS DI ATAS
+router.get("/:id/pdf", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
+            [id]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        const file = result.rows[0];
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="${file.file_name}"`
+        );
+
+        res.send(file.file_pdf);
+    } catch (err) {
+        console.error("PDF error:", err);
+        res.status(500).json({ message: "Gagal load PDF" });
+    }
+});
 
 
 
