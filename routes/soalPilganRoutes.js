@@ -214,4 +214,43 @@ router.get("/gambar/:id", async (req, res) => {
     res.send(result.rows[0].gambar);
 });
 
+router.get("/soal-siswa/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT 
+                sp.id,
+                sp.bank_soal_id,
+                sp.pertanyaan,
+                sp.pg_a,
+                sp.pg_b,
+                sp.pg_c,
+                sp.pg_d,
+                sp.pg_e,
+                sp.pertanyaan_essai,
+                sp.gambar,
+                sp.gambar_mimetype,
+                sp.gambar_soal_essai,
+                sp.gambar_essai_mimetype
+            FROM soal_pilgan sp
+            WHERE sp.bank_soal_id = $1`,
+            [id]
+        );
+
+        const data = result.rows.map(row => ({
+            ...row,
+            gambar: row.gambar ? row.gambar.toString("base64") : null,
+            gambar_soal_essai: row.gambar_soal_essai
+                ? row.gambar_soal_essai.toString("base64")
+                : null,
+        }));
+
+        res.json(data);
+    } catch (error) {
+        console.error("GET SOAL SISWA ERROR:", error);
+        res.status(500).json({ message: "Gagal mengambil soal" });
+    }
+});
+
 export default router;

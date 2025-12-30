@@ -245,7 +245,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Ambil 1 module pembelajaran berdasarkan soalId
-router.get("/soal/:soalId", async (req, res) => {
+router.get("/:soalId", async (req, res) => {
     try {
         const { soalId } = req.params;
         const result = await pool.query(
@@ -328,29 +328,5 @@ router.get("/:id/pdf", async (req, res) => {
         res.status(500).json({ message: "Gagal load PDF" });
     }
 });
-
-
-// routes/soalRoutes.js
-router.get("/siswa/:bankSoalId", verifyToken, async (req, res) => {
-    try {
-        const { bankSoalId } = req.params;
-
-        const result = await pool.query(
-            `
-            SELECT *
-            FROM bank_soal
-            WHERE bank_soal_id = $1
-            ORDER BY id ASC
-            `,
-            [bankSoalId]
-        );
-
-        res.json(result.rows || []);
-    } catch (err) {
-        console.error("GET soal siswa error:", err);
-        res.status(500).json({ message: "Gagal ambil soal" });
-    }
-});
-
 
 export default router;
