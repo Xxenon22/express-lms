@@ -179,29 +179,52 @@ export const login = async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
         // ============ OTP LOGIN =============
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = new Date(Date.now() + 10 * 60 * 1000);
+        // const code = Math.floor(100000 + Math.random() * 900000).toString();
+        // const expires = new Date(Date.now() + 10 * 60 * 1000);
 
         // simpan code untuk login
-        await updateUser(email, {
-            verification_code: code,
-            verification_expires: expires
-        });
+        // await updateUser(email, {
+        //     verification_code: code,
+        //     verification_expires: expires
+        // });
 
-        try {
-            await sendEmail({
-                to: email,
-                subject: "Your Login Code",
-                text: `Your login code is: ${code}`
-            });
-        } catch (emailErr) {
-            console.error("LOGIN EMAIL ERROR:", emailErr);
-        }
+        // try {
+        //     await sendEmail({
+        //         to: email,
+        //         subject: "Your Login Code",
+        //         text: `Your login code is: ${code}`
+        //     });
+        // } catch (emailErr) {
+        //     console.error("LOGIN EMAIL ERROR:", emailErr);
+        // }
+
+        // return res.json({
+        //     message: "OTP sent to your email",
+        //     email: user.email,
+        //     nextStep: "verify-login-code"
+        // });
+
+        // === OTP DISABLED: langsung buat token ===
+        const token = jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                username: user.username
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
 
         return res.json({
-            message: "OTP sent to your email",
-            email: user.email,
-            nextStep: "verify-login-code"
+            message: "Login success",
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                username: user.username
+            }
         });
 
     } catch (err) {
