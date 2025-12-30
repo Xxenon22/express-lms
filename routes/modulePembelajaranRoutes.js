@@ -109,75 +109,36 @@ router.post("/", upload.single("file"), async (req, res) => {
 });
 
 // UPDATE materi by id
-router.put("/:id", verifyToken, upload.single("file"), async (req, res) => {
+router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { judul, video_url, deskripsi, link_zoom, pass_code } = req.body;
-        const file = req.file;
 
-        let query;
-        let values;
-
-        if (file) {
-            // UPDATE DENGAN FILE BARU
-            query = `
-                UPDATE module_pembelajaran
-                SET judul=$1,
-                    video_url=$2,
-                    deskripsi=$3,
-                    link_zoom=$4,
-                    pass_code=$5,
-                    file_pdf=$6,
-                    file_name=$7,
-                    file_mime=$8
-                WHERE id=$9
-                RETURNING *
-            `;
-            values = [
-                judul,
-                video_url,
-                deskripsi,
-                link_zoom,
-                pass_code,
-                file.buffer,
-                file.originalname,
-                file.mimetype,
-                id
-            ];
-        } else {
-            // UPDATE TANPA GANTI PDF
-            query = `
-                UPDATE module_pembelajaran
-                SET judul=$1,
-                    video_url=$2,
-                    deskripsi=$3,
-                    link_zoom=$4,
-                    pass_code=$5
-                WHERE id=$6
-                RETURNING *
-            `;
-            values = [
-                judul,
-                video_url,
-                deskripsi,
-                link_zoom,
-                pass_code,
-                id
-            ];
-        }
-
-        const result = await pool.query(query, values);
+        const result = await pool.query(
+            `
+            UPDATE module_pembelajaran
+            SET judul=$1,
+                video_url=$2,
+                deskripsi=$3,
+                link_zoom=$4,
+                pass_code=$5
+            WHERE id=$6
+            RETURNING *
+            `,
+            [judul, video_url, deskripsi, link_zoom, pass_code, id]
+        );
 
         if (!result.rows.length) {
             return res.status(404).json({ message: "Material not found" });
         }
 
         res.json(result.rows[0]);
-    } catch (error) {
-        console.error("UPDATE materi error:", error);
+    } catch (err) {
+        console.error("FAST UPDATE ERROR:", err);
         res.status(500).json({ message: "Gagal update materi" });
     }
 });
+
 
 // GET materi by kelasId (hanya yang BELUM selesai)
 router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
@@ -311,27 +272,31 @@ router.get("/soal/:soalId", async (req, res) => {
     }
 });
 
-router.get("/:id/pdf", async (req, res) => {
+router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        // console.log("PDF REQUEST ID:", req.params.id);
-        const result = await pool.query(
-            "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
-            [id]
-        );
+        const file = req.file;
 
-        if (!result.rows.length) {
-            return res.status(404).json({ message: "File not found" });
+        if (!file) {
+            return res.status(400).json({ message: "PDF file required" });
         }
 
-        const file = result.rows[0];
+        const result = await pool.query(
+            `
+            UPDATE module_pembelajaran
+            SET file_pdf=$1,
+                file_name=$2,
+                file_mime=$3
+            WHERE id=$4
+            RETURNING id
+            `,
+            [file.buffer, file.originalname, file.mimetype, id]
+        );
 
-        res.setHeader("Content-Type", file.file_mime);
-        res.setHeader("Content-Disposition", `inline; filename="${file.file_name}"`);
-        res.send(file.file_pdf);
+        res.json({ message: "PDF updated successfully" });
     } catch (err) {
-        console.error("PDF error:", err);
-        res.status(500).json({ message: "Gagal load PDF" });
+        console.error("PDF UPDATE ERROR:", err);
+        res.status(500).json({ message: "Gagal update PDF" });
     }
 });
 
