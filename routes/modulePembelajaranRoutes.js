@@ -330,5 +330,27 @@ router.get("/:id/pdf", async (req, res) => {
 });
 
 
+// routes/soalRoutes.js
+router.get("/siswa/:bankSoalId", verifyToken, async (req, res) => {
+    try {
+        const { bankSoalId } = req.params;
+
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM soal_pilgan
+            WHERE bank_soal_id = $1
+            ORDER BY id ASC
+            `,
+            [bankSoalId]
+        );
+
+        res.json(result.rows || []);
+    } catch (err) {
+        console.error("GET soal siswa error:", err);
+        res.status(500).json({ message: "Gagal ambil soal" });
+    }
+});
+
 
 export default router;
