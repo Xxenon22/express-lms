@@ -109,25 +109,72 @@ router.post("/", upload.single("file"), async (req, res) => {
 });
 
 // UPDATE materi by id
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        const { judul, video_url, file_url, deskripsi, link_zoom, pass_code } = req.body;
+        const { judul, video_url, deskripsi, link_zoom, pass_code } = req.body;
+        const file = req.file;
 
-        const result = await pool.query(
-            `UPDATE module_pembelajaran 
-       SET judul=$1, video_url=$2, file_url=$3, deskripsi=$4, link_zoom=$5, pass_code=$6
-       WHERE id=$7 RETURNING *`,
-            [judul, video_url, file_url, deskripsi, link_zoom, pass_code, id]
-        );
+        let query;
+        let values;
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "material not found" });
+        if (file) {
+            // UPDATE DENGAN FILE BARU
+            query = `
+                UPDATE module_pembelajaran
+                SET judul=$1,
+                    video_url=$2,
+                    deskripsi=$3,
+                    link_zoom=$4,
+                    pass_code=$5,
+                    file_pdf=$6,
+                    file_name=$7,
+                    file_mime=$8
+                WHERE id=$9
+                RETURNING *
+            `;
+            values = [
+                judul,
+                video_url,
+                deskripsi,
+                link_zoom,
+                pass_code,
+                file.buffer,
+                file.originalname,
+                file.mimetype,
+                id
+            ];
+        } else {
+            // UPDATE TANPA GANTI PDF
+            query = `
+                UPDATE module_pembelajaran
+                SET judul=$1,
+                    video_url=$2,
+                    deskripsi=$3,
+                    link_zoom=$4,
+                    pass_code=$5
+                WHERE id=$6
+                RETURNING *
+            `;
+            values = [
+                judul,
+                video_url,
+                deskripsi,
+                link_zoom,
+                pass_code,
+                id
+            ];
+        }
+
+        const result = await pool.query(query, values);
+
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "Material not found" });
         }
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error("PUT /module-pembelajaran/:id", error);
+        console.error("UPDATE materi error:", error);
         res.status(500).json({ message: "Gagal update materi" });
     }
 });
