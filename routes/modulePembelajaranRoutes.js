@@ -338,7 +338,7 @@ router.get("/siswa/:bankSoalId", verifyToken, async (req, res) => {
         const result = await pool.query(
             `
             SELECT *
-            FROM soal_pilgan
+            FROM bank_soal
             WHERE bank_soal_id = $1
             ORDER BY id ASC
             `,
