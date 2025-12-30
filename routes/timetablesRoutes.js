@@ -1,90 +1,94 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
 import { pool } from "../config/db.js";
 
 const router = express.Router();
 
-// Storage untuk file PDF
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "uploads/timetables"); // folder penyimpanan
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
+/**
+ * Multer config (PDF only, memory)
+ */
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+    fileFilter(req, file, cb) {
+        if (file.mimetype === "application/pdf") {
+            cb(null, true);
+        } else {
+            cb(new Error("Only PDF files are allowed"));
+        }
     }
 });
-
-// Filter hanya PDF
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
-        cb(null, true);
-    } else {
-        cb(new Error("Only PDF files are allowed"), false);
-    }
-};
-
-const upload = multer({ storage, fileFilter });
 
 /**
  * CREATE - Upload PDF
  */
 router.post("/", upload.single("jadwal"), async (req, res) => {
     try {
-        const file_name = req.file.filename; // hanya simpan nama file
-        const result = await pool.query(
-            "INSERT INTO jadwal_db (file_name) VALUES ($1) RETURNING *",
-            [file_name]
-        );
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error("Error upload jadwal:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * READ - Ambil semua jadwal
- */
-router.get("/", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT * FROM jadwal_db ORDER BY id DESC");
-        res.json(result.rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * DELETE - Hapus jadwal
- */
-router.delete("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        // ambil nama file dulu
-        const fileRes = await pool.query("SELECT file_name FROM jadwal_db WHERE id = $1", [id]);
-        if (fileRes.rowCount === 0) {
-            return res.status(404).json({ message: "Timetable not Found" });
+        if (!req.file) {
+            return res.status(400).json({ message: "PDF file is required" });
         }
 
-        const fileName = fileRes.rows[0].file_name;
+        const { originalname, buffer, mimetype } = req.file;
 
-        // hapus dari db
-        await pool.query("DELETE FROM jadwal_db WHERE id = $1", [id]);
+        const result = await pool.query(
+            `INSERT INTO jadwal_db (file_name, file_data, file_mime)
+             VALUES ($1, $2, $3)
+             RETURNING id`,
+            [originalname, buffer, mimetype]
+        );
 
-        // hapus juga file fisiknya
-        import("fs").then(fs => {
-            const filePath = path.join("uploads/timetables", fileName);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
+        res.status(201).json({
+            id: result.rows[0].id,
+            file_name: originalname
         });
-
-        res.json({ message: "Timetable deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
+});
+
+/**
+ * READ - List jadwal
+ */
+router.get("/", async (req, res) => {
+    const result = await pool.query(
+        "SELECT id, file_name FROM jadwal_db ORDER BY id DESC"
+    );
+    res.json(result.rows);
+});
+
+/**
+ * READ - Ambil PDF by ID
+ */
+router.get("/:id/file", async (req, res) => {
+    const { id } = req.params;
+
+    const result = await pool.query(
+        "SELECT file_data, file_mime, file_name FROM jadwal_db WHERE id = $1",
+        [id]
+    );
+
+    if (!result.rows.length) {
+        return res.status(404).send("File not found");
+    }
+
+    const file = result.rows[0];
+
+    res.setHeader("Content-Type", file.file_mime);
+    res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${file.file_name}"`
+    );
+
+    res.send(file.file_data);
+});
+
+/**
+ * DELETE
+ */
+router.delete("/:id", async (req, res) => {
+    await pool.query("DELETE FROM jadwal_db WHERE id = $1", [req.params.id]);
+    res.json({ message: "Deleted" });
 });
 
 export default router;
