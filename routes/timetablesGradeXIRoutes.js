@@ -72,15 +72,17 @@ router.get("/:id/file", async (req, res) => {
         return res.status(404).send("File not found");
     }
 
-    const file = result.rows[0];
+    const { file_data, file_mime, file_name } = result.rows[0];
 
-    res.setHeader("Content-Type", file.file_mime);
-    res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${file.file_name}"`
-    );
+    res.status(200);
+    res.set({
+        "Content-Type": file_mime,
+        "Content-Length": file_data.length,
+        "Content-Disposition": `inline; filename="${file_name}"`,
+        "Cache-Control": "no-store"
+    });
 
-    res.send(file.file_data);
+    res.end(file_data);
 });
 
 /**
