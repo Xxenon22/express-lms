@@ -24,7 +24,12 @@ router.get("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
         const result = await pool.query(
-            `SELECT * FROM module_pembelajaran WHERE guru_id = $1 ORDER BY created_at DESC`,
+            `SELECT id, judul, video_url, deskripsi, guru_id,
+                    bank_soal_id, judul_penugasan, link_zoom,
+                    kelas_id, pass_code, created_at
+             FROM module_pembelajaran
+             WHERE guru_id = $1
+             ORDER BY created_at DESC`,
             [guruId]
         );
         res.json(result.rows);
@@ -213,7 +218,10 @@ router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            `SELECT * FROM module_pembelajaran WHERE id=$1`,
+            `SELECT id, judul, video_url, deskripsi, guru_id, bank_soal_id,
+                    judul_penugasan, link_zoom, kelas_id, pass_code, created_at
+             FROM module_pembelajaran
+             WHERE id = $1`,
             [id]
         );
 
@@ -229,7 +237,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Ambil 1 module pembelajaran berdasarkan soalId
-router.get("soal/:soalId", async (req, res) => {
+router.get("/soal/:soalId", async (req, res) => {
     try {
         const { soalId } = req.params;
         const result = await pool.query(
