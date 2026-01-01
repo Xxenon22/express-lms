@@ -80,7 +80,7 @@ router.post(
             const files = saved.map(row => ({
                 id: row.id,
                 nama_file: row.file_name,
-                url: `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${row.id}`,
+                url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                 created_at: row.created_at,
             }));
 
@@ -327,17 +327,14 @@ router.get("/file-db/:id", async (req, res) => {
         const file = result.rows[0];
 
         res.setHeader("Content-Type", file.file_mime);
-        res.setHeader(
-            "Content-Disposition",
-            `inline; filename="${file.file_name}"`
-        );
-
+        res.setHeader("Content-Disposition", "inline");
         res.send(file.file_data);
     } catch (err) {
         console.error(err);
         res.status(500).send("Failed to load file");
     }
 });
+
 
 /* =========================
    REVIEW JAWABAN SISWA
