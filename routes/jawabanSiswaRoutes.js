@@ -131,11 +131,30 @@ router.get("/", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
         const result = await pool.query(
-            `SELECT id, user_id, soal_id, bank_soal_id, jawaban, jawaban_essai, nilai, refleksi_siswa, file_jawaban_siswa, created_at
-FROM jawaban_siswa WHERE user_id = $1`,
+            `SELECT 
+                id,
+                user_id,
+                soal_id,
+                bank_soal_id,
+                jawaban,
+                jawaban_essai,
+                refleksi_siswa,
+                nilai,
+                file_name,
+                file_mime,
+                created_at
+            FROM jawaban_siswa
+            WHERE user_id = $1
+            `,
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows.map(r => ({
+            ...r,
+            file_url: r.file_name
+                ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.id}`
+                : null
+        })));
+
     } catch (err) {
         console.error("Error fetch jawaban:", err);
         res.status(500).json({ message: err.message });
@@ -230,10 +249,11 @@ router.get("/all-with-soal", async (req, res) => {
 
         const data = result.rows.map(r => ({
             ...r,
-            url_file_jawaban: r.file_jawaban_siswa
-                ? `${req.protocol}://${req.get("host")}/uploads/file-jawaban-siswa/${r.file_jawaban_siswa}`
+            file_url: r.file_name
+                ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.jawaban_id}`
                 : null
         }));
+
 
 
         res.json(data);
@@ -244,67 +264,69 @@ router.get("/all-with-soal", async (req, res) => {
 });
 
 // GET semua file jawaban siswa by bank_soal_id (bisa untuk guru)
-router.get("/file/:bank_soal_id", verifyToken, async (req, res) => {
-    try {
-        const { bank_soal_id } = req.params;
-        const queryUserId = req.query.user_id; // bisa dari guru (frontend)
-        const userId = queryUserId || req.users.id; // fallback ke user login (siswa)
+// router.get("/file/:bank_soal_id", verifyToken, async (req, res) => {
+//     try {
+//         const { bank_soal_id } = req.params;
+//         const queryUserId = req.query.user_id; // bisa dari guru (frontend)
+//         const userId = queryUserId || req.users.id; // fallback ke user login (siswa)
 
-        const result = await pool.query(
-            `SELECT id, file_jawaban_siswa, created_at
-             FROM jawaban_siswa
-             WHERE user_id = $1 AND bank_soal_id = $2
-             ORDER BY created_at DESC`,
-            [userId, bank_soal_id]
-        );
+//         const result = await pool.query(
+//             `SELECT id, file_jawaban_siswa, created_at
+//              FROM jawaban_siswa
+//              WHERE user_id = $1 AND bank_soal_id = $2
+//              ORDER BY created_at DESC`,
+//             [userId, bank_soal_id]
+//         );
 
-        const files = result.rows.map(row => ({
-            id: row.id,
-            nama_file: row.file_jawaban_siswa,
-            url: `${req.protocol}://${req.get("host")}/uploads/file-jawaban-siswa/${row.file_jawaban_siswa}`,
-            created_at: row.created_at
-        }));
+//         const files = saved.map(row => ({
+//             id: row.id,
+//             file_name: row.file_name,
+//             file_mime: row.file_mime,
+//             url: `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${row.id}`,
+//             created_at: row.created_at
+//         }));
 
-        res.json(files);
-    } catch (err) {
-        console.error("Error fetch file jawaban:", err);
-        res.status(500).json({ message: err.message });
-    }
-});
+
+//         res.json(files);
+//     } catch (err) {
+//         console.error("Error fetch file jawaban:", err);
+//         res.status(500).json({ message: err.message });
+//     }
+// });
 
 // DELETE file jawaban siswa by id
-router.delete("/file/:id", verifyToken, async (req, res) => {
-    try {
-        const userId = req.users.id;
-        const { id } = req.params;
+// router.delete("/file/:id", verifyToken, async (req, res) => {
+//     try {
+//         const userId = req.users.id;
+//         const { id } = req.params;
 
-        // ambil data file dulu
-        const check = await pool.query(
-            `SELECT * FROM jawaban_siswa WHERE id = $1 AND user_id = $2`,
-            [id, userId]
-        );
+//         // ambil data file dulu
+//         const check = await pool.query(
+//             `SELECT * FROM jawaban_siswa WHERE id = $1 AND user_id = $2`,
+//             [id, userId]
+//         );
 
-        if (check.rows.length === 0) {
-            return res.status(404).json({ message: "File not found or not yours" });
-        }
+//         if (check.rows.length === 0) {
+//             return res.status(404).json({ message: "File not found or not yours" });
+//         }
 
-        const fileName = check.rows[0].file_jawaban_siswa;
-        const filePath = path.join("uploads/file-jawaban-siswa", fileName);
+//         const fileName = check.rows[0].file_jawaban_siswa;
+//         const filePath = path.join("uploads/file-jawaban-siswa", fileName);
 
-        // hapus di database
-        await pool.query(`DELETE FROM jawaban_siswa WHERE id = $1 AND user_id = $2`, [id, userId]);
+//         // hapus di database
+//         await pool.query(`DELETE FROM jawaban_siswa WHERE id = $1 AND user_id = $2`, [id, userId]);
 
-        // hapus file fisik kalau ada
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
+//         // hapus file fisik kalau ada
+//         if (fs.existsSync(filePath)) {
+//             fs.unlinkSync(filePath);
+//         }
 
-        res.json({ message: "File deleted successfully" });
-    } catch (err) {
-        console.error("Error delete file:", err);
-        res.status(500).json({ message: err.message });
-    }
-});
+//         res.json({ message: "File deleted successfully" });
+//     } catch (err) {
+//         console.error("Error delete file:", err);
+//         res.status(500).json({ message: err.message });
+//     }
+// });
 
 router.get("/file-db/:id", verifyToken, async (req, res) => {
     try {
