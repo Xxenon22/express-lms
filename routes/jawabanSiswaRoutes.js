@@ -328,7 +328,7 @@ router.get("/all-with-soal", async (req, res) => {
 //     }
 // });
 
-router.get("/file-db/:id", verifyToken, async (req, res) => {
+router.get("/file-db/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
