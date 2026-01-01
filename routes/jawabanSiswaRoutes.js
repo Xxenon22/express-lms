@@ -381,4 +381,34 @@ router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
     res.json(result.rows);
 });
 
+router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
+    try {
+        const { bank_soal_id } = req.params;
+        const userId = req.users.id;
+
+        const result = await pool.query(
+            `SELECT id, file_name, file_mime, created_at
+             FROM jawaban_siswa
+             WHERE bank_soal_id = $1
+               AND user_id = $2
+               AND file_data IS NOT NULL
+             ORDER BY created_at DESC`,
+            [bank_soal_id, userId]
+        );
+
+        const files = result.rows.map(row => ({
+            id: row.id,
+            file_name: row.file_name,
+            file_mime: row.file_mime,
+            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            created_at: row.created_at
+        }));
+
+        res.json(files);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to fetch files" });
+    }
+});
+
 export default router;
