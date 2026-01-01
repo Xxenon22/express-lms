@@ -69,10 +69,15 @@ router.post(
                 saved.push(result.rows[0]);
             }
 
-            res.json({
-                message: "File jawaban berhasil disimpan",
-                data: saved
-            });
+            const files = saved.map(row => ({
+                id: row.id,
+                nama_file: row.file_name,
+                url: `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${row.id}`,
+                created_at: row.created_at
+            }));
+
+            res.json(files);
+
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });
