@@ -33,6 +33,9 @@ const upload = multer({
 /* =========================
    UPLOAD FILE JAWABAN (DB)
 ========================= */
+/* =========================
+   UPLOAD FILE JAWABAN (DB)
+========================= */
 router.post(
     "/upload-multiple",
     verifyToken,
@@ -45,6 +48,11 @@ router.post(
 
             const { soal_id, bank_soal_id, materi_id } = req.body;
             const userId = req.users.id;
+
+            console.log("📥 UPLOAD START");
+            console.log("User ID:", userId);
+            console.log("Bank Soal ID:", bank_soal_id);
+            console.log("Total Files:", req.files.length);
 
             const saved = [];
 
@@ -74,23 +82,45 @@ router.post(
                     ]
                 );
 
-                saved.push(result.rows[0]);
+                const row = result.rows[0];
+
+                // ✅ LOG PER FILE
+                console.log("✅ FILE UPLOADED");
+                console.log({
+                    jawaban_id: row.id,
+                    file_name: row.file_name,
+                    mime: row.file_mime,
+                    size_kb: Math.round(file.buffer.length / 1024) + " KB",
+                });
+
+                saved.push(row);
             }
 
             const files = saved.map(row => ({
                 id: row.id,
                 nama_file: row.file_name,
+                mime: row.file_mime,
                 url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                 created_at: row.created_at,
             }));
 
-            res.json(files);
+            // ✅ LOG FINAL
+            console.log("🎉 UPLOAD SELESAI");
+            console.log("Total berhasil:", files.length);
+
+            res.json({
+                message: "Upload jawaban siswa berhasil",
+                total: files.length,
+                files,
+            });
+
         } catch (err) {
-            console.error(err);
+            console.error("❌ UPLOAD GAGAL:", err);
             res.status(500).json({ message: err.message });
         }
     }
 );
+
 
 /* =========================
    SIMPAN JAWABAN (MULTIPLE)
