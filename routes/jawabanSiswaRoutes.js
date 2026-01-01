@@ -8,80 +8,76 @@ import fs from "fs";
 
 const router = express.Router();
 
-// STORAGE CONFIGURATION (multer)
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const dir = "uploads/file-jawaban-siswa";
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true }); // auto buat folder
-        }
-        cb(null, dir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
-            'image/jpeg',
-            'image/png',
-            'image/webp',
-            'application/pdf'
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "application/pdf"
         ];
 
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error("Only JPG, PNG, WEBP, and PDF files are allowed"), false);
+            cb(new Error("Only JPG, PNG, WEBP, and PDF allowed"), false);
         }
     },
 });
 
-router.post("/upload-multiple", verifyToken, upload.array("files"), async (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: "No files uploaded" });
-        }
+router.post(
+    "/upload-multiple",
+    verifyToken,
+    upload.array("files"),
+    async (req, res) => {
+        try {
+            if (!req.files?.length) {
+                return res.status(400).json({ message: "No files uploaded" });
+            }
 
-        const { soal_id, bank_soal_id, materi_id } = req.body;
-        const userId = req.users.id;
+            const { soal_id, bank_soal_id, materi_id } = req.body;
+            const userId = req.users.id;
 
-        // Pastikan id terisi atau null
-        const soalId = soal_id || null;
-        const bankSoalId = bank_soal_id || null;
-        const materiId = materi_id || null;
+            const saved = [];
 
-        const savedFiles = [];
-
-        for (const file of req.files) {
-            const result = await pool.query(
-                `INSERT INTO jawaban_siswa (user_id, soal_id, bank_soal_id, file_jawaban_siswa, created_at)
-                 VALUES ($1,$2,$3,$4,NOW())
-                 ON CONFLICT (user_id, soal_id) DO UPDATE
-                 SET file_jawaban_siswa = EXCLUDED.file_jawaban_siswa,
-                     created_at = NOW()
+            for (const file of req.files) {
+                const result = await pool.query(
+                    `INSERT INTO jawaban_siswa
+                (user_id, soal_id, bank_soal_id, materi_id,
+                 file_data, file_mime, file_name, created_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+                 ON CONFLICT (user_id, soal_id, bank_soal_id)
+                 DO UPDATE SET
+                    file_data = EXCLUDED.file_data,
+                    file_mime = EXCLUDED.file_mime,
+                    file_name = EXCLUDED.file_name,
+                    created_at = NOW()
                  RETURNING *`,
-                [userId, soalId, bankSoalId, file.filename]
-            );
+                    [
+                        userId,
+                        soal_id || null,
+                        bank_soal_id,
+                        materi_id || null,
+                        file.buffer,
+                        file.mimetype,
+                        file.originalname
+                    ]
+                );
 
-            savedFiles.push(result.rows[0]);
+                saved.push(result.rows[0]);
+            }
+
+            res.json({
+                message: "File jawaban berhasil disimpan",
+                data: saved
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: err.message });
         }
-
-        res.json({
-            message: "Files uploaded successfully",
-            files: req.files.map(f => f.filename),
-            jawaban: savedFiles
-        });
-    } catch (err) {
-        console.error("Error upload files:", err);
-        res.status(500).json({ message: err.message });
-    }
-});
-
+    });
 
 // SIMPAN JAWABAN (multiple soal)
 router.post("/", verifyToken, async (req, res) => {
@@ -302,6 +298,36 @@ router.delete("/file/:id", verifyToken, async (req, res) => {
     } catch (err) {
         console.error("Error delete file:", err);
         res.status(500).json({ message: err.message });
+    }
+});
+
+router.get("/file-db/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT file_data, file_mime, file_name
+             FROM jawaban_siswa
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).send("File not found");
+        }
+
+        const file = result.rows[0];
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="${file.file_name}"`
+        );
+
+        res.send(file.file_data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Failed to load file");
     }
 });
 
