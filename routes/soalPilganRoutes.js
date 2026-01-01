@@ -19,7 +19,7 @@ router.post("/", async (req, res) => {
         );
 
         if (!bankSoalCheck.rows.length) {
-            return res.status(403).json({ message: "Unauthorized" });
+            res.status(403).json({ message: "Unauthorized" });
         }
 
         for (const soal of soal_list) {

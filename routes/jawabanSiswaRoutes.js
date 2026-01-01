@@ -331,4 +331,27 @@ router.get("/file-db/:id", verifyToken, async (req, res) => {
     }
 });
 
+router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
+    const { bank_soal_id } = req.params;
+    const userId = req.users.id;
+
+    const result = await pool.query(`
+        SELECT 
+            sp.id AS soal_id,
+            sp.pertanyaan,
+            sp.pg_a, sp.pg_b, sp.pg_c, sp.pg_d, sp.pg_e,
+            sp.kunci_jawaban,
+            js.jawaban AS jawaban_siswa,
+            js.jawaban_essai,
+            js.refleksi_siswa
+        FROM soal_pilgan sp
+        LEFT JOIN jawaban_siswa js
+            ON js.soal_id = sp.id
+           AND js.user_id = $1
+        WHERE sp.bank_soal_id = $2
+    `, [userId, bank_soal_id]);
+
+    res.json(result.rows);
+});
+
 export default router;

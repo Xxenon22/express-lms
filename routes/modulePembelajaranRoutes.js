@@ -146,19 +146,32 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
         const { kelasId } = req.params;
         const userId = req.users.id; // ambil dari token user yang login
 
+        // const result = await pool.query(
+        //     `SELECT 
+        //         m.*, 
+        //         b.id AS bank_soal_id, 
+        //         b.judul_penugasan AS bank_soal_nama,
+        //         u.photo_profile AS guru_foto
+        //         FROM module_pembelajaran m 
+        //      LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
+        //      LEFT JOIN users u ON m.guru_id = u.id
+        //      LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
+        //      WHERE m.kelas_id = $1
+        //        AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
+        //      ORDER BY m.created_at DESC`,
+        //     [kelasId, userId]
+        // );
+
         const result = await pool.query(
             `SELECT 
-                m.*, 
-                b.id AS bank_soal_id, 
-                b.judul_penugasan AS bank_soal_nama,
-                u.photo_profile AS guru_foto
-                FROM module_pembelajaran m 
-             LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
-             LEFT JOIN users u ON m.guru_id = u.id
-             LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
-             WHERE m.kelas_id = $1
-               AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
-             ORDER BY m.created_at DESC`,
+                m.*,
+                jm.status_selesai
+            FROM module_pembelajaran m
+            LEFT JOIN progress_materi jm 
+                ON jm.materi_id = m.id 
+            AND jm.user_id = $2
+            WHERE m.kelas_id = $1
+            ORDER BY m.created_at DESC`,
             [kelasId, userId]
         );
 
@@ -327,6 +340,28 @@ router.get("/:id/pdf", async (req, res) => {
         console.error("PDF error:", err);
         res.status(500).json({ message: "Gagal load PDF" });
     }
+});
+
+// GET materi history siswa
+router.get("/kelas/:kelasId/history", verifyToken, async (req, res) => {
+    const { kelasId } = req.params;
+    const userId = req.users.id;
+
+    const result = await pool.query(`
+        SELECT 
+            m.*,
+            p.refleksi,
+            p.status_selesai
+        FROM module_pembelajaran m
+        JOIN progress_materi p 
+            ON p.materi_id = m.id
+        WHERE m.kelas_id = $1
+          AND p.user_id = $2
+          AND p.status_selesai = true
+        ORDER BY p.updated_at DESC
+    `, [kelasId, userId]);
+
+    res.json(result.rows);
 });
 
 export default router;
