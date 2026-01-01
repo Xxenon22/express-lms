@@ -8,6 +8,9 @@ import fs from "fs";
 
 const router = express.Router();
 
+/* =========================
+   MULTER CONFIG
+========================= */
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
@@ -16,7 +19,7 @@ const upload = multer({
             "image/jpeg",
             "image/png",
             "image/webp",
-            "application/pdf"
+            "application/pdf",
         ];
 
         if (allowedTypes.includes(file.mimetype)) {
@@ -27,6 +30,9 @@ const upload = multer({
     },
 });
 
+/* =========================
+   UPLOAD FILE JAWABAN (DB)
+========================= */
 router.post(
     "/upload-multiple",
     verifyToken,
@@ -44,17 +50,19 @@ router.post(
 
             for (const file of req.files) {
                 const result = await pool.query(
-                    `INSERT INTO jawaban_siswa
-                (user_id, soal_id, bank_soal_id, materi_id,
-                 file_data, file_mime, file_name, created_at)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
-                 ON CONFLICT (user_id, soal_id, bank_soal_id)
-                 DO UPDATE SET
-                    file_data = EXCLUDED.file_data,
-                    file_mime = EXCLUDED.file_mime,
-                    file_name = EXCLUDED.file_name,
-                    created_at = NOW()
-                 RETURNING *`,
+                    `
+                    INSERT INTO jawaban_siswa
+                        (user_id, soal_id, bank_soal_id, materi_id,
+                         file_data, file_mime, file_name, created_at)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+                    ON CONFLICT (user_id, soal_id, bank_soal_id)
+                    DO UPDATE SET
+                        file_data = EXCLUDED.file_data,
+                        file_mime = EXCLUDED.file_mime,
+                        file_name = EXCLUDED.file_name,
+                        created_at = NOW()
+                    RETURNING *
+                    `,
                     [
                         userId,
                         soal_id || null,
@@ -62,7 +70,7 @@ router.post(
                         materi_id || null,
                         file.buffer,
                         file.mimetype,
-                        file.originalname
+                        file.originalname,
                     ]
                 );
 
@@ -73,21 +81,23 @@ router.post(
                 id: row.id,
                 nama_file: row.file_name,
                 url: `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${row.id}`,
-                created_at: row.created_at
+                created_at: row.created_at,
             }));
 
             res.json(files);
-
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });
         }
-    });
+    }
+);
 
-// SIMPAN JAWABAN (multiple soal)
+/* =========================
+   SIMPAN JAWABAN (MULTIPLE)
+========================= */
 router.post("/", verifyToken, async (req, res) => {
     try {
-        const jawabanList = req.body; // array of jawaban
+        const jawabanList = req.body;
         const userId = req.users.id;
 
         if (!Array.isArray(jawabanList)) {
@@ -95,17 +105,23 @@ router.post("/", verifyToken, async (req, res) => {
         }
 
         const inserted = [];
+
         for (const j of jawabanList) {
             const result = await pool.query(
-                `INSERT INTO jawaban_siswa (user_id, soal_id, bank_soal_id, jawaban, jawaban_essai, refleksi_siswa, file_jawaban_siswa, created_at)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
-                 ON CONFLICT (user_id, soal_id) DO UPDATE
-                 SET jawaban = EXCLUDED.jawaban,
-                     jawaban_essai = EXCLUDED.jawaban_essai,
-                     refleksi_siswa = EXCLUDED.refleksi_siswa,
-                     file_jawaban_siswa = EXCLUDED.file_jawaban_siswa,
-                     created_at = NOW()
-                 RETURNING *`,
+                `
+                INSERT INTO jawaban_siswa
+                    (user_id, soal_id, bank_soal_id, jawaban,
+                     jawaban_essai, refleksi_siswa, file_jawaban_siswa, created_at)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+                ON CONFLICT (user_id, soal_id)
+                DO UPDATE SET
+                    jawaban = EXCLUDED.jawaban,
+                    jawaban_essai = EXCLUDED.jawaban_essai,
+                    refleksi_siswa = EXCLUDED.refleksi_siswa,
+                    file_jawaban_siswa = EXCLUDED.file_jawaban_siswa,
+                    created_at = NOW()
+                RETURNING *
+                `,
                 [
                     userId,
                     j.soal_id,
@@ -116,22 +132,30 @@ router.post("/", verifyToken, async (req, res) => {
                     j.file_jawaban_siswa || null,
                 ]
             );
+
             inserted.push(result.rows[0]);
         }
 
-        res.json({ message: "Answer saved successfully", data: inserted });
+        res.json({
+            message: "Answer saved successfully",
+            data: inserted,
+        });
     } catch (err) {
         console.error("Error simpan jawaban:", err);
         res.status(500).json({ message: err.message });
     }
 });
 
-// AMBIL JAWABAN SISWA (by user login)
+/* =========================
+   GET JAWABAN SISWA (LOGIN)
+========================= */
 router.get("/", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
+
         const result = await pool.query(
-            `SELECT 
+            `
+            SELECT
                 id,
                 user_id,
                 soal_id,
@@ -148,21 +172,24 @@ router.get("/", verifyToken, async (req, res) => {
             `,
             [userId]
         );
-        res.json(result.rows.map(r => ({
-            ...r,
-            file_url: r.file_name
-                ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.id}`
-                : null
-        })));
 
+        res.json(
+            result.rows.map(r => ({
+                ...r,
+                file_url: r.file_name
+                    ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.id}`
+                    : null,
+            }))
+        );
     } catch (err) {
         console.error("Error fetch jawaban:", err);
         res.status(500).json({ message: err.message });
     }
 });
 
-
-// GET jawaban siswa by bank_soal_id (assignment) untuk guru
+/* =========================
+   GET SEMUA JAWABAN (GURU)
+========================= */
 router.get("/all", verifyToken, async (req, res) => {
     try {
         const { bank_soal_id } = req.query;
@@ -171,12 +198,13 @@ router.get("/all", verifyToken, async (req, res) => {
             return res.status(400).json({ message: "bank_soal_id required" });
         }
 
-        // Ambil semua jawaban siswa untuk assignment ini
         const result = await pool.query(
-            `SELECT js.*, u.username, u.photo_profile
-             FROM jawaban_siswa js
-             JOIN users u ON u.id = js.user_id
-             WHERE js.bank_soal_id = $1`,
+            `
+            SELECT js.*, u.username, u.photo_profile
+            FROM jawaban_siswa js
+            JOIN users u ON u.id = js.user_id
+            WHERE js.bank_soal_id = $1
+            `,
             [bank_soal_id]
         );
 
@@ -187,31 +215,42 @@ router.get("/all", verifyToken, async (req, res) => {
     }
 });
 
-// UPDATE nilai siswa
+/* =========================
+   UPDATE NILAI
+========================= */
 router.put("/nilai", verifyToken, async (req, res) => {
     try {
-        const { user_id, bank_soal_id, nilai } = req.body
+        const { user_id, bank_soal_id, nilai } = req.body;
+
         if (!user_id || !bank_soal_id || nilai === undefined) {
-            return res.status(400).json({ message: "user_id, bank_soal_id, nilai required" })
+            return res.status(400).json({
+                message: "user_id, bank_soal_id, nilai required",
+            });
         }
 
         const result = await pool.query(
-            `UPDATE jawaban_siswa
-             SET nilai = $1
-             WHERE user_id = $2 AND bank_soal_id = $3
-             RETURNING *`,
+            `
+            UPDATE jawaban_siswa
+            SET nilai = $1
+            WHERE user_id = $2 AND bank_soal_id = $3
+            RETURNING *
+            `,
             [nilai, user_id, bank_soal_id]
-        )
+        );
 
-        res.json({ message: "Score updated sucessfully", data: result.rows[0] })
+        res.json({
+            message: "Score updated sucessfully",
+            data: result.rows[0],
+        });
     } catch (err) {
-        console.error("Error update nilai:", err)
-        res.status(500).json({ message: err.message })
+        console.error("Error update nilai:", err);
+        res.status(500).json({ message: err.message });
     }
-})
+});
 
-
-// Ambil jawaban siswa + data soal
+/* =========================
+   GET JAWABAN + SOAL
+========================= */
 router.get("/all-with-soal", async (req, res) => {
     try {
         const { bank_soal_id } = req.query;
@@ -221,121 +260,63 @@ router.get("/all-with-soal", async (req, res) => {
         }
 
         const result = await pool.query(
-            `SELECT js.id AS jawaban_id,
-                    js.user_id,
-                    js.jawaban,
-                    js.jawaban_essai,
-                    js.refleksi_siswa,
-                    js.nilai,
-                    js.file_jawaban_siswa,
-                    sp.id AS soal_id,
-                    sp.pertanyaan,
-                    sp.pg_a,
-                    sp.pg_b,
-                    sp.pg_c,
-                    sp.pg_d,
-                    sp.pg_e,
-                    sp.kunci_jawaban,
-                    sp.gambar,
-                    sp.pertanyaan_essai,
-                    sp.gambar_soal_essai
-             FROM jawaban_siswa js
-             LEFT JOIN soal_pilgan sp
-             ON js.soal_id = sp.id
-             WHERE js.bank_soal_id = $1`,
+            `
+            SELECT
+                js.id AS jawaban_id,
+                js.user_id,
+                js.jawaban,
+                js.jawaban_essai,
+                js.refleksi_siswa,
+                js.nilai,
+                js.file_jawaban_siswa,
+                sp.id AS soal_id,
+                sp.pertanyaan,
+                sp.pg_a,
+                sp.pg_b,
+                sp.pg_c,
+                sp.pg_d,
+                sp.pg_e,
+                sp.kunci_jawaban,
+                sp.gambar,
+                sp.pertanyaan_essai,
+                sp.gambar_soal_essai
+            FROM jawaban_siswa js
+            LEFT JOIN soal_pilgan sp
+                ON js.soal_id = sp.id
+            WHERE js.bank_soal_id = $1
+            `,
             [bank_soal_id]
         );
-
 
         const data = result.rows.map(r => ({
             ...r,
             file_url: r.file_name
                 ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.jawaban_id}`
-                : null
+                : null,
         }));
-
-
 
         res.json(data);
     } catch (error) {
         console.error("Failed to retrieve answers and questions:", error);
-        res.status(500).json({ message: "Failed to retrieve answers and questions" });
+        res.status(500).json({
+            message: "Failed to retrieve answers and questions",
+        });
     }
 });
 
-// GET semua file jawaban siswa by bank_soal_id (bisa untuk guru)
-// router.get("/file/:bank_soal_id", verifyToken, async (req, res) => {
-//     try {
-//         const { bank_soal_id } = req.params;
-//         const queryUserId = req.query.user_id; // bisa dari guru (frontend)
-//         const userId = queryUserId || req.users.id; // fallback ke user login (siswa)
-
-//         const result = await pool.query(
-//             `SELECT id, file_jawaban_siswa, created_at
-//              FROM jawaban_siswa
-//              WHERE user_id = $1 AND bank_soal_id = $2
-//              ORDER BY created_at DESC`,
-//             [userId, bank_soal_id]
-//         );
-
-//         const files = saved.map(row => ({
-//             id: row.id,
-//             file_name: row.file_name,
-//             file_mime: row.file_mime,
-//             url: `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${row.id}`,
-//             created_at: row.created_at
-//         }));
-
-
-//         res.json(files);
-//     } catch (err) {
-//         console.error("Error fetch file jawaban:", err);
-//         res.status(500).json({ message: err.message });
-//     }
-// });
-
-// DELETE file jawaban siswa by id
-// router.delete("/file/:id", verifyToken, async (req, res) => {
-//     try {
-//         const userId = req.users.id;
-//         const { id } = req.params;
-
-//         // ambil data file dulu
-//         const check = await pool.query(
-//             `SELECT * FROM jawaban_siswa WHERE id = $1 AND user_id = $2`,
-//             [id, userId]
-//         );
-
-//         if (check.rows.length === 0) {
-//             return res.status(404).json({ message: "File not found or not yours" });
-//         }
-
-//         const fileName = check.rows[0].file_jawaban_siswa;
-//         const filePath = path.join("uploads/file-jawaban-siswa", fileName);
-
-//         // hapus di database
-//         await pool.query(`DELETE FROM jawaban_siswa WHERE id = $1 AND user_id = $2`, [id, userId]);
-
-//         // hapus file fisik kalau ada
-//         if (fs.existsSync(filePath)) {
-//             fs.unlinkSync(filePath);
-//         }
-
-//         res.json({ message: "File deleted successfully" });
-//     } catch (err) {
-//         console.error("Error delete file:", err);
-//         res.status(500).json({ message: err.message });
-//     }
-// });
-
+/* =========================
+   STREAM FILE DARI DB
+========================= */
 router.get("/file-db/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
         const result = await pool.query(
-            `SELECT file_data, file_mime, file_name
-             FROM jawaban_siswa
-             WHERE id = $1`,
+            `
+            SELECT file_data, file_mime, file_name
+            FROM jawaban_siswa
+            WHERE id = $1
+            `,
             [id]
         );
 
@@ -358,15 +339,23 @@ router.get("/file-db/:id", async (req, res) => {
     }
 });
 
+/* =========================
+   REVIEW JAWABAN SISWA
+========================= */
 router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
     const { bank_soal_id } = req.params;
     const userId = req.users.id;
 
-    const result = await pool.query(`
-        SELECT 
+    const result = await pool.query(
+        `
+        SELECT
             sp.id AS soal_id,
             sp.pertanyaan,
-            sp.pg_a, sp.pg_b, sp.pg_c, sp.pg_d, sp.pg_e,
+            sp.pg_a,
+            sp.pg_b,
+            sp.pg_c,
+            sp.pg_d,
+            sp.pg_e,
             sp.kunci_jawaban,
             js.jawaban AS jawaban_siswa,
             js.jawaban_essai,
@@ -376,23 +365,30 @@ router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
             ON js.soal_id = sp.id
            AND js.user_id = $1
         WHERE sp.bank_soal_id = $2
-    `, [userId, bank_soal_id]);
+        `,
+        [userId, bank_soal_id]
+    );
 
     res.json(result.rows);
 });
 
+/* =========================
+   FILE BY BANK SOAL
+========================= */
 router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
     try {
         const { bank_soal_id } = req.params;
         const userId = req.users.id;
 
         const result = await pool.query(
-            `SELECT id, file_name, file_mime, created_at
-             FROM jawaban_siswa
-             WHERE bank_soal_id = $1
-               AND user_id = $2
-               AND file_data IS NOT NULL
-             ORDER BY created_at DESC`,
+            `
+            SELECT id, file_name, file_mime, created_at
+            FROM jawaban_siswa
+            WHERE bank_soal_id = $1
+              AND user_id = $2
+              AND file_data IS NOT NULL
+            ORDER BY created_at DESC
+            `,
             [bank_soal_id, userId]
         );
 
@@ -401,7 +397,7 @@ router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
             file_name: row.file_name,
             file_mime: row.file_mime,
             url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-            created_at: row.created_at
+            created_at: row.created_at,
         }));
 
         res.json(files);
