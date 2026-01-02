@@ -207,7 +207,7 @@ router.get("/", verifyToken, async (req, res) => {
             result.rows.map(r => ({
                 ...r,
                 file_url: r.file_name
-                    ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.id}`
+                    ? `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${r.id}`
                     : null,
             }))
         );
@@ -321,7 +321,7 @@ router.get("/all-with-soal", async (req, res) => {
         const data = result.rows.map(r => ({
             ...r,
             file_url: r.file_name
-                ? `${req.protocol}://${req.get("host")}/jawaban-siswa/file-db/${r.jawaban_id}`
+                ? `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${r.jawaban_id}`
                 : null,
         }));
 
