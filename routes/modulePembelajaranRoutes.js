@@ -40,7 +40,7 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // POST tambah module
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/", verifyToken, upload.single("file"), async (req, res) => {
     try {
         const {
             judul,
@@ -50,8 +50,8 @@ router.post("/", upload.single("file"), async (req, res) => {
             bank_soal_id,
             judul_penugasan,
             link_zoom,
-            kelas_id,
-            pass_code
+            pass_code,
+            kelas_ids // ⬅️ ARRAY
         } = req.body;
 
         const file = req.file;
@@ -60,46 +60,60 @@ router.post("/", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "PDF file is required" });
         }
 
-        const result = await pool.query(
-            `INSERT INTO module_pembelajaran
-            (
-                judul,
-                video_url,
-                deskripsi,
-                guru_id,
-                bank_soal_id,
-                judul_penugasan,
-                link_zoom,
-                kelas_id,
-                pass_code,
-                file_pdf,
-                file_name,
-                file_mime
-            )
-            VALUES
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-            RETURNING *`,
-            [
-                judul,
-                video_url,
-                deskripsi,
-                guru_id,
-                bank_soal_id,
-                judul_penugasan,
-                link_zoom,
-                kelas_id,
-                pass_code,
-                file.buffer,       // ✅ BYTEA
-                file.originalname, // nama file
-                file.mimetype      // application/pdf
-            ]
-        );
+        if (!kelas_ids || !kelas_ids.length) {
+            return res.status(400).json({ message: "kelas_ids is required" });
+        }
 
-        res.json(result.rows[0]);
-        console.log("FILE RECEIVED:", {
-            name: file?.originalname,
-            size: file?.size,
-            mime: file?.mimetype,
+        const inserted = [];
+
+        for (const kelasId of Array.isArray(kelas_ids) ? kelas_ids : [kelas_ids]) {
+            const result = await pool.query(
+                `INSERT INTO module_pembelajaran
+                (
+                    judul,
+                    video_url,
+                    deskripsi,
+                    guru_id,
+                    bank_soal_id,
+                    judul_penugasan,
+                    link_zoom,
+                    kelas_id,
+                    pass_code,
+                    file_pdf,
+                    file_name,
+                    file_mime
+                )
+                VALUES
+                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                RETURNING id`,
+                [
+                    judul,
+                    video_url,
+                    deskripsi,
+                    guru_id,
+                    bank_soal_id,
+                    judul_penugasan,
+                    link_zoom,
+                    kelasId,
+                    pass_code,
+                    file.buffer,       // BYTEA
+                    file.originalname,
+                    file.mimetype
+                ]
+            );
+
+            inserted.push(result.rows[0]);
+        }
+
+        console.log("FILE RECEIVED (ONCE):", {
+            name: file.originalname,
+            size: file.size,
+            mime: file.mimetype
+        });
+
+        res.json({
+            message: "Material saved successfully",
+            total_kelas: inserted.length
         });
 
     } catch (err) {
@@ -107,6 +121,7 @@ router.post("/", upload.single("file"), async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // UPDATE materi by id
 router.put("/:id", verifyToken, async (req, res) => {
