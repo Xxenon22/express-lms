@@ -23,19 +23,48 @@ const upload = multer({
 router.get("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
+
         const result = await pool.query(
-            `SELECT id, judul, video_url, deskripsi, guru_id,
-                    bank_soal_id, judul_penugasan, link_zoom,
-                    kelas_id, pass_code, created_at
-             FROM module_pembelajaran
-             WHERE guru_id = $1
-             ORDER BY created_at DESC`,
+            `
+            SELECT 
+                mp.id,
+                mp.judul,
+                mp.video_url,
+                mp.deskripsi,
+                mp.guru_id,
+                mp.bank_soal_id,
+                mp.judul_penugasan,
+                mp.link_zoom,
+                mp.kelas_id,
+                mp.pass_code,
+                mp.created_at,
+
+                -- ⬇️ NAMA KELAS
+                CONCAT(
+                    gl.grade_lvl, ' ',
+                    mj.nama_jurusan, ' ',
+                    nr.number, ' - ',
+                    dm.nama_mapel
+                ) AS kelas_nama
+
+            FROM module_pembelajaran mp
+            JOIN kelas k ON k.id = mp.kelas_id
+            JOIN rombel r ON k.rombel_id = r.id
+            JOIN number_rombel nr ON r.name_rombel = nr.id
+            JOIN grade_level gl ON r.grade_id = gl.id
+            JOIN jurusan mj ON r.jurusan_id = mj.id
+            JOIN db_mapel dm ON k.id_mapel = dm.id
+
+            WHERE mp.guru_id = $1
+            ORDER BY mp.created_at DESC
+            `,
             [guruId]
         );
+
         res.json(result.rows);
     } catch (err) {
-        res.status(500).json({ message: err.message });
-        console.error("error get the data module pembelajaran :", err)
+        console.error("GET module pembelajaran:", err);
+        res.status(500).json({ message: "Gagal ambil module" });
     }
 });
 
