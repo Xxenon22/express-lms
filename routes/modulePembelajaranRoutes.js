@@ -379,4 +379,102 @@ router.get("/kelas/:kelasId/history", verifyToken, async (req, res) => {
     res.json(result.rows);
 });
 
+router.put("/:id/kelas", verifyToken, async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+        const { id } = req.params;
+        const { kelas_ids } = req.body;
+
+        if (!Array.isArray(kelas_ids) || kelas_ids.length === 0) {
+            return res.status(400).json({
+                message: "kelas_ids harus berupa array dan tidak boleh kosong"
+            });
+        }
+
+        await client.query("BEGIN");
+
+        // 1️⃣ Ambil data materi lama (sebagai template)
+        const materiRes = await client.query(
+            `SELECT * FROM module_pembelajaran WHERE id = $1`,
+            [id]
+        );
+
+        if (!materiRes.rows.length) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ message: "Materi tidak ditemukan" });
+        }
+
+        const materi = materiRes.rows[0];
+
+        // 2️⃣ Hapus semua materi dengan judul & guru yang sama
+        await client.query(
+            `
+            DELETE FROM module_pembelajaran
+            WHERE judul = $1 AND guru_id = $2
+            `,
+            [materi.judul, materi.guru_id]
+        );
+
+        // 3️⃣ Insert ulang berdasarkan kelas baru
+        const inserted = [];
+
+        for (const kelasId of kelas_ids) {
+            const result = await client.query(
+                `
+                INSERT INTO module_pembelajaran
+                (
+                    judul,
+                    video_url,
+                    deskripsi,
+                    guru_id,
+                    bank_soal_id,
+                    judul_penugasan,
+                    link_zoom,
+                    kelas_id,
+                    pass_code,
+                    file_pdf,
+                    file_name,
+                    file_mime
+                )
+                VALUES
+                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                RETURNING *
+                `,
+                [
+                    materi.judul,
+                    materi.video_url,
+                    materi.deskripsi,
+                    materi.guru_id,
+                    materi.bank_soal_id,
+                    materi.judul_penugasan,
+                    materi.link_zoom,
+                    kelasId,
+                    materi.pass_code,
+                    materi.file_pdf,
+                    materi.file_name,
+                    materi.file_mime
+                ]
+            );
+
+            inserted.push(result.rows[0]);
+        }
+
+        await client.query("COMMIT");
+
+        res.json({
+            message: "Kelas materi berhasil diperbarui",
+            total: inserted.length,
+            data: inserted
+        });
+
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.error("UPDATE KELAS ERROR:", err);
+        res.status(500).json({ message: "Gagal update kelas materi" });
+    } finally {
+        client.release();
+    }
+});
+
 export default router;
