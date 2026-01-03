@@ -9,7 +9,7 @@ const router = express.Router();
 ===================================================== */
 router.get("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id;
+        const guruId = req.params.id;
 
         const result = await pool.query(`
       SELECT rr.*,
@@ -117,7 +117,6 @@ router.get("/:id", verifyToken, async (req, res) => {
 router.post("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
-
         const {
             kelas_id,
             rombel_id,
@@ -189,18 +188,20 @@ router.put("/:id", verifyToken, async (req, res) => {
 
         const result = await pool.query(`
         UPDATE rpk_refleksi
-        SET kelas_id = $1,
+        SET 
+            kelas_id = $1,
             rombel_id = $2,
-            hari_tanggal = $3,
-            waktu = $4,
-            refleksi_siswa = $5,
-            refleksi_guru = $6,
-            tngkt_pencapaian = $7,
-            desk_pencapaian = $8,
-            follow_up = $9,
-            pendampingan_siswa = $10,
-            keterangan = $11
-        WHERE id = $12
+            instructor = $3,
+            hari_tanggal = $4,
+            waktu = $5,
+            refleksi_siswa = $6,
+            refleksi_guru = $7,
+            tngkt_pencapaian = $8,
+            desk_pencapaian = $9,
+            follow_up = $10,
+            pendampingan_siswa = $11,
+            keterangan = $12
+        WHERE id = $13
         RETURNING *
     `, [
             kelas_id,
