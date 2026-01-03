@@ -275,7 +275,7 @@ router.get("/siswa/:id", verifyToken, async (req, res) => {
         const query = `
             SELECT 
                 mp.id,
-                mp.materi_uuid
+                mp.materi_uuid,
                 mp.judul_penugasan,
                 mp.kelas_id,
                 mp.bank_soal_id,
