@@ -3,7 +3,7 @@ import express from "express";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import multer from "multer";
-
+import { v4 as uuidv4 } from "uuid";
 const router = express.Router();
 
 
@@ -71,6 +71,7 @@ router.get("/", verifyToken, async (req, res) => {
 // POST tambah module
 router.post("/", verifyToken, upload.single("file"), async (req, res) => {
     try {
+        const materiUuid = uuidv4();
         const {
             judul,
             video_url,
@@ -99,6 +100,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
             const result = await pool.query(
                 `INSERT INTO module_pembelajaran
                 (
+                    materi_uuid,
                     judul,
                     video_url,
                     deskripsi,
@@ -116,6 +118,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
                 ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
                 RETURNING id`,
                 [
+                    materiUuid,
                     judul,
                     video_url,
                     deskripsi,
@@ -276,6 +279,36 @@ router.get("/siswa/:id", async (req, res) => {
 });
 
 
+// ✅ PDF HARUS DI ATAS
+router.get("/:id/pdf", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
+            [id]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        const file = result.rows[0];
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="${file.file_name}"`
+        );
+
+        res.send(file.file_pdf);
+    } catch (err) {
+        console.error("PDF error:", err);
+        res.status(500).json({ message: "Gagal load PDF" });
+    }
+});
+
+
 // GET MATERI BY ID
 router.get("/:id", async (req, res) => {
     try {
@@ -352,35 +385,6 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
     } catch (err) {
         console.error("PDF UPDATE ERROR:", err);
         res.status(500).json({ message: "Gagal update PDF" });
-    }
-});
-
-// ✅ PDF HARUS DI ATAS
-router.get("/:id/pdf", async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const result = await pool.query(
-            "SELECT file_pdf, file_name, file_mime FROM module_pembelajaran WHERE id=$1",
-            [id]
-        );
-
-        if (!result.rows.length) {
-            return res.status(404).json({ message: "File not found" });
-        }
-
-        const file = result.rows[0];
-
-        res.setHeader("Content-Type", file.file_mime);
-        res.setHeader(
-            "Content-Disposition",
-            `inline; filename="${file.file_name}"`
-        );
-
-        res.send(file.file_pdf);
-    } catch (err) {
-        console.error("PDF error:", err);
-        res.status(500).json({ message: "Gagal load PDF" });
     }
 });
 
