@@ -175,7 +175,7 @@ router.put("/:id", verifyToken, async (req, res) => {
             kelas_id,
             rombel_id,
             hari_tanggal,
-            instructor,
+            instructor = null,
             waktu,
             refleksi_siswa,
             refleksi_guru,
