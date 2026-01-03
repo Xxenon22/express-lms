@@ -33,9 +33,6 @@ const upload = multer({
 /* =========================
    UPLOAD FILE JAWABAN (DB)
 ========================= */
-/* =========================
-   UPLOAD FILE JAWABAN (DB)
-========================= */
 router.post(
     "/upload-multiple",
     verifyToken,
@@ -61,8 +58,8 @@ router.post(
                     `
                     INSERT INTO jawaban_siswa
                         (user_id, soal_id, bank_soal_id, materi_id,
-                         file_data, file_mime, file_name, created_at)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+                         file_data, file_mime, file_name, file_size, created_at)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
                     ON CONFLICT (user_id, soal_id, bank_soal_id)
                     DO UPDATE SET
                         file_data = EXCLUDED.file_data,
@@ -79,6 +76,7 @@ router.post(
                         file.buffer,
                         file.mimetype,
                         file.originalname,
+                        file.buffer.length,
                     ]
                 );
 
@@ -100,6 +98,7 @@ router.post(
                 id: row.id,
                 nama_file: row.file_name,
                 mime: row.file_mime,
+                file_size: row.file_size,
                 url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                 created_at: row.created_at,
             }));
@@ -409,7 +408,7 @@ router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
 
         const result = await pool.query(
             `
-            SELECT id, file_name, file_mime, created_at
+            SELECT id, file_name, file_mime, file_size, created_at
             FROM jawaban_siswa
             WHERE bank_soal_id = $1
               AND user_id = $2
