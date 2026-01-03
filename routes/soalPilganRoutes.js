@@ -65,6 +65,22 @@ router.post("/", verifyToken, async (req, res) => {
     }
 });
 
+// untuk menampilkan gambar soal
+router.get("/gambar/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const result = await pool.query(
+        "SELECT gambar, gambar_mimetype FROM soal_pilgan WHERE id = $1",
+        [id]
+    );
+
+    if (!result.rows.length || !result.rows[0].gambar) {
+        return res.status(404).end();
+    }
+
+    res.setHeader("Content-Type", result.rows[0].gambar_mimetype);
+    res.send(result.rows[0].gambar);
+});
 
 // Ambil semua soal berdasarkan bank_soal_id (PG + Essai)
 router.get("/:id", verifyToken, async (req, res) => {
@@ -195,23 +211,6 @@ router.put("/:bank_soal_id", verifyToken, async (req, res) => {
     } finally {
         client.release();
     }
-});
-
-// untuk menampilkan gambar soal
-router.get("/gambar/:id", async (req, res) => {
-    const { id } = req.params;
-
-    const result = await pool.query(
-        "SELECT gambar, gambar_mimetype FROM soal_pilgan WHERE id = $1",
-        [id]
-    );
-
-    if (!result.rows.length || !result.rows[0].gambar) {
-        return res.status(404).end();
-    }
-
-    res.setHeader("Content-Type", result.rows[0].gambar_mimetype);
-    res.send(result.rows[0].gambar);
 });
 
 router.get("/soal-siswa/:id", verifyToken, async (req, res) => {

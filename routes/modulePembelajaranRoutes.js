@@ -268,13 +268,14 @@ router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
 
 
 // GET semua materi untuk siswa berdasarkan kelas yang diikuti
-router.get("/siswa/:id", async (req, res) => {
+router.get("/siswa/:id", verifyToken, async (req, res) => {
     const siswaId = req.params.id;
 
     try {
         const query = `
             SELECT 
                 mp.id,
+                mp.materi_uuid
                 mp.judul_penugasan,
                 mp.kelas_id,
                 mp.bank_soal_id,
@@ -338,7 +339,7 @@ router.get("/:id/pdf", async (req, res) => {
 
 
 // GET MATERI BY ID
-router.get("/:id", async (req, res) => {
+router.get("/by-id/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
@@ -361,7 +362,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Ambil 1 module pembelajaran berdasarkan soalId
-router.get("/:soalId", async (req, res) => {
+router.get("/by-soal/:soalId", async (req, res) => {
     try {
         const { soalId } = req.params;
         const result = await pool.query(
