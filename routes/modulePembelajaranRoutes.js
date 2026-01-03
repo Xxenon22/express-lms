@@ -457,6 +457,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
                 `
                 INSERT INTO module_pembelajaran
                 (
+                    mater_uuid,
                     judul,
                     video_url,
                     deskripsi,
@@ -471,10 +472,11 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
                     file_mime
                 )
                 VALUES
-                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
                 RETURNING *
                 `,
                 [
+                    materi.materi_uuid,
                     materi.judul,
                     materi.video_url,
                     materi.deskripsi,
