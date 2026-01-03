@@ -274,32 +274,25 @@ router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
     try {
         const query = `
             SELECT 
-                mp.id,
-                mp.materi_uuid,
-                mp.judul_penugasan,
-                mp.kelas_id,
-                mp.bank_soal_id,
-                mp.created_at,
-                r.name_rombel,
-                m.nama_mapel,
-                p.pdf_selesai,
-                p.video_selesai,
-                j.nilai,
-                u.photo_profile AS guru_foto
-            FROM module_pembelajaran mp
-            INNER JOIN kelas_diikuti kd 
-                ON kd.kelas_id = mp.kelas_id
-            INNER JOIN kelas k ON k.id = mp.kelas_id
-            INNER JOIN rombel r ON r.id = k.rombel_id
-            INNER JOIN db_mapel m ON m.id = k.id_mapel
-            LEFT JOIN users u ON u.id = mp.guru_id
-            LEFT JOIN progress_materi p 
-                ON p.materi_id = mp.id AND p.user_id = $1
-            LEFT JOIN jawaban_siswa j 
-                ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
-            WHERE kd.user_id = $1
-              AND mp.kelas_id = $2
-            ORDER BY mp.created_at DESC
+            mp.id,
+            mp.materi_uuid,
+            mp.judul,
+            mp.video_url,
+            mp.deskripsi,
+            mp.judul_penugasan,
+            mp.link_zoom,
+            mp.bank_soal_id,
+            mp.created_at,
+            p.pdf_selesai,
+            p.video_selesai,
+            u.photo_profile AS guru_foto
+        FROM module_pembelajaran mp
+        LEFT JOIN progress_materi p 
+            ON p.materi_id = mp.id AND p.user_id = $1
+        LEFT JOIN users u ON u.id = mp.guru_id
+        WHERE mp.kelas_id = $2
+        ORDER BY mp.created_at DESC
+
         `;
 
         const { rows } = await pool.query(query, [userId, kelasId]);
