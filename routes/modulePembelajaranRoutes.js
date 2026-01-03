@@ -66,7 +66,7 @@ router.get("/", verifyToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error("GET module pembelajaran:", err);
-        res.status(500).json({ message: "Gagal ambil module" });
+        res.status(500).json({ message: "failed to retrieve module" });
     }
 });
 
@@ -184,7 +184,7 @@ router.put("/:id", verifyToken, async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         console.error("FAST UPDATE ERROR:", err);
-        res.status(500).json({ message: "Gagal update materi" });
+        res.status(500).json({ message: "failed to update material" });
     }
 });
 
@@ -234,7 +234,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         await pool.query("DELETE FROM module_pembelajaran WHERE id=$1", [id]);
-        res.json({ message: "Materi berhasil dihapus" });
+        res.json({ message: "Material successfully deleted" });
     } catch (error) {
         console.error("DELETE /module-pembelajaran/:id", error);
         res.status(500).json({ message: "Failed to delted material" });
@@ -257,12 +257,12 @@ router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
         );
 
         res.json({
-            message: "Materi berhasil dihapus dari semua kelas",
+            message: "Material successfully removed from all classes",
             deleted: result.rowCount
         });
     } catch (error) {
         console.error("DELETE BY UUID ERROR:", error);
-        res.status(500).json({ message: "Gagal menghapus materi" });
+        res.status(500).json({ message: "Failed to delete material" });
     }
 });
 
@@ -332,7 +332,7 @@ router.get("/:id/pdf", async (req, res) => {
         res.send(file.file_pdf);
     } catch (err) {
         console.error("PDF error:", err);
-        res.status(500).json({ message: "Gagal load PDF" });
+        res.status(500).json({ message: "failed to load PDF" });
     }
 });
 
@@ -412,7 +412,7 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
         res.json({ message: "PDF updated successfully" });
     } catch (err) {
         console.error("PDF UPDATE ERROR:", err);
-        res.status(500).json({ message: "Gagal update PDF" });
+        res.status(500).json({ message: "failed to update PDF" });
     }
 });
 
@@ -447,7 +447,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
 
         if (!Array.isArray(kelas_ids) || kelas_ids.length === 0) {
             return res.status(400).json({
-                message: "kelas_ids harus berupa array dan tidak boleh kosong"
+                message: "kelas_ids must be an array and cannot be empty"
             });
         }
 
@@ -461,7 +461,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
 
         if (!materiRes.rows.length) {
             await client.query("ROLLBACK");
-            return res.status(404).json({ message: "Materi tidak ditemukan" });
+            return res.status(404).json({ message: "Material not found" });
         }
 
         const materi = materiRes.rows[0];
@@ -524,7 +524,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
         await client.query("COMMIT");
 
         res.json({
-            message: "Kelas materi berhasil diperbarui",
+            message: "Material class updated successfully",
             total: inserted.length,
             data: inserted
         });
@@ -532,7 +532,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
     } catch (err) {
         await client.query("ROLLBACK");
         console.error("UPDATE KELAS ERROR:", err);
-        res.status(500).json({ message: "Gagal update kelas materi" });
+        res.status(500).json({ message: "Failed to update material class" });
     } finally {
         client.release();
     }

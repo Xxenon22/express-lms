@@ -4,7 +4,7 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Tambah soal (bisa banyak sekaligus)
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
     try {
         const { bank_soal_id, soal_list } = req.body;
         const guru_id = req.users.id;
@@ -125,7 +125,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 });
 
 // Update soal pilgan berdasarkan id
-router.put("/:bank_soal_id", async (req, res) => {
+router.put("/:bank_soal_id", verifyToken, async (req, res) => {
     const client = await pool.connect();
     try {
         const { bank_soal_id } = req.params;
