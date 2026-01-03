@@ -9,7 +9,7 @@ const router = express.Router();
 ===================================================== */
 router.get("/", verifyToken, async (req, res) => {
     try {
-        const guruId = req.params.id;
+        const guruId = req.users.id;
 
         const result = await pool.query(`
       SELECT rr.*,
