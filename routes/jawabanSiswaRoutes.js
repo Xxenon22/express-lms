@@ -433,4 +433,103 @@ router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
     }
 });
 
+/* =========================
+   DELETE FILE JAWABAN SISWA
+========================= */
+router.delete("/file/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.users.id;
+
+        const result = await pool.query(
+            `
+            DELETE FROM jawaban_siswa
+            WHERE id = $1 AND user_id = $2
+            RETURNING id
+            `,
+            [id, userId]
+        );
+
+        if (!result.rowCount) {
+            return res.status(404).json({
+                message: "File not found or not authorized"
+            });
+        }
+
+        res.json({
+            message: "File deleted successfully",
+            id
+        });
+    } catch (err) {
+        console.error("Delete file error:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/* =========================
+   UPDATE FILE JAWABAN SISWA
+========================= */
+router.put(
+    "/file/:id",
+    verifyToken,
+    upload.single("file"),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const userId = req.users.id;
+
+            if (!req.file) {
+                return res.status(400).json({ message: "File is required" });
+            }
+
+            const file = req.file;
+
+            const result = await pool.query(
+                `
+                UPDATE jawaban_siswa
+                SET
+                    file_data = $1,
+                    file_mime = $2,
+                    file_name = $3,
+                    file_size = $4,
+                    created_at = NOW()
+                WHERE id = $5 AND user_id = $6
+                RETURNING *
+                `,
+                [
+                    file.buffer,
+                    file.mimetype,
+                    file.originalname,
+                    file.buffer.length,
+                    id,
+                    userId
+                ]
+            );
+
+            if (!result.rowCount) {
+                return res.status(404).json({
+                    message: "File not found or not authorized"
+                });
+            }
+
+            const row = result.rows[0];
+
+            res.json({
+                message: "File updated successfully",
+                file: {
+                    id: row.id,
+                    file_name: row.file_name,
+                    file_mime: row.file_mime,
+                    url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                    created_at: row.created_at
+                }
+            });
+
+        } catch (err) {
+            console.error("Update file error:", err);
+            res.status(500).json({ message: err.message });
+        }
+    }
+);
+
 export default router;
