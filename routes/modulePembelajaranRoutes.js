@@ -241,6 +241,32 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+// DELETE materi by materi_uuid (hapus SEMUA kelas)
+router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
+    try {
+        const { materiUuid } = req.params;
+        const guruId = req.users.id;
+
+        const result = await pool.query(
+            `
+            DELETE FROM module_pembelajaran
+            WHERE materi_uuid = $1
+              AND guru_id = $2
+            `,
+            [materiUuid, guruId]
+        );
+
+        res.json({
+            message: "Materi berhasil dihapus dari semua kelas",
+            deleted: result.rowCount
+        });
+    } catch (error) {
+        console.error("DELETE BY UUID ERROR:", error);
+        res.status(500).json({ message: "Gagal menghapus materi" });
+    }
+});
+
+
 // GET semua materi untuk siswa berdasarkan kelas yang diikuti
 router.get("/siswa/:id", async (req, res) => {
     const siswaId = req.params.id;
