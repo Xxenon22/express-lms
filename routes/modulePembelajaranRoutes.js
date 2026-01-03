@@ -457,7 +457,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
                 `
                 INSERT INTO module_pembelajaran
                 (
-                    mater_uuid,
+                    materi_uuid,
                     judul,
                     video_url,
                     deskripsi,
