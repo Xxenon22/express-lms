@@ -75,7 +75,7 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
 /* =====================================================
    GET BY ID
 ===================================================== */
-router.get("/:id", async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -97,6 +97,7 @@ router.get("/:id", async (req, res) => {
       LEFT JOIN grade_level g ON rb.grade_id = g.id
       LEFT JOIN jurusan j ON rb.jurusan_id = j.id
       WHERE rr.id = $1
+      LIMIT 1
     `, [id]);
 
         if (!result.rows.length) {
