@@ -189,6 +189,7 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
     try {
         const { kelasId } = req.params;
         const userId = req.users.id;
+        const guruId = req.users.id;   // guru (materi)
 
         const result = await pool.query(
             `
@@ -213,7 +214,7 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
             AND m.guru_id = $3
             ORDER BY m.created_at DESC
             `,
-            [kelasId, userId]
+            [kelasId, userId, guruId]
         );
 
         res.json(result.rows);
