@@ -187,21 +187,20 @@ router.put("/:id", verifyToken, async (req, res) => {
         } = req.body;
 
         const result = await pool.query(`
-      UPDATE rpk_refleksi
-      SET kelas_id = $1,
-          rombel_id = $2,
-          hari_tanggal = $3,
-          instructor = $4,
-          waktu = $5,
-          refleksi_siswa = $6,
-          refleksi_guru = $7,
-          tngkt_pencapaian = $8,
-          desk_pencapaian = $9,
-          follow_up = $10,
-          pendampingan_siswa = $11,
-          keterangan = $12
-      WHERE id = $13
-      RETURNING *
+        UPDATE rpk_refleksi
+        SET kelas_id = $1,
+            rombel_id = $2,
+            hari_tanggal = $3,
+            waktu = $4,
+            refleksi_siswa = $5,
+            refleksi_guru = $6,
+            tngkt_pencapaian = $7,
+            desk_pencapaian = $8,
+            follow_up = $9,
+            pendampingan_siswa = $10,
+            keterangan = $11
+        WHERE id = $12
+        RETURNING *
     `, [
             kelas_id,
             rombel_id,
