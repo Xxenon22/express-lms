@@ -56,7 +56,7 @@ router.get("/", verifyToken, async (req, res) => {
             LEFT JOIN grade_level gl ON r.grade_id = gl.id
             LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
             LEFT JOIN db_mapel dm ON k.id_mapel = dm.id
-            
+
             WHERE mp.guru_id = $1
             ORDER BY mp.created_at DESC
             `,
@@ -117,7 +117,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
                     file_mime
                 )
                 VALUES
-                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
                 RETURNING id`,
                 [
                     materiUuid,
