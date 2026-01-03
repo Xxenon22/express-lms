@@ -39,22 +39,24 @@ router.get("/", verifyToken, async (req, res) => {
                 mp.pass_code,
                 mp.created_at,
 
-                -- ⬇️ NAMA KELAS
                 CONCAT(
-                    gl.grade_lvl, ' ',
-                    mj.nama_jurusan, ' ',
-                    nr.number, ' - ',
-                    dm.nama_mapel
+                    COALESCE(gl.grade_lvl, ''),
+                    ' ',
+                    COALESCE(mj.nama_jurusan, ''),
+                    ' ',
+                    COALESCE(nr.number, ''),
+                    ' - ',
+                    COALESCE(dm.nama_mapel, '')
                 ) AS kelas_nama
 
             FROM module_pembelajaran mp
-            JOIN kelas k ON k.id = mp.kelas_id
-            JOIN rombel r ON k.rombel_id = r.id
-            JOIN number_rombel nr ON r.name_rombel = nr.id
-            JOIN grade_level gl ON r.grade_id = gl.id
-            JOIN jurusan mj ON r.jurusan_id = mj.id
-            JOIN db_mapel dm ON k.id_mapel = dm.id
-
+            LEFT JOIN kelas k ON k.id = mp.kelas_id
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN grade_level gl ON r.grade_id = gl.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+            LEFT JOIN db_mapel dm ON k.id_mapel = dm.id
+            
             WHERE mp.guru_id = $1
             ORDER BY mp.created_at DESC
             `,
