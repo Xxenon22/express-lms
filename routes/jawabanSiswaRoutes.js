@@ -355,8 +355,18 @@ router.get("/file-db/:id", async (req, res) => {
 
         const file = result.rows[0];
 
+        // ✅ WAJIB UNTUK FETCH
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+        // ✅ PAKSA DOWNLOAD
         res.setHeader("Content-Type", file.file_mime);
-        res.setHeader("Content-Disposition", "inline");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${file.file_name}"`
+        );
+
         res.send(file.file_data);
     } catch (err) {
         console.error(err);
