@@ -188,41 +188,38 @@ router.put("/:id", verifyToken, async (req, res) => {
 router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
     try {
         const { kelasId } = req.params;
-        const userId = req.users.id; // ambil dari token user yang login
-
-        // const result = await pool.query(
-        //     `SELECT 
-        //         m.*, 
-        //         b.id AS bank_soal_id, 
-        //         b.judul_penugasan AS bank_soal_nama,
-        //         u.photo_profile AS guru_foto
-        //         FROM module_pembelajaran m 
-        //      LEFT JOIN bank_soal b ON m.bank_soal_id = b.id
-        //      LEFT JOIN users u ON m.guru_id = u.id
-        //      LEFT JOIN progress_materi jm ON jm.materi_id = m.id AND jm.user_id = $2
-        //      WHERE m.kelas_id = $1
-        //        AND (jm.status_selesai IS NULL OR jm.status_selesai = false)
-        //      ORDER BY m.created_at DESC`,
-        //     [kelasId, userId]
-        // );
+        const userId = req.users.id;
 
         const result = await pool.query(
-            `SELECT 
-                m.*,
+            `
+            SELECT 
+                m.id,
+                m.judul,
+                m.video_url,
+                m.deskripsi,
+                m.guru_id,
+                m.bank_soal_id,
+                m.judul_penugasan,
+                m.link_zoom,
+                m.kelas_id,
+                m.pass_code,
+                m.created_at,
                 jm.status_selesai
             FROM module_pembelajaran m
             LEFT JOIN progress_materi jm 
                 ON jm.materi_id = m.id 
-            AND jm.user_id = $2
+               AND jm.user_id = $2
             WHERE m.kelas_id = $1
-            ORDER BY m.created_at DESC`,
+            AND m.guru_id = $3
+            ORDER BY m.created_at DESC
+            `,
             [kelasId, userId]
         );
 
-        res.json(result.rows || []);
+        res.json(result.rows);
     } catch (error) {
         console.error("GET /module-pembelajaran/kelas/:kelasId", error);
-        res.status(500).json({ message: "Gagal ambil modul berdasarkan kelas" });
+        res.status(500).json({ message: "Failed retrieve Module by id" });
     }
 });
 
