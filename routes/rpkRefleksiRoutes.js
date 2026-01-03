@@ -132,6 +132,8 @@ router.post("/", verifyToken, async (req, res) => {
             keterangan
         } = req.body;
 
+        console.log("UPDATE BODY:", req.body);
+
         const result = await pool.query(`
       INSERT INTO rpk_refleksi (
         kelas_id, rombel_id, hari_tanggal, instructor, waktu,
@@ -172,7 +174,6 @@ router.put("/:id", verifyToken, async (req, res) => {
         const { id } = req.params;
 
         const {
-            kelas_id,
             rombel_id,
             hari_tanggal,
             instructor = null,
@@ -187,27 +188,25 @@ router.put("/:id", verifyToken, async (req, res) => {
         } = req.body;
 
         const result = await pool.query(`
-        UPDATE rpk_refleksi
-        SET 
-            kelas_id = $1,
-            rombel_id = $2,
-            instructor = $3,
-            hari_tanggal = $4,
-            waktu = $5,
-            refleksi_siswa = $6,
-            refleksi_guru = $7,
-            tngkt_pencapaian = $8,
-            desk_pencapaian = $9,
-            follow_up = $10,
-            pendampingan_siswa = $11,
-            keterangan = $12
-        WHERE id = $13
-        RETURNING *
-    `, [
-            kelas_id,
+            UPDATE rpk_refleksi
+            SET 
+                rombel_id = $1,
+                instructor = $2,
+                hari_tanggal = $3,
+                waktu = $4,
+                refleksi_siswa = $5,
+                refleksi_guru = $6,
+                tngkt_pencapaian = $7,
+                desk_pencapaian = $8,
+                follow_up = $9,
+                pendampingan_siswa = $10,
+                keterangan = $11
+            WHERE id = $12
+            RETURNING *
+        `, [
             rombel_id,
-            hari_tanggal,
             instructor,
+            hari_tanggal,
             waktu,
             refleksi_siswa,
             refleksi_guru,
@@ -220,9 +219,8 @@ router.put("/:id", verifyToken, async (req, res) => {
         ]);
 
         res.json(result.rows[0]);
-        console.log("UPDATE PAYLOAD:", req.body);
-
     } catch (err) {
+        console.error("UPDATE rpk_refleksi error:", err);
         res.status(500).json({ error: err.message });
     }
 });
