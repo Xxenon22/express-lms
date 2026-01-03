@@ -268,8 +268,8 @@ router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
 
 
 // GET semua materi untuk siswa berdasarkan kelas yang diikuti
-router.get("/siswa/:id", verifyToken, async (req, res) => {
-    const siswaId = req.params.id;
+router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
+    const { userId, kelasId } = req.params;
 
     try {
         const query = `
@@ -287,23 +287,26 @@ router.get("/siswa/:id", verifyToken, async (req, res) => {
                 j.nilai,
                 u.photo_profile AS guru_foto
             FROM module_pembelajaran mp
+            INNER JOIN kelas_diikuti kd 
+                ON kd.kelas_id = mp.kelas_id
             INNER JOIN kelas k ON k.id = mp.kelas_id
             INNER JOIN rombel r ON r.id = k.rombel_id
             INNER JOIN db_mapel m ON m.id = k.id_mapel
-            INNER JOIN kelas_diikuti kd ON kd.kelas_id = k.id
             LEFT JOIN users u ON u.id = mp.guru_id
-            LEFT JOIN progress_materi p ON p.materi_id = mp.id AND p.user_id = $1
+            LEFT JOIN progress_materi p 
+                ON p.materi_id = mp.id AND p.user_id = $1
             LEFT JOIN jawaban_siswa j 
                 ON j.bank_soal_id = mp.bank_soal_id AND j.user_id = $1
             WHERE kd.user_id = $1
+              AND mp.kelas_id = $2
             ORDER BY mp.created_at DESC
         `;
 
-        const { rows } = await pool.query(query, [siswaId]);
+        const { rows } = await pool.query(query, [userId, kelasId]);
         res.json(rows);
-    } catch (error) {
-        console.error("Error fetch materi siswa:", error);
-        res.status(500).json({ error: "Internal server error" });
+    } catch (err) {
+        console.error("Error fetch materi siswa per kelas:", err);
+        res.status(500).json({ message: "Failed fetch materi" });
     }
 });
 
