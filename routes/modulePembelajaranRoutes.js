@@ -1,4 +1,3 @@
-// routes/moduleRoutes.js
 import express from "express";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
@@ -28,6 +27,7 @@ router.get("/", verifyToken, async (req, res) => {
             `
             SELECT 
                 mp.id,
+                mp.materi_uuid,
                 mp.judul,
                 mp.video_url,
                 mp.deskripsi,
