@@ -329,7 +329,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
 
             FROM module_pembelajaran mp
 
-            JOIN kelas ks
+            JOIN kelas_diikuti ks
                 ON ks.kelas_id = mp.kelas_id
                AND ks.user_id = $1
 
