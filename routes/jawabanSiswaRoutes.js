@@ -339,13 +339,12 @@ router.get("/all-with-soal", async (req, res) => {
 router.get("/file-db/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const isDownload = req.query.download === "1";
 
         const result = await pool.query(
-            `
-            SELECT file_data, file_mime, file_name
-            FROM jawaban_siswa
-            WHERE id = $1
-            `,
+            `SELECT file_data, file_mime, file_name
+             FROM jawaban_siswa
+             WHERE id = $1`,
             [id]
         );
 
@@ -355,25 +354,30 @@ router.get("/file-db/:id", async (req, res) => {
 
         const file = result.rows[0];
 
-        // ✅ WAJIB UNTUK FETCH
-        // res.setHeader("Access-Control-Allow-Origin", "*");
-        // res.setHeader("Access-Control-Allow-Methods", "GET");
-        // res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        // CORS (aman)
+        res.setHeader("Access-Control-Allow-Origin", "*");
 
-        // ✅ PAKSA DOWNLOAD
         res.setHeader("Content-Type", file.file_mime);
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="${file.file_name}"`
-        );
 
-        return res.end(file.file_data);
+        // 🔥 INI KUNCINYA
+        if (isDownload) {
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${file.file_name}"`
+            );
+        } else {
+            res.setHeader(
+                "Content-Disposition",
+                `inline; filename="${file.file_name}"`
+            );
+        }
+
+        res.send(file.file_data);
     } catch (err) {
         console.error(err);
         res.status(500).send("Failed to load file");
     }
 });
-
 
 /* =========================
    REVIEW JAWABAN SISWA
