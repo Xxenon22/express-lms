@@ -364,7 +364,7 @@ router.get("/file-db/:id", async (req, res) => {
         res.setHeader("Content-Type", file.file_mime);
         res.setHeader(
             "Content-Disposition",
-            `inline; filename="${file.file_name}"`
+            `attachment; filename="${file.original_name}"`
         );
 
         res.send(file.file_data);
