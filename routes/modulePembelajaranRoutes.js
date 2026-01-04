@@ -329,10 +329,9 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
 
             FROM module_pembelajaran mp
 
-            -- ✅ siswa HARUS terdaftar di kelas ini
-            JOIN kelas ks 
-                ON ks.kelas_id = mp.kelas_id
-               AND ks.user_id = $1
+            JOIN kelas_siswa ks
+                ON ks.<<KOL0M_KELAS>> = mp.kelas_id
+               AND ks.<<K0L0M_USER>> = $1
 
             LEFT JOIN progress_materi p
                 ON p.materi_id = mp.id
@@ -358,7 +357,6 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Failed fetch materi siswa" });
     }
 });
-
 
 
 // ✅ PDF HARUS DI ATAS
