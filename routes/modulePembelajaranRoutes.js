@@ -303,6 +303,63 @@ router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
     }
 });
 
+// GET semua materi untuk siswa (HANYA dari kelas yang diikuti)
+router.get("/siswa/:userId", verifyToken, async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const query = `
+            SELECT DISTINCT
+                mp.id,
+                mp.materi_uuid,
+                mp.judul,
+                mp.video_url,
+                mp.deskripsi,
+                mp.judul_penugasan,
+                mp.link_zoom,
+                mp.bank_soal_id,
+                mp.kelas_id,
+                mp.created_at,
+
+                p.pdf_selesai,
+                p.video_selesai,
+
+                dm.nama_mapel,
+                u.photo_profile AS guru_foto
+
+            FROM module_pembelajaran mp
+
+            -- ✅ siswa HARUS terdaftar di kelas ini
+            JOIN kelas_siswa ks 
+                ON ks.kelas_id = mp.kelas_id
+               AND ks.user_id = $1
+
+            LEFT JOIN progress_materi p
+                ON p.materi_id = mp.id
+               AND p.user_id = $1
+
+            LEFT JOIN users u 
+                ON u.id = mp.guru_id
+
+            LEFT JOIN kelas k 
+                ON k.id = mp.kelas_id
+
+            LEFT JOIN db_mapel dm 
+                ON dm.id = k.id_mapel
+
+            ORDER BY mp.created_at DESC
+        `;
+
+        const { rows } = await pool.query(query, [userId]);
+        res.json(rows);
+
+    } catch (err) {
+        console.error("Error fetch materi siswa:", err);
+        res.status(500).json({ message: "Failed fetch materi siswa" });
+    }
+});
+
+
 
 // ✅ PDF HARUS DI ATAS
 router.get("/:id/pdf", async (req, res) => {
