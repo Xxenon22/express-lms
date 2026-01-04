@@ -46,7 +46,7 @@ router.get("/:userId", verifyToken, async (req, res) => {
             `SELECT
                 p.*,
                 u.photo_profile AS user_photo
-                FROM progress_materi 
+                FROM progress_materi p 
                 JOIN users u ON p.user_id = u.id
              WHERE user_id = $1`,
             [userId]
