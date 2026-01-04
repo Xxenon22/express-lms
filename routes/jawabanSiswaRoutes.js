@@ -411,7 +411,7 @@ router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
 /* =========================
    FILE BY BANK SOAL
 ========================= */
-router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
+router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) => {
     try {
         const { bank_soal_id } = req.params;
         const userId = req.users.id;
@@ -478,7 +478,7 @@ router.get(
 );
 
 // FILE BY BANK SOAL (GURU)
-router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
+router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) => {
     try {
         const { bank_soal_id } = req.params;
 
