@@ -367,7 +367,7 @@ router.get("/file-db/:id", async (req, res) => {
             `attachment; filename="${file.file_name}"`
         );
 
-        res.send(file.file_data);
+        return res.end(file.file_data);
     } catch (err) {
         console.error(err);
         res.status(500).send("Failed to load file");
