@@ -99,7 +99,7 @@ router.post(
                 nama_file: row.file_name,
                 mime: row.file_mime,
                 file_size: row.file_size,
-                url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                 created_at: row.created_at,
             }));
 
@@ -432,7 +432,7 @@ router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) =
             id: row.id,
             file_name: row.file_name,
             file_mime: row.file_mime,
-            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
             created_at: row.created_at,
         }));
 
@@ -470,7 +470,7 @@ router.get(
                 soal_id: row.soal_id,
                 nama_file: row.file_name,
                 mime: row.file_mime,
-                url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                 created_at: row.created_at,
             }))
         );
@@ -498,7 +498,7 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
             user_id: row.user_id,
             file_name: row.file_name,
             file_mime: row.file_mime,
-            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
             created_at: row.created_at,
         }));
 
@@ -597,7 +597,7 @@ router.put(
                     id: row.id,
                     file_name: row.file_name,
                     file_mime: row.file_mime,
-                    url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                    url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
                     created_at: row.created_at
                 }
             });
