@@ -364,7 +364,7 @@ router.get("/file-db/:id", async (req, res) => {
         res.setHeader("Content-Type", file.file_mime);
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename="${file.file_name}"`
+            `inline; filename="${file.file_name}"`
         );
 
         res.send(file.file_data);
@@ -442,6 +442,73 @@ router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Failed to fetch files" });
     }
 });
+
+// GET FILE JAWABAN PER SOAL
+router.get(
+    "/files-by-soal/:bank_soal_id/:soal_id",
+    verifyToken,
+    async (req, res) => {
+        const { bank_soal_id, soal_id } = req.params;
+        const userId = req.users.id;
+
+        const result = await pool.query(
+            `
+      SELECT id, soal_id, file_name, file_mime, created_at
+      FROM jawaban_siswa
+      WHERE bank_soal_id = $1
+        AND soal_id = $2
+        AND user_id = $3
+        AND file_data IS NOT NULL
+      ORDER BY created_at DESC
+      `,
+            [bank_soal_id, soal_id, userId]
+        );
+
+        res.json(
+            result.rows.map(row => ({
+                id: row.id,
+                soal_id: row.soal_id,
+                nama_file: row.file_name,
+                mime: row.file_mime,
+                url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                created_at: row.created_at,
+            }))
+        );
+    }
+);
+
+// FILE BY BANK SOAL (GURU)
+router.get("/files-by-bank/:bank_soal_id", verifyToken, async (req, res) => {
+    try {
+        const { bank_soal_id } = req.params;
+
+        const result = await pool.query(
+            `
+            SELECT id, user_id, file_name, file_mime, file_size, created_at
+            FROM jawaban_siswa
+            WHERE bank_soal_id = $1
+              AND file_data IS NOT NULL
+            ORDER BY created_at DESC
+            `,
+            [bank_soal_id]
+        );
+
+        const files = result.rows.map(row => ({
+            id: row.id,
+            user_id: row.user_id,
+            file_name: row.file_name,
+            file_mime: row.file_mime,
+            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            created_at: row.created_at,
+        }));
+
+        res.json(files);
+    } catch (err) {
+        console.error("Fetch files error:", err);
+        res.status(500).json({ message: "Failed to fetch files" });
+    }
+});
+
 
 /* =========================
    DELETE FILE JAWABAN SISWA
