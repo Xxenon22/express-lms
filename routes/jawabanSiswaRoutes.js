@@ -356,9 +356,9 @@ router.get("/file-db/:id", async (req, res) => {
         const file = result.rows[0];
 
         // ✅ WAJIB UNTUK FETCH
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        // res.setHeader("Access-Control-Allow-Origin", "*");
+        // res.setHeader("Access-Control-Allow-Methods", "GET");
+        // res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
         // ✅ PAKSA DOWNLOAD
         res.setHeader("Content-Type", file.file_mime);
