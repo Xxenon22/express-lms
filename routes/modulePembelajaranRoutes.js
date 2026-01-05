@@ -282,6 +282,7 @@ router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
             mp.judul_penugasan,
             mp.link_zoom,
             mp.bank_soal_id,
+            mp.guru_id,
             mp.created_at,
             p.pdf_selesai,
             p.video_selesai,
