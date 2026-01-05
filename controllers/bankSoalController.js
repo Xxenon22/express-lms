@@ -14,12 +14,18 @@ export const getPenugasan = [
                     bs.judul_penugasan,
                     bs.created_at,
 
-                    ARRAY_AGG(DISTINCT CONCAT(
-                        gl.grade_lvl, ' ',
-                        mj.nama_jurusan, ' ',
-                        nr.number, ' - ',
-                        dm.nama_mapel
-                    )) FILTER (WHERE k.id IS NOT NULL) AS kelas_list
+                    COALESCE(
+                        STRING_AGG(
+                            DISTINCT CONCAT(
+                                gl.grade_lvl, ' ',
+                                mj.nama_jurusan, ' ',
+                                nr.number, ' - ',
+                                dm.nama_mapel
+                            ),
+                            ', '
+                        ),
+                        '-'
+                    ) AS kelas_list
 
                 FROM bank_soal bs
 
