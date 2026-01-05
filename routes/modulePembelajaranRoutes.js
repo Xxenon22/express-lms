@@ -319,6 +319,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
                 mp.link_zoom,
                 mp.bank_soal_id,
                 mp.kelas_id,
+                mp.guru_id,
                 mp.created_at,
 
                 p.pdf_selesai,
