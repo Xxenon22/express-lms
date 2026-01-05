@@ -161,7 +161,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const { judul, video_url, deskripsi, link_zoom, pass_code } = req.body;
+        const { judul, video_url, deskripsi, link_zoom, pass_code, bank_soal_id } = req.body;
 
         const result = await pool.query(
             `
@@ -170,11 +170,12 @@ router.put("/:id", verifyToken, async (req, res) => {
                 video_url=$2,
                 deskripsi=$3,
                 link_zoom=$4,
-                pass_code=$5
-            WHERE id=$6
+                pass_code=$5,
+                bank_soal_id=$6
+            WHERE id=$7
             RETURNING *
             `,
-            [judul, video_url, deskripsi, link_zoom, pass_code, id]
+            [judul, video_url, deskripsi, link_zoom, pass_code, bank_soal_id, id]
         );
 
         if (!result.rows.length) {
