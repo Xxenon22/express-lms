@@ -65,19 +65,23 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const other = [];
 
         for (const row of rows) {
-            const kelas = {
+            const data = {
                 id: row.id,
                 nama_mapel: row.nama_mapel,
-                link_wallpaper_kelas: row.link_wallpaper_kelas,
                 guru_id: row.guru_id,
                 teacher: {
                     username: row.guru_name,
-                    photo_profile: row.guru_photo,
+                    photo_profile: row.guru_photo
                 },
-                sudahDiikuti: row.sudah_diikuti,
+                link_wallpaper_kelas: row.link_wallpaper_kelas,
+                sudahDiikuti: row.sudah_diikuti
             };
 
-            row.sudah_diikuti ? joined.push(kelas) : other.push(kelas);
+            if (row.sudah_diikuti) {
+                joined.push(data);
+            } else {
+                other.push(data);
+            }
         }
 
         res.json({ joined, other });
