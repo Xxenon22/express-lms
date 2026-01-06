@@ -5,6 +5,61 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /* ============================================
+   GET All kelas (Untuk siswa / admin)
+============================================ */
+router.get("/all/list", async (req, res) => {
+    try {
+        const q = `
+            SELECT 
+                k.id,
+                k.link_wallpaper_kelas,
+                k.guru_id,
+                k.rombel_id,
+                k.id_mapel,
+                m.nama_mapel,
+                nr.number AS name_rombel,
+                g.grade_lvl,
+                u.username AS guru_name,
+                nj.nama_jurusan AS major,
+                u.photo_profile AS guru_photo
+            FROM kelas k
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN grade_level g ON r.grade_id = g.id
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
+            LEFT JOIN users u ON k.guru_id = u.id
+            ORDER BY k.id ASC
+        `;
+
+        const { rows } = await pool.query(q);
+
+        const formatted = rows.map(row => ({
+            id: row.id,
+            nama_mapel: row.nama_mapel,
+            guru_id: row.guru_id,
+            teacher: {
+                username: row.guru_name,
+                photo_profile: row.guru_photo
+            },
+            rombel: {
+                id: row.rombel_id,
+                name_rombel: row.name_rombel,
+                grade_lvl: row.grade_lvl,
+                major: row.major
+            },
+            link_wallpaper_kelas: row.link_wallpaper_kelas
+        }));
+
+        res.json(formatted);
+    } catch (err) {
+        console.error("Error GET /kelas/all/list:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+
+/* ============================================
    GET All kelas (Guru)
 ============================================ */
 router.get("/", verifyToken, async (req, res) => {
@@ -211,61 +266,6 @@ router.delete("/:id", async (req, res) => {
 
     } catch (err) {
         console.error("Error DELETE /kelas/:id:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
-
-
-/* ============================================
-   GET All kelas (Untuk siswa / admin)
-============================================ */
-router.get("/all/list", async (req, res) => {
-    try {
-        const q = `
-            SELECT 
-                k.id,
-                k.link_wallpaper_kelas,
-                k.guru_id,
-                k.rombel_id,
-                k.id_mapel,
-                m.nama_mapel,
-                nr.number AS name_rombel,
-                g.grade_lvl,
-                u.username AS guru_name,
-                nj.nama_jurusan AS major,
-                u.photo_profile AS guru_photo
-            FROM kelas k
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-            LEFT JOIN grade_level g ON r.grade_id = g.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            ORDER BY k.id ASC
-        `;
-
-        const { rows } = await pool.query(q);
-
-        const formatted = rows.map(row => ({
-            id: row.id,
-            nama_mapel: row.nama_mapel,
-            guru_id: row.guru_id,
-            teacher: {
-                username: row.guru_name,
-                photo_profile: row.guru_photo
-            },
-            rombel: {
-                id: row.rombel_id,
-                name_rombel: row.name_rombel,
-                grade_lvl: row.grade_lvl,
-                major: row.major
-            },
-            link_wallpaper_kelas: row.link_wallpaper_kelas
-        }));
-
-        res.json(formatted);
-    } catch (err) {
-        console.error("Error GET /kelas/all/list:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
