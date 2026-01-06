@@ -8,6 +8,7 @@ const router = express.Router();
    GET All kelas (Untuk siswa / admin)
 ============================================ */
 router.get("/all/list", verifyToken, async (req, res) => {
+    console.log("HIT /kelas/all/list");
     try {
         const q = `
             SELECT 
@@ -32,8 +33,9 @@ router.get("/all/list", verifyToken, async (req, res) => {
             ORDER BY k.id ASC
         `;
 
+        console.time("QUERY all kelas");
         const { rows } = await pool.query(q);
-
+        console.timeEnd("QUERY all kelas");
         const formatted = rows.map(row => ({
             id: row.id,
             guru_id: row.guru_id,
