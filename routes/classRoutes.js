@@ -5,33 +5,6 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /* ============================================
-   GET Dashboard kelas student (SUPER CEPAT)
-============================================ */
-router.get("/student/dashboard", verifyToken, async (req, res) => {
-    try {
-        const q = `
-            SELECT
-                k.id,
-                k.link_wallpaper_kelas,
-                m.nama_mapel,
-                u.username AS guru_name,
-                u.photo_profile AS guru_photo
-            FROM kelas k
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            ORDER BY k.id DESC
-        `;
-
-        const { rows } = await pool.query(q);
-        res.json(rows);
-
-    } catch (err) {
-        console.error("Error GET /kelas/student/dashboard:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
-
-/* ============================================
    GET All kelas (Untuk siswa / admin)
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
