@@ -22,7 +22,10 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const userId = req.users.id;
+        const userId = Number(req.users.id);
+        if (isNaN(userId)) {
+            return res.status(400).json({ message: "Invalid user ID" });
+        }
 
         const result = await pool.query(
             `
@@ -34,7 +37,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             [
                 req.file.buffer,     // ✅ BYTEA
                 req.file.mimetype,   // ✅ TEXT
-                req.users.id         // ✅ dari JWT
+                userId       // ✅ dari JWT
             ]
         );
 
