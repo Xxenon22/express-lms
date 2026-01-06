@@ -39,24 +39,32 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const userId = req.users.id;
 
         const q = `
-            SELECT
-                k.id,
-                k.link_wallpaper_kelas,
-                m.nama_mapel,
-                u.id AS guru_id,
-                u.username AS guru_name,
-                u.photo_profile AS guru_photo,
-                CASE
-                    WHEN kd.user_id IS NULL THEN false
-                    ELSE true
-                END AS sudah_diikuti
-            FROM kelas k
-            LEFT JOIN kelas_diikuti kd
-                ON kd.kelas_id = k.id
-               AND kd.user_id = $1
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            ORDER BY k.id DESC
+        SELECT 
+            k.id,
+            k.link_wallpaper_kelas,
+            k.guru_id,
+            k.rombel_id,
+            k.id_mapel,
+            m.nama_mapel,
+            nr.number AS name_rombel,
+            g.grade_lvl,
+            u.username AS guru_name,
+            nj.nama_jurusan AS major,
+            u.photo_profile AS guru_photo,
+            CASE 
+                WHEN sk.user_id IS NOT NULL THEN true
+                ELSE false
+            END AS sudah_diikuti
+        FROM kelas k
+        LEFT JOIN student_kelas sk 
+            ON sk.kelas_id = k.id 
+            AND sk.user_id = $1
+        LEFT JOIN rombel r ON k.rombel_id = r.id
+        LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+        LEFT JOIN grade_level g ON r.grade_id = g.id
+        LEFT JOIN db_mapel m ON k.id_mapel = m.id
+        LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
+        LEFT JOIN users u ON k.guru_id = u.id
         `;
 
         const { rows } = await pool.query(q, [userId]);
@@ -65,7 +73,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const other = [];
 
         for (const row of rows) {
-            const data = {
+            const kelas = {
                 id: row.id,
                 nama_mapel: row.nama_mapel,
                 guru_id: row.guru_id,
@@ -73,24 +81,30 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                     username: row.guru_name,
                     photo_profile: row.guru_photo
                 },
-                link_wallpaper_kelas: row.link_wallpaper_kelas,
-                sudahDiikuti: row.sudah_diikuti
+                rombel: {
+                    id: row.rombel_id,
+                    name_rombel: row.name_rombel,
+                    grade_lvl: row.grade_lvl,
+                    major: row.major
+                },
+                link_wallpaper_kelas: row.link_wallpaper_kelas
             };
 
             if (row.sudah_diikuti) {
-                joined.push(data);
+                joined.push(kelas);
             } else {
-                other.push(data);
+                other.push(kelas);
             }
         }
 
         res.json({ joined, other });
 
     } catch (err) {
-        console.error("Error GET /kelas/student/dashboard:", err);
-        res.status(500).json({ error: "Server error" });
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
     }
 });
+
 
 /* ============================================
    GET kelas diikuti user
