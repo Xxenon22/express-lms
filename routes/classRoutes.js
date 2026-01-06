@@ -108,27 +108,57 @@ router.get("/followed/me", verifyToken, async (req, res) => {
 /* ============================================
    GET Siswa yang mengikuti kelas
 ============================================ */
-router.get("/students/:kelasId", verifyToken, async (req, res) => {
+router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
-        const { kelasId } = req.params;
+        const userId = Number(req.users.id);
+        const page = Number(req.query.page || 1);
+        const limit = 20;
+        const offset = (page - 1) * limit;
 
-        const query = `
-            SELECT 
-                kd.user_id,
-                u.username AS name,
-                u.photo_profile
-            FROM kelas_diikuti kd
-            JOIN users u ON u.id = kd.user_id
-            WHERE kd.kelas_id = $1
-            ORDER BY u.username ASC
-        `;
+        const [kelasRes, followedRes] = await Promise.all([
+            pool.query(
+                `
+                SELECT
+                    k.id,
+                    k.link_wallpaper_kelas,
+                    m.nama_mapel,
+                    u.username AS guru_name,
+                    u.photo_profile AS guru_photo
+                FROM kelas k
+                JOIN db_mapel m ON m.id = k.id_mapel
+                JOIN users u ON u.id = k.guru_id
+                ORDER BY k.id DESC
+                LIMIT $1 OFFSET $2
+                `,
+                [limit, offset]
+            ),
+            pool.query(
+                `
+                SELECT kelas_id
+                FROM kelas_diikuti
+                WHERE user_id = $1
+                `,
+                [userId]
+            )
+        ]);
 
-        const { rows } = await pool.query(query, [kelasId]);
-        res.json(rows);
+        const followedSet = new Set(
+            followedRes.rows.map(r => r.kelas_id)
+        );
+
+        const joined = [];
+        const other = [];
+
+        for (const k of kelasRes.rows) {
+            if (followedSet.has(k.id)) joined.push(k);
+            else other.push(k);
+        }
+
+        res.json({ joined, other });
 
     } catch (err) {
-        console.error("Error GET /kelas/students/:kelasId:", err);
-        res.status(500).json({ error: "Server error" });
+        console.error("Dashboard error:", err);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
