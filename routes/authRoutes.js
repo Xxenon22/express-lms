@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, registerTeacher, verifyEmail, verifyLoginCode } from "../controllers/authController.js";
+import { register, login, registerTeacher } from "../controllers/authController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { pool } from "../config/db.js";
 
@@ -8,8 +8,8 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/register-teacher", registerTeacher);
-router.post("/verify-email", verifyEmail);
-router.post("/verify-login-code", verifyLoginCode);
+// router.post("/verify-email", verifyEmail);
+// router.post("/verify-login-code", verifyLoginCode);
 
 // GET all profile
 router.get("/", async (req, res) => {
