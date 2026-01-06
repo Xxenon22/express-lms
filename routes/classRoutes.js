@@ -65,6 +65,7 @@ router.get("/all/list", verifyToken, async (req, res) => {
    GET kelas diikuti user
 ============================================ */
 router.get("/followed/me", verifyToken, async (req, res) => {
+    console.log("HIT /kelas/followed/me");
     try {
         const userId = req.users.id;
 
