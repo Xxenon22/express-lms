@@ -91,9 +91,8 @@ app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== UPLOADS & STATIC FILES ==================
-// upload umum
-app.use("/api/uploads", uploadRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // upload soal
 app.use("/api/gambar-soal", uploadGambarSoal);
@@ -102,8 +101,12 @@ app.use(
     express.static(path.join(__dirname, "uploads/gambar-soal"))
 );
 
-// upload profile
+// Static files (uploads) access
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+// Upload routes
 app.use("/api/uploads/photo-profile", uploadProfileRoutes);
+
 
 // timetables
 app.use(

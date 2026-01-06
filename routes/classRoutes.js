@@ -3,82 +3,6 @@ import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-/* ============================================
-   GET Dashboard Kelas (Siswa)
-============================================ */
-router.get("/student/dashboard", verifyToken, async (req, res) => {
-    try {
-        const userId = req.users.id;
-
-        /* ===============================
-           1. Ambil semua kelas (GLOBAL)
-        =============================== */
-        const kelasQuery = `
-            SELECT
-                k.id,
-                k.link_wallpaper_kelas,
-                m.nama_mapel,
-                u.username AS guru_name,
-                u.photo_profile AS guru_photo
-            FROM kelas k
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            ORDER BY k.id DESC
-            LIMIT 100
-        `;
-
-        const { rows: kelasRows } = await pool.query(kelasQuery);
-
-        /* ===============================
-           2. Ambil kelas yang diikuti USER
-        =============================== */
-        const followedQuery = `
-            SELECT kelas_id
-            FROM kelas_diikuti
-            WHERE user_id = $1
-        `;
-
-        const { rows: followedRows } = await pool.query(followedQuery, [userId]);
-
-        /* ===============================
-           3. Convert ke Set (SUPER CEPAT)
-        =============================== */
-        const followedSet = new Set(
-            followedRows.map(r => r.kelas_id)
-        );
-
-        /* ===============================
-           4. Pisahkan joined & other
-        =============================== */
-        const joined = [];
-        const other = [];
-
-        for (const row of kelasRows) {
-            const kelas = {
-                id: row.id,
-                nama_mapel: row.nama_mapel,
-                teacher: {
-                    username: row.guru_name,
-                    photo_profile: row.guru_photo
-                },
-                link_wallpaper_kelas: row.link_wallpaper_kelas
-            };
-
-            if (followedSet.has(row.id)) {
-                joined.push(kelas);
-            } else {
-                other.push(kelas);
-            }
-        }
-
-        res.json({ joined, other });
-
-    } catch (err) {
-        console.error("Error GET /student/dashboard:", err);
-        res.status(500).json({ message: "Server error" });
-    }
-});
-
 
 /* ============================================
    GET kelas diikuti user
@@ -123,7 +47,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                     k.link_wallpaper_kelas,
                     m.nama_mapel,
                     u.username AS guru_name,
-                    u.photo_profile AS guru_photo
+                    u.photo_url AS guru_photo
                 FROM kelas k
                 JOIN db_mapel m ON m.id = k.id_mapel
                 JOIN users u ON u.id = k.guru_id
