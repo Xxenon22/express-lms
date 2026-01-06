@@ -137,11 +137,15 @@ router.get("/students/:kelasId", verifyToken, async (req, res) => {
 ============================================ */
 router.post("/follow/:kelasId", verifyToken, async (req, res) => {
     try {
-        const userId = req.users.id;
-        const { kelasId } = req.params;
+        const userId = Number(req.users.id);
+        const kelasId = Number(req.params.kelasId);
+
+        if (isNaN(userId) || isNaN(kelasId)) {
+            return res.status(400).json({ error: "Invalid userId or kelasId" });
+        }
 
         const cek = await pool.query(
-            "SELECT * FROM kelas_diikuti WHERE user_id = $1 AND kelas_id = $2",
+            "SELECT 1 FROM kelas_diikuti WHERE user_id = $1 AND kelas_id = $2",
             [userId, kelasId]
         );
 
@@ -149,13 +153,12 @@ router.post("/follow/:kelasId", verifyToken, async (req, res) => {
             return res.status(400).json({ error: "Already followed this class" });
         }
 
-        const q = `
-            INSERT INTO kelas_diikuti (user_id, kelas_id)
-            VALUES ($1, $2)
-            RETURNING *
-        `;
-
-        const { rows } = await pool.query(q, [userId, kelasId]);
+        const { rows } = await pool.query(
+            `INSERT INTO kelas_diikuti (user_id, kelas_id)
+             VALUES ($1, $2)
+             RETURNING *`,
+            [userId, kelasId]
+        );
 
         res.status(201).json(rows[0]);
 
