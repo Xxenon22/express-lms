@@ -35,6 +35,9 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
    GET All kelas (Untuk siswa / admin)
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
+    console.log("FULL RESPONSE:", res.data);
+    console.log("JOINED:", res.data.joined);
+    console.log("OTHER:", res.data.other);
     try {
         const userId = req.users.id;
 
@@ -65,6 +68,8 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         LEFT JOIN db_mapel m ON k.id_mapel = m.id
         LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
         LEFT JOIN users u ON k.guru_id = u.id
+        ORDER BY k.id DESC
+        LIMIT 100
         `;
 
         const { rows } = await pool.query(q, [userId]);
