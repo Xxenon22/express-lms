@@ -15,34 +15,17 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const userId = req.users.id;
 
         const q = `
-        SELECT 
-            k.id,
-            k.link_wallpaper_kelas,
-            k.guru_id,
-            k.rombel_id,
-            k.id_mapel,
-            m.nama_mapel,
-            nr.number AS name_rombel,
-            g.grade_lvl,
-            u.username AS guru_name,
-            nj.nama_jurusan AS major,
-            u.photo_profile AS guru_photo,
-            CASE 
-                WHEN sk.user_id IS NOT NULL THEN true
-                ELSE false
-            END AS sudah_diikuti
-        FROM kelas k
-        LEFT JOIN kelas_diikuti sk 
-            ON sk.kelas_id = k.id 
-            AND sk.user_id = $1
-        LEFT JOIN rombel r ON k.rombel_id = r.id
-        LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-        LEFT JOIN grade_level g ON r.grade_id = g.id
-        LEFT JOIN db_mapel m ON k.id_mapel = m.id
-        LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
-        LEFT JOIN users u ON k.guru_id = u.id
-        ORDER BY k.id DESC
-        LIMIT 100
+        SELECT
+    k.id,
+    k.link_wallpaper_kelas,
+    m.nama_mapel,
+    u.username AS guru_name,
+    u.photo_profile AS guru_photo
+FROM kelas k
+LEFT JOIN db_mapel m ON k.id_mapel = m.id
+LEFT JOIN users u ON k.guru_id = u.id
+ORDER BY k.id DESC
+LIMIT 100;
         `;
 
         const { rows } = await pool.query(q, [userId]);
