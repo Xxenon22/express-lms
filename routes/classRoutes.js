@@ -34,58 +34,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
 /* ============================================
    GET All kelas (Untuk siswa / admin)
 ============================================ */
-// router.get("/all/list", async (req, res) => {
-//     try {
-//         const q = `
-//       SELECT 
-//           k.id,
-//           k.link_wallpaper_kelas,
-//           k.guru_id,
-//           k.rombel_id,
-//           k.id_mapel,
-//           m.nama_mapel,
-//           nr.number AS name_rombel,
-//           g.grade_lvl,
-//           u.username AS guru_name,
-//           nj.nama_jurusan AS major,
-//           u.photo_profile AS guru_photo
-//       FROM kelas k
-//       LEFT JOIN rombel r ON k.rombel_id = r.id
-//       LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-//       LEFT JOIN grade_level g ON r.grade_id = g.id
-//       LEFT JOIN db_mapel m ON k.id_mapel = m.id
-//       LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
-//       LEFT JOIN users u ON k.guru_id = u.id
-//     `;
-
-//         console.time("allKelasQuery");
-//         const { rows } = await pool.query(q);
-//         console.timeEnd("allKelasQuery");
-//         const formatted = rows.map(row => ({
-//             id: row.id,
-//             nama_mapel: row.nama_mapel,
-//             guru_id: row.guru_id,
-//             teacher: {
-//                 username: row.guru_name || null,
-//                 photo_profile: row.guru_photo || null
-//             },
-//             rombel: {
-//                 id: row.rombel_id || null,
-//                 name_rombel: row.name_rombel || null,
-//                 grade_lvl: row.grade_lvl || null,
-//                 major: row.major || null
-//             },
-//             link_wallpaper_kelas: row.link_wallpaper_kelas
-//         }));
-
-//         res.json(formatted);
-//     } catch (err) {
-//         console.error("Error GET /kelas/all/list:", err);
-//         res.status(500).json({ error: "Server error" });
-//     }
-// });
-
-router.get("/student/joined", verifyToken, async (req, res) => {
+router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
 
@@ -94,59 +43,58 @@ router.get("/student/joined", verifyToken, async (req, res) => {
                 k.id,
                 k.link_wallpaper_kelas,
                 m.nama_mapel,
+
                 u.id AS guru_id,
                 u.username AS guru_name,
-                u.photo_profile AS guru_photo
-            FROM kelas_diikuti kd
-            INNER JOIN kelas k ON kd.kelas_id = k.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            WHERE kd.user_id = $1
-            ORDER BY k.id DESC
-        `;
+                u.photo_profile AS guru_photo,
 
-        const { rows } = await pool.query(q, [userId]);
-        res.json(rows);
+                CASE
+                    WHEN kd.user_id IS NULL THEN false
+                    ELSE true
+                END AS sudah_diikuti
 
-    } catch (err) {
-        console.error("Error GET /kelas/student/joined:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
-
-router.get("/student/other", verifyToken, async (req, res) => {
-    try {
-        const userId = req.users.id;
-
-        const q = `
-            SELECT
-                k.id,
-                k.link_wallpaper_kelas,
-                m.nama_mapel,
-                u.id AS guru_id,
-                u.username AS guru_name,
-                u.photo_profile AS guru_photo
             FROM kelas k
+            LEFT JOIN kelas_diikuti kd
+                ON kd.kelas_id = k.id
+               AND kd.user_id = $1
+
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM kelas_diikuti kd
-                WHERE kd.kelas_id = k.id
-                  AND kd.user_id = $1
-            )
+
             ORDER BY k.id DESC
-            LIMIT 30
+            LIMIT 50
         `;
 
         const { rows } = await pool.query(q, [userId]);
-        res.json(rows);
+
+        const joined = [];
+        const other = [];
+
+        for (const r of rows) {
+            const formatted = {
+                id: r.id,
+                nama_mapel: r.nama_mapel,
+                link_wallpaper_kelas: r.link_wallpaper_kelas,
+                guru_id: r.guru_id,
+                teacher: {
+                    username: r.guru_name,
+                    photo_profile: r.guru_photo
+                },
+                sudahDiikuti: r.sudah_diikuti
+            };
+
+            if (r.sudah_diikuti) joined.push(formatted);
+            else other.push(formatted);
+        }
+
+        res.json({ joined, other });
 
     } catch (err) {
-        console.error("Error GET /kelas/student/other:", err);
+        console.error("GET /kelas/student/dashboard:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 
 /* ============================================
