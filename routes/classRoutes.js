@@ -35,9 +35,9 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
    GET All kelas (Untuk siswa / admin)
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
-    console.log("FULL RESPONSE:", res.data);
-    console.log("JOINED:", res.data.joined);
-    console.log("OTHER:", res.data.other);
+    // console.log("FULL RESPONSE:", res.data);
+    // console.log("JOINED:", res.data.joined);
+    // console.log("OTHER:", res.data.other);
     try {
         const userId = req.users.id;
 
@@ -102,6 +102,8 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
             }
         }
 
+        console.log("JOINED:", joined.length);
+        console.log("OTHER:", other.length);
         res.json({ joined, other });
 
     } catch (err) {
