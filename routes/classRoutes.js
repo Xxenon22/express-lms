@@ -32,7 +32,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 ELSE false
             END AS sudah_diikuti
         FROM kelas k
-        LEFT JOIN kelas sk 
+        LEFT JOIN student_kelas sk 
             ON sk.kelas_id = k.id 
             AND sk.user_id = $1
         LEFT JOIN rombel r ON k.rombel_id = r.id
