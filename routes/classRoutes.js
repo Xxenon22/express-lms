@@ -221,43 +221,43 @@ router.delete("/:id", async (req, res) => {
 router.get("/all/list", async (req, res) => {
     try {
         const q = `
-            SELECT 
-                k.id,
-                k.link_wallpaper_kelas,
-                k.guru_id,
-                k.rombel_id,
-                k.id_mapel,
-                m.nama_mapel,
-                nr.number AS name_rombel,
-                g.grade_lvl,
-                u.username AS guru_name,
-                nj.nama_jurusan AS major,
-                u.photo_profile AS guru_photo
-            FROM kelas k
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-            LEFT JOIN grade_level g ON r.grade_id = g.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            ORDER BY k.id ASC
-        `;
+      SELECT 
+          k.id,
+          k.link_wallpaper_kelas,
+          k.guru_id,
+          k.rombel_id,
+          k.id_mapel,
+          m.nama_mapel,
+          nr.number AS name_rombel,
+          g.grade_lvl,
+          u.username AS guru_name,
+          nj.nama_jurusan AS major,
+          u.photo_profile AS guru_photo
+      FROM kelas k
+      LEFT JOIN rombel r ON k.rombel_id = r.id
+      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+      LEFT JOIN grade_level g ON r.grade_id = g.id
+      LEFT JOIN db_mapel m ON k.id_mapel = m.id
+      LEFT JOIN jurusan nj ON r.jurusan_id = nj.id
+      LEFT JOIN users u ON k.guru_id = u.id
+    `;
 
+        console.time("allKelasQuery");
         const { rows } = await pool.query(q);
-
+        console.timeEnd("allKelasQuery");
         const formatted = rows.map(row => ({
             id: row.id,
             nama_mapel: row.nama_mapel,
             guru_id: row.guru_id,
             teacher: {
-                username: row.guru_name,
-                photo_profile: row.guru_photo
+                username: row.guru_name || null,
+                photo_profile: row.guru_photo || null
             },
             rombel: {
-                id: row.rombel_id,
-                name_rombel: row.name_rombel,
-                grade_lvl: row.grade_lvl,
-                major: row.major
+                id: row.rombel_id || null,
+                name_rombel: row.name_rombel || null,
+                grade_lvl: row.grade_lvl || null,
+                major: row.major || null
             },
             link_wallpaper_kelas: row.link_wallpaper_kelas
         }));
