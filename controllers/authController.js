@@ -90,15 +90,15 @@ export const registerTeacher = async (req, res) => {
             null
         );
 
-        try {
-            await sendEmail({
-                to: email,
-                subject: "Verify Your Teacher Account",
-                text: `Your verification code is: ${code}`
-            });
-        } catch (emailErr) {
-            console.error("EMAIL SEND ERROR:", emailErr);
-        }
+        // try {
+        //     await sendEmail({
+        //         to: email,
+        //         subject: "Verify Your Teacher Account",
+        //         text: `Your verification code is: ${code}`
+        //     });
+        // } catch (emailErr) {
+        //     console.error("EMAIL SEND ERROR:", emailErr);
+        // }
 
         return res.json({
             message: "Teacher registered, verification required",
