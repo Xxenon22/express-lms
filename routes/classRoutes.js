@@ -43,26 +43,20 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 k.id,
                 k.link_wallpaper_kelas,
                 m.nama_mapel,
-
                 u.id AS guru_id,
                 u.username AS guru_name,
                 u.photo_profile AS guru_photo,
-
                 CASE
                     WHEN kd.user_id IS NULL THEN false
                     ELSE true
                 END AS sudah_diikuti
-
             FROM kelas k
             LEFT JOIN kelas_diikuti kd
                 ON kd.kelas_id = k.id
                AND kd.user_id = $1
-
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN users u ON k.guru_id = u.id
-
             ORDER BY k.id DESC
-            LIMIT 50
         `;
 
         const { rows } = await pool.query(q, [userId]);
@@ -70,32 +64,29 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const joined = [];
         const other = [];
 
-        for (const r of rows) {
-            const formatted = {
-                id: r.id,
-                nama_mapel: r.nama_mapel,
-                link_wallpaper_kelas: r.link_wallpaper_kelas,
-                guru_id: r.guru_id,
+        for (const row of rows) {
+            const kelas = {
+                id: row.id,
+                nama_mapel: row.nama_mapel,
+                link_wallpaper_kelas: row.link_wallpaper_kelas,
+                guru_id: row.guru_id,
                 teacher: {
-                    username: r.guru_name,
-                    photo_profile: r.guru_photo
+                    username: row.guru_name,
+                    photo_profile: row.guru_photo,
                 },
-                sudahDiikuti: r.sudah_diikuti
+                sudahDiikuti: row.sudah_diikuti,
             };
 
-            if (r.sudah_diikuti) joined.push(formatted);
-            else other.push(formatted);
+            row.sudah_diikuti ? joined.push(kelas) : other.push(kelas);
         }
 
         res.json({ joined, other });
 
     } catch (err) {
-        console.error("GET /kelas/student/dashboard:", err);
+        console.error("Error GET /kelas/student/dashboard:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
-
-
 
 /* ============================================
    GET kelas diikuti user
