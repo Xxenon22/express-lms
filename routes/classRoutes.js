@@ -3,67 +3,78 @@ import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
 /* ============================================
-   GET All kelas (Untuk siswa / admin)
+   GET Dashboard Kelas (Siswa)
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
-    // console.log("FULL RESPONSE:", res.data);
-    // console.log("JOINED:", res.data.joined);
-    // console.log("OTHER:", res.data.other);
     try {
         const userId = req.users.id;
 
-        const q = `
-        SELECT
-    k.id,
-    k.link_wallpaper_kelas,
-    m.nama_mapel,
-    u.username AS guru_name,
-    u.photo_profile AS guru_photo
-FROM kelas k
-LEFT JOIN db_mapel m ON k.id_mapel = m.id
-LEFT JOIN users u ON k.guru_id = u.id
-ORDER BY k.id DESC
-LIMIT 100;
+        /* ===============================
+           1. Ambil semua kelas (GLOBAL)
+        =============================== */
+        const kelasQuery = `
+            SELECT
+                k.id,
+                k.link_wallpaper_kelas,
+                m.nama_mapel,
+                u.username AS guru_name,
+                u.photo_profile AS guru_photo
+            FROM kelas k
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN users u ON k.guru_id = u.id
+            ORDER BY k.id DESC
+            LIMIT 100
         `;
 
-        const { rows } = await pool.query(q, [userId]);
+        const { rows: kelasRows } = await pool.query(kelasQuery);
 
+        /* ===============================
+           2. Ambil kelas yang diikuti USER
+        =============================== */
+        const followedQuery = `
+            SELECT kelas_id
+            FROM kelas_diikuti
+            WHERE user_id = $1
+        `;
+
+        const { rows: followedRows } = await pool.query(followedQuery, [userId]);
+
+        /* ===============================
+           3. Convert ke Set (SUPER CEPAT)
+        =============================== */
+        const followedSet = new Set(
+            followedRows.map(r => r.kelas_id)
+        );
+
+        /* ===============================
+           4. Pisahkan joined & other
+        =============================== */
         const joined = [];
         const other = [];
 
-        for (const row of rows) {
+        for (const row of kelasRows) {
             const kelas = {
                 id: row.id,
                 nama_mapel: row.nama_mapel,
-                guru_id: row.guru_id,
                 teacher: {
                     username: row.guru_name,
                     photo_profile: row.guru_photo
                 },
-                rombel: {
-                    id: row.rombel_id,
-                    name_rombel: row.name_rombel,
-                    grade_lvl: row.grade_lvl,
-                    major: row.major
-                },
                 link_wallpaper_kelas: row.link_wallpaper_kelas
             };
 
-            if (row.sudah_diikuti) {
+            if (followedSet.has(row.id)) {
                 joined.push(kelas);
             } else {
                 other.push(kelas);
             }
         }
 
-        console.log("JOINED:", joined.length);
-        console.log("OTHER:", other.length);
         res.json({ joined, other });
 
     } catch (err) {
-        console.error(err);
+        console.error("Error GET /student/dashboard:", err);
         res.status(500).json({ message: "Server error" });
     }
 });
