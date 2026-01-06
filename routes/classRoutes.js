@@ -7,7 +7,7 @@ const router = express.Router();
 /* ============================================
    GET All kelas (Untuk siswa / admin)
 ============================================ */
-router.get("/all/list", async (req, res) => {
+router.get("/all/list", verifyToken, async (req, res) => {
     try {
         const q = `
             SELECT 
@@ -51,6 +51,7 @@ router.get("/all/list", async (req, res) => {
             link_wallpaper_kelas: row.link_wallpaper_kelas
         }));
 
+        console.log("ROWS:", rows.length);
         res.json(formatted);
     } catch (err) {
         console.error("Error GET /kelas/all/list:", err);
@@ -58,41 +59,30 @@ router.get("/all/list", async (req, res) => {
     }
 });
 
-
 /* ============================================
-   GET All kelas (Guru)
+   GET kelas diikuti user
 ============================================ */
-router.get("/", verifyToken, async (req, res) => {
+router.get("/followed/me", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id;
+        const userId = req.users.id;
 
         const result = await pool.query(`
-            SELECT 
-                k.*, 
-                nr.number AS name_rombel,
-                g.grade_lvl,
-                m.nama_mapel,
-                mj.nama_jurusan AS major,
-                u.username AS guru_name,
-                u.photo_profile AS guru_photo
-            FROM kelas k
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-            LEFT JOIN grade_level g ON r.grade_id = g.id
+            SELECT kd.*, k.rombel_id, k.id_mapel, 
+                   m.nama_mapel, 
+                   u.username AS guru_name
+            FROM kelas_diikuti kd
+            INNER JOIN kelas k ON kd.kelas_id = k.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
             LEFT JOIN users u ON k.guru_id = u.id
-            WHERE k.guru_id = $1
-            ORDER BY k.id ASC
-        `, [guruId]);
+            WHERE kd.user_id = $1
+        `, [userId]);
 
         res.json(result.rows);
     } catch (err) {
-        console.error("Error GET /kelas:", err);
+        console.error("Error GET /kelas/followed:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
-
 
 /* ============================================
    GET Single kelas + modules
@@ -179,6 +169,41 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+
+
+/* ============================================
+   GET All kelas (Guru)
+============================================ */
+router.get("/", verifyToken, async (req, res) => {
+    try {
+        const guruId = req.users.id;
+
+        const result = await pool.query(`
+            SELECT 
+                k.*, 
+                nr.number AS name_rombel,
+                g.grade_lvl,
+                m.nama_mapel,
+                mj.nama_jurusan AS major,
+                u.username AS guru_name,
+                u.photo_profile AS guru_photo
+            FROM kelas k
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN grade_level g ON r.grade_id = g.id
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+            LEFT JOIN users u ON k.guru_id = u.id
+            WHERE k.guru_id = $1
+            ORDER BY k.id ASC
+        `, [guruId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error GET /kelas:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
 /* ============================================
    CREATE kelas
@@ -269,33 +294,6 @@ router.delete("/:id", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
-
-/* ============================================
-   GET kelas diikuti user
-============================================ */
-router.get("/followed/me", verifyToken, async (req, res) => {
-    try {
-        const userId = req.users.id;
-
-        const result = await pool.query(`
-            SELECT kd.*, k.rombel_id, k.id_mapel, 
-                   m.nama_mapel, 
-                   u.username AS guru_name
-            FROM kelas_diikuti kd
-            INNER JOIN kelas k ON kd.kelas_id = k.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            WHERE kd.user_id = $1
-        `, [userId]);
-
-        res.json(result.rows);
-    } catch (err) {
-        console.error("Error GET /kelas/followed:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
-
 
 /* ============================================
    FOLLOW kelas
