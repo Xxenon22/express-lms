@@ -19,7 +19,7 @@ router.post(
             const { soal_id } = req.params;
 
             if (!req.file) {
-                return res.status(400).json({ message: "File tidak ditemukan" });
+                return res.status(400).json({ message: "File not Found" });
             }
 
             const imagePath = `/uploads/soal/pg/${req.file.filename}`;
@@ -30,12 +30,12 @@ router.post(
             );
 
             res.json({
-                message: "Gambar PG berhasil diupload",
+                message: "Upload image successfully",
                 path: imagePath
             });
         } catch (error) {
             console.error("UPLOAD GAMBAR PG ERROR:", error);
-            res.status(500).json({ message: "Upload gagal" });
+            res.status(500).json({ message: "Failed Upload" });
         }
     }
 );
@@ -52,7 +52,7 @@ router.post(
             const { soal_id } = req.params;
 
             if (!req.file) {
-                return res.status(400).json({ message: "File tidak ditemukan" });
+                return res.status(400).json({ message: "File not found" });
             }
 
             const imagePath = `/uploads/soal/essai/${req.file.filename}`;

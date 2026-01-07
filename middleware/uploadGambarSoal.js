@@ -18,5 +18,15 @@ const createStorage = (folder) => {
     });
 };
 
-export const uploadPG = multer({ storage: createStorage("pg") });
-export const uploadEssai = multer({ storage: createStorage("essai") });
+
+export const uploadPG = multer({
+    storage: createStorage("pg"),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter
+});
+
+export const uploadEssai = multer({
+    storage: createStorage("essai"),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter
+});
