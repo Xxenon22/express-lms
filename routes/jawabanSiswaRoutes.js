@@ -476,6 +476,7 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
             file_name: row.file_name,
             file_mime: row.file_mime,
             url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${r.id}`,
             created_at: row.created_at,
         }));
 
@@ -576,5 +577,46 @@ router.put(
         }
     }
 );
+
+/* =========================
+   DOWNLOAD FILE JAWABAN SISWA
+========================= */
+router.get("/download/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.users.id;
+
+        const result = await pool.query(
+            `
+            SELECT file_jawaban_siswa, file_name, file_mime
+            FROM jawaban_siswa
+            WHERE id = $1 AND user_id = $2
+            `,
+            [id, userId]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        const file = result.rows[0];
+        const absolutePath = path.join(process.cwd(), file.file_jawaban_siswa);
+
+        if (!fs.existsSync(absolutePath)) {
+            return res.status(404).json({ message: "File missing on server" });
+        }
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${file.file_name}"`
+        );
+
+        res.sendFile(absolutePath);
+    } catch (err) {
+        console.error("Download error:", err);
+        res.status(500).json({ message: "Failed to download file" });
+    }
+});
 
 export default router;
