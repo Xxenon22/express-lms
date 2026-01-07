@@ -1,6 +1,12 @@
 import fs from "fs";
 import path from "path";
 import multer from "multer";
+import express from "express";
+import { pool } from "../config/db.js";
+import { pdfUpload } from "../utils/pdfUploader.js";
+
+const router = express.Router();
+const upload = pdfUpload("uploads/timetables-teachers");
 
 const storage = (folder) =>
     multer.diskStorage({
@@ -24,16 +30,6 @@ export const pdfUpload = (folder) =>
             else cb(new Error("Only PDF allowed"));
         },
     });
-
-import express from "express";
-import path from "path";
-import fs from "fs";
-import { pool } from "../config/db.js";
-import { pdfUpload } from "../utils/pdfUploader.js";
-
-const router = express.Router();
-const upload = pdfUpload("uploads/timetables-teachers");
-
 /**
  * CREATE
  */
