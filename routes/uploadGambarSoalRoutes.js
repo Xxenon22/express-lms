@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { uploadPG, uploadEssai } from "../middleware/uploadGambarSoal.js";
+import { uploadSoal } from "../middleware/uploadGambarSoal.js";
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ const router = express.Router();
 router.post(
     "/pg/:soal_id",
     verifyToken,
-    uploadPG.single("gambar"),
+    uploadSoal.single("gambar"),
     async (req, res) => {
         try {
             const { soal_id } = req.params;
@@ -46,7 +46,7 @@ router.post(
 router.post(
     "/essai/:soal_id",
     verifyToken,
-    uploadEssai.single("gambar"),
+    uploadSoal.single("gambar"),
     async (req, res) => {
         try {
             const { soal_id } = req.params;
