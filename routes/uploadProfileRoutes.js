@@ -54,7 +54,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "User not authenticated" });
         }
 
-        const photoUrl = `/uploads/users/users-${userId}${path.extname(req.file.originalname)}`;
+        const photoUrl = `/uploads/users/users-${path.extname(req.file.originalname)}`;
 
         // Update the user's photo URL in the database
         const result = await pool.query(
@@ -92,7 +92,7 @@ router.get("/:userId", async (req, res) => {
             return res.status(404).send("Image not found");
         }
 
-        res.sendFile(path.join(process.cwd(), 'uploads', 'users', result.rows[0].photo_url));
+        res.sendFile(path.join(process.cwd(), result.rows[0].photo_url));
     } catch (err) {
         console.error(err);
         res.status(500).send("Error fetching image");
