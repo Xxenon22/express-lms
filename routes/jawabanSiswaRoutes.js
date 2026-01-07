@@ -469,7 +469,7 @@ router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) =
         file_name: r.file_name,
         file_mime: r.file_mime,
         url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-        download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${r.id}`, // ❌ r TIDAK ADA
+        download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,// ❌ r TIDAK ADA
         created_at: r.created_at
     })));
 });
