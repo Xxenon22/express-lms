@@ -20,17 +20,6 @@ const storage = (folder) =>
         },
     });
 
-export const pdfUpload = (folder) =>
-    multer({
-        storage: storage(folder),
-        limits: { fileSize: 20 * 1024 * 1024 },
-        fileFilter(req, file, cb) {
-            if (file.mimetype === "application/pdf") cb(null, true);
-            else cb(new Error("Only PDF allowed"));
-        },
-    });
-
-
 /**
  * CREATE
  */
