@@ -18,6 +18,13 @@ const createStorage = (folder) => {
     });
 };
 
+const fileFilter = (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+        cb(new Error("File harus berupa gambar"), false);
+    } else {
+        cb(null, true);
+    }
+};
 
 export const uploadPG = multer({
     storage: createStorage("pg"),
