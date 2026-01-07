@@ -19,9 +19,21 @@ router.post(
             const { soal_id } = req.params;
 
             if (!req.file) {
-                return res.status(400).json({ message: "File not Found" });
+                return res.status(400).json({ message: "File not found" });
             }
 
+            // 1️⃣ Ambil gambar lama
+            const old = await pool.query(
+                "SELECT gambar FROM soal_pilgan WHERE id = $1",
+                [soal_id]
+            );
+
+            if (old.rows.length && old.rows[0].gambar) {
+                const oldPath = path.join(process.cwd(), old.rows[0].gambar);
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            }
+
+            // 2️⃣ Simpan path baru
             const imagePath = `/uploads/soal/pg/${req.file.filename}`;
 
             await pool.query(
@@ -35,10 +47,11 @@ router.post(
             });
         } catch (error) {
             console.error("UPLOAD GAMBAR PG ERROR:", error);
-            res.status(500).json({ message: "Failed Upload" });
+            res.status(500).json({ message: "Failed upload image" });
         }
     }
 );
+
 
 /* =========================================
    UPLOAD GAMBAR ESSAI
@@ -55,6 +68,21 @@ router.post(
                 return res.status(400).json({ message: "File not found" });
             }
 
+            // 1️⃣ Ambil gambar lama
+            const old = await pool.query(
+                "SELECT gambar_soal_essai FROM soal_pilgan WHERE id = $1",
+                [soal_id]
+            );
+
+            if (old.rows.length && old.rows[0].gambar_soal_essai) {
+                const oldPath = path.join(
+                    process.cwd(),
+                    old.rows[0].gambar_soal_essai
+                );
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            }
+
+            // 2️⃣ Simpan path baru
             const imagePath = `/uploads/soal/essai/${req.file.filename}`;
 
             await pool.query(
