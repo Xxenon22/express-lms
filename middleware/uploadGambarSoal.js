@@ -4,31 +4,34 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-/**
- * __dirname untuk ESM
- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- * ABSOLUTE PATH
- * /var/www/backend/express-lms/uploads/soal
- */
-const UPLOAD_PATH = path.join(__dirname, "..", "uploads", "soal");
+// ABSOLUTE PATH (AMAN)
+const BASE_UPLOAD_PATH = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    "soal"
+);
 
-/**
- * Pastikan folder ada
- */
-if (!fs.existsSync(UPLOAD_PATH)) {
-    fs.mkdirSync(UPLOAD_PATH, { recursive: true });
-}
+const ensureDir = (dir) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+};
 
-/**
- * STORAGE
- */
 const storage = multer.diskStorage({
-    destination: (_, __, cb) => {
-        cb(null, UPLOAD_PATH);
+    destination: (req, file, cb) => {
+        let sub = "general";
+
+        if (file.fieldname.startsWith("pg_")) sub = "pg";
+        if (file.fieldname.startsWith("essai_")) sub = "essai";
+
+        const target = path.join(BASE_UPLOAD_PATH, sub);
+        ensureDir(target);
+
+        cb(null, target);
     },
     filename: (_, file, cb) => {
         const ext = path.extname(file.originalname);
@@ -36,49 +39,15 @@ const storage = multer.diskStorage({
     }
 });
 
-/**
- * FILTER
- */
-const fileFilter = (req, file, cb) => {
+const fileFilter = (_, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
-        cb(new Error("INVALID_IMAGE_TYPE"), false);
-    } else {
-        cb(null, true);
+        return cb(new Error("INVALID_IMAGE_TYPE"));
     }
+    cb(null, true);
 };
 
-/**
- * EXPORT — SATU STORAGE UNTUK SEMUA
- */
-export const uploadPG = multer({
+export const uploadSoal = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter
 });
-
-export const uploadEssai = multer({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter
-});
-
-/**
- * GLOBAL ERROR HANDLER
- */
-export const uploadErrorHandler = (err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-            return res.status(413).json({
-                message: "Maximum image size is 5MB"
-            });
-        }
-    }
-
-    if (err.message === "INVALID_IMAGE_TYPE") {
-        return res.status(400).json({
-            message: "File must be an image (jpg, jpeg, png)"
-        });
-    }
-
-    next(err);
-};
