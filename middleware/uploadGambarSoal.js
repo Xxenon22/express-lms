@@ -20,7 +20,7 @@ const createStorage = (folder) => {
 
 const fileFilter = (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
-        cb(new Error("File harus berupa gambar"), false);
+        cb(new Error("The file must be an image"), false);
     } else {
         cb(null, true);
     }
@@ -36,4 +36,20 @@ export const uploadEssai = multer({
     storage: createStorage("essai"),
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter
+});
+
+router.use((err, req, res, next) => {
+    if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({
+            message: "Maximum image size 10MB"
+        });
+    }
+
+    if (err.message === "File harus berupa gambar") {
+        return res.status(400).json({
+            message: "File must be an image (jpg, png, jpeg)"
+        });
+    }
+
+    next(err);
 });
