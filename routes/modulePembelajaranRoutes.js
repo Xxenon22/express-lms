@@ -277,102 +277,6 @@
 //     }
 // });
 
-
-// // GET semua materi untuk siswa berdasarkan kelas yang diikuti
-// router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
-//     const { userId, kelasId } = req.params;
-
-//     try {
-//         const query = `
-//             SELECT
-//                 mp.id,
-//                 mp.judul,
-//                 mp.video_url,
-//                 mp.deskripsi,
-//                 mp.judul_penugasan,
-//                 mp.bank_soal_id,
-//                 mp.created_at,
-
-//                 p.langkah_aktif,
-//                 p.pdf_selesai,
-//                 p.video_selesai,
-//                 p.status_selesai,
-
-//                 u.photo_url AS guru_foto
-//             FROM module_pembelajaran mp
-//             LEFT JOIN progress_materi p
-//                 ON p.materi_id = mp.id
-//             AND p.user_id = $1
-//             LEFT JOIN users u ON u.id = mp.guru_id
-//             WHERE mp.kelas_id = $2
-//             ORDER BY mp.created_at DESC
-
-//         `;
-
-//         const { rows } = await pool.query(query, [userId, kelasId]);
-//         res.json(rows);
-//     } catch (err) {
-//         console.error("Error fetch materi siswa per kelas:", err);
-//         res.status(500).json({ message: "Failed fetch materi" });
-//     }
-// });
-
-// // GET semua materi untuk siswa (HANYA dari kelas yang diikuti)
-// router.get("/siswa/:userId", verifyToken, async (req, res) => {
-//     const { userId } = req.params;
-
-//     try {
-//         const query = `
-//             SELECT DISTINCT
-//                 mp.id,
-//                 mp.materi_uuid,
-//                 mp.judul,
-//                 mp.video_url,
-//                 mp.deskripsi,
-//                 mp.judul_penugasan,
-//                 mp.link_zoom,
-//                 mp.bank_soal_id,
-//                 mp.kelas_id,
-//                 mp.guru_id,
-//                 mp.created_at,
-
-//                 p.pdf_selesai,
-//                 p.video_selesai,
-
-//                 dm.nama_mapel,
-//                 u.photo_url AS guru_foto
-
-//             FROM module_pembelajaran mp
-
-//             JOIN kelas_diikuti ks
-//                 ON ks.kelas_id = mp.kelas_id
-//                AND ks.user_id = $1
-
-//             LEFT JOIN progress_materi p
-//                 ON p.materi_id = mp.id
-//                AND p.user_id = $1
-
-//             LEFT JOIN users u
-//                 ON u.id = mp.guru_id
-
-//             LEFT JOIN kelas k
-//                 ON k.id = mp.kelas_id
-
-//             LEFT JOIN db_mapel dm
-//                 ON dm.id = k.id_mapel
-
-//             ORDER BY mp.created_at DESC
-//         `;
-
-//         const { rows } = await pool.query(query, [userId]);
-//         res.json(rows);
-
-//     } catch (err) {
-//         console.error("Error fetch materi siswa:", err);
-//         res.status(500).json({ message: "Failed fetch materi siswa" });
-//     }
-// });
-
 // router.get("/:id/pdf", async (req, res) => {
 //     try {
 //         const { id } = req.params;
@@ -846,99 +750,38 @@ router.delete("/:id", verifyToken, async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
-// GET semua materi untuk siswa berdasarkan kelas yang diikuti
-router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
-    const { userId, kelasId } = req.params;
-
+/* ================= GET MATERI HISTORY SISWA ================= */
+router.get("/kelas/:kelasId/history", verifyToken, async (req, res) => {
     try {
-        const query = `
+        const { kelasId } = req.params;
+        const userId = req.users.id;
+
+        const { rows } = await pool.query(
+            `
             SELECT
-                mp.id,
-                mp.judul,
-                mp.video_url,
-                mp.deskripsi,
-                mp.judul_penugasan,
-                mp.bank_soal_id,
-                mp.created_at,
-
-                p.langkah_aktif,
-                p.pdf_selesai,
-                p.video_selesai,
-                p.status_selesai,
-
-                u.photo_url AS guru_foto
-            FROM module_pembelajaran mp
+                m.*,
+                p.refleksi,
+                COALESCE(p.status_selesai, false) AS status_selesai,
+                p.updated_at AS selesai_at
+            FROM module_pembelajaran m
             LEFT JOIN progress_materi p
-                ON p.materi_id = mp.id
-            AND p.user_id = $1
-            LEFT JOIN users u ON u.id = mp.guru_id
-            WHERE mp.kelas_id = $2
-            ORDER BY mp.created_at DESC
+                ON p.materi_id = m.id
+               AND p.user_id = $2
+            WHERE m.kelas_id = $1
+              AND p.status_selesai = true
+            ORDER BY p.updated_at DESC
+            `,
+            [kelasId, userId]
+        );
 
-        `;
-
-        const { rows } = await pool.query(query, [userId, kelasId]);
         res.json(rows);
     } catch (err) {
-        console.error("Error fetch materi siswa per kelas:", err);
-        res.status(500).json({ message: "Failed fetch materi" });
+        console.error("GET HISTORY ERROR:", err);
+        res.status(500).json({
+            message: "Failed to retrieve history material"
+        });
     }
 });
 
-// GET semua materi untuk siswa (HANYA dari kelas yang diikuti)
-router.get("/siswa/:userId", verifyToken, async (req, res) => {
-    const { userId } = req.params;
-
-    try {
-        const query = `
-            SELECT DISTINCT
-                mp.id,
-                mp.materi_uuid,
-                mp.judul,
-                mp.video_url,
-                mp.deskripsi,
-                mp.judul_penugasan,
-                mp.link_zoom,
-                mp.bank_soal_id,
-                mp.kelas_id,
-                mp.guru_id,
-                mp.created_at,
-
-                p.pdf_selesai,
-                p.video_selesai,
-
-                dm.nama_mapel,
-                u.photo_url AS guru_foto
-
-            FROM module_pembelajaran mp
-
-            JOIN kelas_diikuti ks
-                ON ks.kelas_id = mp.kelas_id
-               AND ks.user_id = $1
-
-            LEFT JOIN progress_materi p
-                ON p.materi_id = mp.id
-               AND p.user_id = $1
-
-            LEFT JOIN users u
-                ON u.id = mp.guru_id
-
-            LEFT JOIN kelas k
-                ON k.id = mp.kelas_id
-
-            LEFT JOIN db_mapel dm
-                ON dm.id = k.id_mapel
-
-            ORDER BY mp.created_at DESC
-        `;
-
-        const { rows } = await pool.query(query, [userId]);
-        res.json(rows);
-
-    } catch (err) {
-        console.error("Error fetch materi siswa:", err);
-        res.status(500).json({ message: "Failed fetch materi siswa" });
-    }
-});
 
 export default router;
