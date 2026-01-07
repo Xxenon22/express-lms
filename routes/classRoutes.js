@@ -107,7 +107,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         =============================== */
         const [mapelRes, guruRes] = await Promise.all([
             pool.query(`SELECT id, nama_mapel FROM db_mapel`),
-            pool.query(`SELECT id, username, photo_profile FROM users`)
+            pool.query(`SELECT id, username, photo_url FROM users`)
         ]);
 
         const mapelMap = Object.fromEntries(
@@ -119,7 +119,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 g.id,
                 {
                     username: g.username,
-                    photo: g.photo_profile
+                    photo: g.photo_url
                 }
             ])
         );
@@ -246,7 +246,7 @@ router.get("/", verifyToken, async (req, res) => {
                 m.nama_mapel,
                 mj.nama_jurusan AS major,
                 u.username AS guru_name,
-                u.photo_profile AS guru_photo
+                u.photo_url AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
@@ -375,7 +375,7 @@ router.get("/:id", async (req, res) => {
                 mj.nama_jurusan AS major,
 
                 u.username AS guru_name,
-                u.photo_profile AS guru_photo,
+                u.photo_url AS guru_photo,
 
                 mp.id AS module_id,
                 mp.judul AS module_judul,
