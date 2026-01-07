@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import router from "../routes/authRoutes";
 
 const createStorage = (folder) => {
     const uploadPath = path.join("uploads", "soal", folder);
