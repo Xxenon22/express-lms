@@ -62,7 +62,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 LIMIT $2 OFFSET $3
 
                 `,
-                [limit, offset]
+                [userId, limit, offset]
             ),
             pool.query(
                 `
