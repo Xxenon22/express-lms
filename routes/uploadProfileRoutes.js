@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         // Using user ID to generate the filename
-        const userId = req.users?.id;  // Ensure userId is available
+        const userId = req.users.id;  // Ensure userId is available
         if (!userId) {
             return cb(new Error("User ID is missing."));
         }
@@ -51,7 +51,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const userId = req.users?.id;  // Ensure userId is available
+        const userId = req.users.id;  // Ensure userId is available
         if (!userId) {
             return res.status(400).json({ message: "User not authenticated" });
         }
