@@ -275,25 +275,27 @@ router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
     try {
         const query = `
             SELECT 
-            mp.id,
-            mp.materi_uuid,
-            mp.judul,
-            mp.video_url,
-            mp.deskripsi,
-            mp.judul_penugasan,
-            mp.link_zoom,
-            mp.bank_soal_id,
-            mp.guru_id,
-            mp.created_at,
-            p.pdf_selesai,
-            p.video_selesai,
-            u.photo_url AS guru_foto
-        FROM module_pembelajaran mp
-        LEFT JOIN progress_materi p 
-            ON p.materi_id = mp.id AND p.user_id = $1
-        LEFT JOIN users u ON u.id = mp.guru_id
-        WHERE mp.kelas_id = $2
-        ORDER BY mp.created_at DESC
+                mp.id,
+                mp.judul,
+                mp.video_url,
+                mp.deskripsi,
+                mp.judul_penugasan,
+                mp.bank_soal_id,
+                mp.created_at,
+
+                p.langkah_aktif,
+                p.pdf_selesai,
+                p.video_selesai,
+                p.status_selesai,
+
+                u.photo_url AS guru_foto
+            FROM module_pembelajaran mp
+            LEFT JOIN progress_materi p 
+                ON p.materi_id = mp.id
+            AND p.user_id = $1
+            LEFT JOIN users u ON u.id = mp.guru_id
+            WHERE mp.kelas_id = $2
+            ORDER BY mp.created_at DESC
 
         `;
 
