@@ -5,29 +5,40 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
-const router = express.Router();
+const router = express.Router()
 
-/* =========================
-   MULTER CONFIG
-========================= */
+const uploadDir = path.join(process.cwd(), "uploads/jawaban_siswa_file");
+
+// pastikan folder ada
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const unique = crypto.randomUUID();
+        cb(null, `${unique}${ext}`);
+    }
+});
+
 const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-        const allowedTypes = [
+        const allowed = [
             "image/jpeg",
             "image/png",
             "image/webp",
             "application/pdf",
         ];
-
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error("Only JPG, PNG, WEBP, and PDF allowed"), false);
-        }
-    },
+        cb(null, allowed.includes(file.mimetype));
+    }
 });
 
 /* =========================
@@ -39,32 +50,30 @@ router.post(
     upload.array("files"),
     async (req, res) => {
         try {
+            const { soal_id, bank_soal_id, materi_id } = req.body;
+            const userId = req.users.id;
+
             if (!req.files?.length) {
                 return res.status(400).json({ message: "No files uploaded" });
             }
 
-            const { soal_id, bank_soal_id, materi_id } = req.body;
-            const userId = req.users.id;
-
-            console.log("📥 UPLOAD START");
-            console.log("User ID:", userId);
-            console.log("Bank Soal ID:", bank_soal_id);
-            console.log("Total Files:", req.files.length);
-
             const saved = [];
 
             for (const file of req.files) {
+                const filePath = `/uploads/jawaban_siswa_file/${file.filename}`;
+
                 const result = await pool.query(
                     `
                     INSERT INTO jawaban_siswa
                         (user_id, soal_id, bank_soal_id, materi_id,
-                         file_data, file_mime, file_name, file_size, created_at)
+                         file_jawaban_siswa, file_mime, file_name, file_size, created_at)
                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
                     ON CONFLICT (user_id, soal_id, bank_soal_id)
                     DO UPDATE SET
-                        file_data = EXCLUDED.file_data,
+                        file_jawaban_siswa = EXCLUDED.file_jawaban_siswa,
                         file_mime = EXCLUDED.file_mime,
                         file_name = EXCLUDED.file_name,
+                        file_size = EXCLUDED.file_size,
                         created_at = NOW()
                     RETURNING *
                     `,
@@ -73,52 +82,34 @@ router.post(
                         soal_id || null,
                         bank_soal_id,
                         materi_id || null,
-                        file.buffer,
+                        filePath,
                         file.mimetype,
                         file.originalname,
-                        file.buffer.length,
+                        file.size
                     ]
                 );
 
-                const row = result.rows[0];
-
-                // ✅ LOG PER FILE
-                console.log("✅ FILE UPLOADED");
-                console.log({
-                    jawaban_id: row.id,
-                    file_name: row.file_name,
-                    mime: row.file_mime,
-                    size_kb: Math.round(file.buffer.length / 1024) + " KB",
-                });
-
-                saved.push(row);
+                saved.push(result.rows[0]);
             }
-
-            const files = saved.map(row => ({
-                id: row.id,
-                nama_file: row.file_name,
-                mime: row.file_mime,
-                file_size: row.file_size,
-                url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-                created_at: row.created_at,
-            }));
-
-            // ✅ LOG FINAL
-            console.log("🎉 UPLOAD SELESAI");
-            console.log("Total berhasil:", files.length);
 
             res.json({
                 message: "Upload jawaban siswa berhasil",
-                total: files.length,
-                files,
+                files: saved.map(r => ({
+                    id: r.id,
+                    nama_file: r.file_name,
+                    mime: r.file_mime,
+                    url: `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`,
+                    created_at: r.created_at
+                }))
             });
 
         } catch (err) {
-            console.error("❌ UPLOAD GAGAL:", err);
+            console.error(err);
             res.status(500).json({ message: err.message });
         }
     }
 );
+
 
 
 /* =========================
