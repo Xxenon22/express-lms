@@ -170,42 +170,33 @@ router.post("/", verifyToken, async (req, res) => {
    GET JAWABAN SISWA (LOGIN)
 ========================= */
 router.get("/", verifyToken, async (req, res) => {
-    try {
-        const userId = req.users.id;
+    const userId = req.users.id;
 
-        const result = await pool.query(
-            `
-            SELECT
-                id,
-                user_id,
-                soal_id,
-                bank_soal_id,
-                jawaban,
-                jawaban_essai,
-                refleksi_siswa,
-                nilai,
-                file_name,
-                file_mime,
-                created_at
-            FROM jawaban_siswa
-            WHERE user_id = $1
-            `,
-            [userId]
-        );
+    const result = await pool.query(`
+        SELECT
+            id,
+            soal_id,
+            bank_soal_id,
+            jawaban,
+            jawaban_essai,
+            refleksi_siswa,
+            nilai,
+            file_jawaban_siswa,
+            file_name,
+            file_mime,
+            created_at
+        FROM jawaban_siswa
+        WHERE user_id = $1
+    `, [userId]);
 
-        res.json(
-            result.rows.map(r => ({
-                ...r,
-                file_url: r.file_name
-                    ? `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${r.id}`
-                    : null,
-            }))
-        );
-    } catch (err) {
-        console.error("Error fetch jawaban:", err);
-        res.status(500).json({ message: err.message });
-    }
+    res.json(result.rows.map(r => ({
+        ...r,
+        file_url: r.file_jawaban_siswa
+            ? `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`
+            : null
+    })));
 });
+
 
 /* =========================
    GET SEMUA JAWABAN (GURU)
@@ -327,48 +318,48 @@ router.get("/all-with-soal", async (req, res) => {
 /* =========================
    STREAM FILE DARI DB
 ========================= */
-router.get("/file-db/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const isDownload = req.query.download === "1";
+// router.get("/file-db/:id", async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const isDownload = req.query.download === "1";
 
-        const result = await pool.query(
-            `SELECT file_data, file_mime, file_name
-             FROM jawaban_siswa
-             WHERE id = $1`,
-            [id]
-        );
+//         const result = await pool.query(
+//             `SELECT file_jawaban_siswa, file_mime, file_name
+//              FROM jawaban_siswa
+//              WHERE id = $1`,
+//             [id]
+//         );
 
-        if (!result.rows.length) {
-            return res.status(404).send("File not found");
-        }
+//         if (!result.rows.length) {
+//             return res.status(404).send("File not found");
+//         }
 
-        const file = result.rows[0];
+//         const file = result.rows[0];
 
-        // CORS (aman)
-        res.setHeader("Access-Control-Allow-Origin", "*");
+//         // CORS (aman)
+//         res.setHeader("Access-Control-Allow-Origin", "*");
 
-        res.setHeader("Content-Type", file.file_mime);
+//         res.setHeader("Content-Type", file.file_mime);
 
-        // 🔥 INI KUNCINYA
-        if (isDownload) {
-            res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="${file.file_name}"`
-            );
-        } else {
-            res.setHeader(
-                "Content-Disposition",
-                `inline; filename="${file.file_name}"`
-            );
-        }
+//         // 🔥 INI KUNCINYA
+//         if (isDownload) {
+//             res.setHeader(
+//                 "Content-Disposition",
+//                 `attachment; filename="${file.file_name}"`
+//             );
+//         } else {
+//             res.setHeader(
+//                 "Content-Disposition",
+//                 `inline; filename="${file.file_name}"`
+//             );
+//         }
 
-        res.send(file.file_data);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Failed to load file");
-    }
-});
+//         res.send(file.file_jawaban_siswa);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Failed to load file");
+//     }
+// });
 
 /* =========================
    REVIEW JAWABAN SISWA
@@ -407,36 +398,27 @@ router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
    FILE BY BANK SOAL
 ========================= */
 router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) => {
-    try {
-        const { bank_soal_id } = req.params;
-        const userId = req.users.id;
+    const { bank_soal_id } = req.params;
+    const userId = req.users.id;
 
-        const result = await pool.query(
-            `
-            SELECT id, file_name, file_mime, file_size, created_at
-            FROM jawaban_siswa
-            WHERE bank_soal_id = $1
-              AND user_id = $2
-              AND file_data IS NOT NULL
-            ORDER BY created_at DESC
-            `,
-            [bank_soal_id, userId]
-        );
+    const result = await pool.query(`
+        SELECT id, file_name, file_mime, file_jawaban_siswa, created_at
+        FROM jawaban_siswa
+        WHERE bank_soal_id = $1
+          AND user_id = $2
+          AND file_jawaban_siswa IS NOT NULL
+        ORDER BY created_at DESC
+    `, [bank_soal_id, userId]);
 
-        const files = result.rows.map(row => ({
-            id: row.id,
-            file_name: row.file_name,
-            file_mime: row.file_mime,
-            url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-            created_at: row.created_at,
-        }));
-
-        res.json(files);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Failed to fetch files" });
-    }
+    res.json(result.rows.map(r => ({
+        id: r.id,
+        file_name: r.file_name,
+        file_mime: r.file_mime,
+        url: `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`,
+        created_at: r.created_at
+    })));
 });
+
 
 // GET FILE JAWABAN PER SOAL
 router.get(
@@ -453,7 +435,7 @@ router.get(
       WHERE bank_soal_id = $1
         AND soal_id = $2
         AND user_id = $3
-        AND file_data IS NOT NULL
+        AND file_jawaban_siswa IS NOT NULL
       ORDER BY created_at DESC
       `,
             [bank_soal_id, soal_id, userId]
@@ -482,7 +464,7 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
             SELECT id, user_id, file_name, file_mime, file_size, created_at
             FROM jawaban_siswa
             WHERE bank_soal_id = $1
-              AND file_data IS NOT NULL
+              AND file_jawaban_siswa IS NOT NULL
             ORDER BY created_at DESC
             `,
             [bank_soal_id]
@@ -509,34 +491,25 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
    DELETE FILE JAWABAN SISWA
 ========================= */
 router.delete("/file/:id", verifyToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.users.id;
+    const { id } = req.params;
+    const userId = req.users.id;
 
-        const result = await pool.query(
-            `
-            DELETE FROM jawaban_siswa
-            WHERE id = $1 AND user_id = $2
-            RETURNING id
-            `,
-            [id, userId]
-        );
+    const result = await pool.query(`
+        DELETE FROM jawaban_siswa
+        WHERE id = $1 AND user_id = $2
+        RETURNING file_jawaban_siswa
+    `, [id, userId]);
 
-        if (!result.rowCount) {
-            return res.status(404).json({
-                message: "File not found or not authorized"
-            });
-        }
-
-        res.json({
-            message: "File deleted successfully",
-            id
-        });
-    } catch (err) {
-        console.error("Delete file error:", err);
-        res.status(500).json({ message: err.message });
+    if (!result.rowCount) {
+        return res.status(404).json({ message: "Not found" });
     }
+
+    const filePath = path.join(process.cwd(), result.rows[0].file_jawaban_siswa);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    res.json({ message: "File deleted" });
 });
+
 
 /* =========================
    UPDATE FILE JAWABAN SISWA
@@ -560,7 +533,7 @@ router.put(
                 `
                 UPDATE jawaban_siswa
                 SET
-                    file_data = $1,
+                    file_jawaban_siswa = $1,
                     file_mime = $2,
                     file_name = $3,
                     file_size = $4,
