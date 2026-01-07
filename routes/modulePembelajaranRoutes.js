@@ -846,4 +846,43 @@ router.delete("/:id", verifyToken, async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
+router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!req.file) {
+            return res.status(400).json({ message: "PDF required" });
+        }
+
+        // ambil file lama (untuk dihapus)
+        const old = await pool.query(
+            "SELECT file_url FROM module_pembelajaran WHERE id=$1",
+            [id]
+        );
+
+        if (!old.rows.length) {
+            return res.status(404).json({ message: "Material not found" });
+        }
+
+        const newPath = `/uploads/materi/${req.file.filename}`;
+
+        // update DB
+        await pool.query(
+            "UPDATE module_pembelajaran SET file_url=$1 WHERE id=$2",
+            [newPath, id]
+        );
+
+        // hapus file lama (optional tapi direkomendasikan)
+        if (old.rows[0].file_url) {
+            const oldPath = path.join(process.cwd(), old.rows[0].file_url);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        res.json({ message: "PDF updated successfully" });
+    } catch (err) {
+        console.error("UPDATE PDF ERROR:", err);
+        res.status(500).json({ message: "Failed to update PDF" });
+    }
+});
+
 export default router;
