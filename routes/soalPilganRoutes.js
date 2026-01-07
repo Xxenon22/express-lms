@@ -1,8 +1,7 @@
 import express from "express";
 import { pool } from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { uploadSoal } from "../middleware/uploadGambarSoal.js";
-
+import { uploadSoalCreate } from "../middleware/uploadSoalCreate.js";
 const router = express.Router();
 
 /* =======================
@@ -12,7 +11,7 @@ const router = express.Router();
 router.post(
     "/",
     verifyToken,
-    uploadSoal.any(),
+    uploadSoalCreate.any(),
     async (req, res) => {
         try {
             const { bank_soal_id, soal_list } = JSON.parse(req.body.data);
