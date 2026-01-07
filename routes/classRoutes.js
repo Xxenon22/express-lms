@@ -294,6 +294,38 @@ router.post("/", verifyToken, async (req, res) => {
 });
 
 /* ============================================
+   GET siswa dalam kelas (UNTUK GURU)
+============================================ */
+router.get("/students/:kelasId", verifyToken, async (req, res) => {
+    try {
+        const { kelasId } = req.params;
+
+        if (isNaN(kelasId)) {
+            return res.status(400).json({ error: "Invalid kelasId" });
+        }
+
+        const { rows } = await pool.query(
+            `
+            SELECT
+                u.id AS user_id,
+                u.username AS name
+            FROM kelas_diikuti kd
+            JOIN users u ON kd.user_id = u.id
+            WHERE kd.kelas_id = $1
+            ORDER BY u.username ASC
+            `,
+            [kelasId]
+        );
+
+        res.json(rows);
+    } catch (err) {
+        console.error("Error GET /kelas/students/:kelasId", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+
+/* ============================================
    UPDATE kelas (COALESCE)
 ============================================ */
 router.put("/:id", async (req, res) => {
