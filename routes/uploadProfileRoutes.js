@@ -11,7 +11,7 @@ const router = express.Router();
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Directory where profile images are stored
-        const uploadDir = path.join(process.cwd(), 'uploads', 'profile');
+        const uploadDir = path.join(process.cwd(), 'uploads', 'users');
         // Ensure the directory exists, create it if not
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
             return cb(new Error("User ID is missing."));
         }
         const extension = path.extname(file.originalname); // Get the file extension
-        cb(null, `profile-${userId}${extension}`);
+        cb(null, `users-${userId}${extension}`);
     }
 });
 
@@ -54,7 +54,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "User not authenticated" });
         }
 
-        const photoUrl = `/uploads/users/profile-${userId}${path.extname(req.file.originalname)}`;
+        const photoUrl = `/uploads/users/users-${userId}${path.extname(req.file.originalname)}`;
 
         // Update the user's photo URL in the database
         const result = await pool.query(
@@ -92,7 +92,7 @@ router.get("/:userId", async (req, res) => {
             return res.status(404).send("Image not found");
         }
 
-        res.sendFile(path.join(process.cwd(), 'uploads', 'profile', result.rows[0].photo_url));
+        res.sendFile(path.join(process.cwd(), 'uploads', 'users', result.rows[0].photo_url));
     } catch (err) {
         console.error(err);
         res.status(500).send("Error fetching image");
