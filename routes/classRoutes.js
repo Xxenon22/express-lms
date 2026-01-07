@@ -47,12 +47,20 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                     k.link_wallpaper_kelas,
                     m.nama_mapel,
                     u.username AS guru_name,
-                    u.photo_url AS guru_photo
+                    u.photo_url AS guru_photo,
+                    CASE
+                        WHEN kd.user_id IS NOT NULL THEN true
+                        ELSE false
+                    END AS is_joined
                 FROM kelas k
                 JOIN db_mapel m ON m.id = k.id_mapel
                 JOIN users u ON u.id = k.guru_id
+                LEFT JOIN kelas_diikuti kd
+                    ON kd.kelas_id = k.id
+                    AND kd.user_id = $1
                 ORDER BY k.id DESC
-                LIMIT $1 OFFSET $2
+                LIMIT $2 OFFSET $3
+
                 `,
                 [limit, offset]
             ),
