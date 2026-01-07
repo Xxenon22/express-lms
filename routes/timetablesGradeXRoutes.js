@@ -53,6 +53,37 @@ router.get("/", async (req, res) => {
     res.json(result.rows);
 });
 
+router.get("/:id/file", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "SELECT file_url FROM timetables_x_db WHERE id = $1",
+            [id]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).json({ message: "File not found in DB" });
+        }
+
+        const filePath = path.join(
+            process.cwd(),
+            result.rows[0].file_url
+        );
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "PDF not found on server" });
+        }
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+
+        res.sendFile(filePath);
+    } catch (err) {
+        console.error("TIMETABLE FILE ERROR:", err);
+        res.status(500).json({ message: "Failed to load PDF" });
+    }
+});
 /**
  * DELETE
  */
