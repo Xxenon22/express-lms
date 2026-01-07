@@ -5,7 +5,7 @@ import { pool } from "../config/db.js";
 import { pdfUpload } from "../utils/pdfUploader.js";
 
 const router = express.Router();
-const upload = pdfUpload("uploads/timetables-grade-x");
+const upload = pdfUpload("uploads/timetables");
 
 /**
  * CREATE
@@ -15,10 +15,10 @@ router.post("/", upload.single("jadwal"), async (req, res) => {
         return res.status(400).json({ message: "PDF required" });
     }
 
-    const fileUrl = `/uploads/timetables-grade-x/${req.file.filename}`;
+    const fileUrl = `/uploads/timetables/${req.file.filename}`;
 
     const result = await pool.query(
-        `INSERT INTO jadwal_x_db (file_name, file_url)
+        `INSERT INTO jadwal_db (file_name, file_url)
          VALUES ($1, $2)
          RETURNING id`,
         [req.file.originalname, fileUrl]
@@ -35,7 +35,7 @@ router.post("/", upload.single("jadwal"), async (req, res) => {
  */
 router.get("/", async (req, res) => {
     const result = await pool.query(
-        "SELECT id, file_name, file_url FROM jadwal_x_db ORDER BY id DESC"
+        "SELECT id, file_name, file_url FROM jadwal_db ORDER BY id DESC"
     );
     res.json(result.rows);
 });
@@ -77,7 +77,7 @@ router.get("/:id/file", async (req, res) => {
  */
 router.delete("/:id", async (req, res) => {
     const old = await pool.query(
-        "SELECT file_url FROM jadwal_x_db WHERE id=$1",
+        "SELECT file_url FROM jadwal_db WHERE id=$1",
         [req.params.id]
     );
 
@@ -86,7 +86,7 @@ router.delete("/:id", async (req, res) => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
-    await pool.query("DELETE FROM jadwal_x_db WHERE id=$1", [req.params.id]);
+    await pool.query("DELETE FROM jadwal_db WHERE id=$1", [req.params.id]);
     res.json({ message: "Deleted" });
 });
 
