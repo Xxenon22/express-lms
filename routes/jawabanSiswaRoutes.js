@@ -41,6 +41,60 @@ const upload = multer({
     }
 });
 
+router.post(
+    "/upload/:materiId",
+    verifyToken,
+    upload.single("file"),
+    async (req, res) => {
+        try {
+            const { materiId } = req.params;
+            const userId = req.users.id;
+            const file = req.file;
+
+            if (!file) {
+                return res.status(400).json({ message: "No file uploaded" });
+            }
+
+            const filePath = `/uploads/jawaban_siswa_file/${file.filename}`;
+
+            const result = await pool.query(
+                `
+                INSERT INTO jawaban_siswa
+                (user_id, materi_id, file_jawaban_siswa, file_name, file_mime, file_size)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
+                `,
+                [
+                    userId,
+                    materiId,
+                    filePath,
+                    file.originalname,
+                    file.mimetype,
+                    file.size
+                ]
+            );
+
+            const row = result.rows[0];
+
+            res.json({
+                file: {
+                    id: row.id,
+                    file_name: row.file_name,
+                    file_mime: row.file_mime,
+                    created_at: row.created_at,
+                    url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`,
+                    download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`
+                }
+            });
+
+        } catch (err) {
+            console.error("UPLOAD ERROR:", err);
+            res.status(500).json({ message: "Upload failed" });
+        }
+    }
+);
+
+
 /* =========================
    UPLOAD FILE JAWABAN (DB)
 ========================= */
