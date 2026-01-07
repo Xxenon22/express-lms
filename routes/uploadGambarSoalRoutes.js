@@ -91,12 +91,12 @@ router.post(
             );
 
             res.json({
-                message: "Gambar essai berhasil diupload",
+                message: "Essay image successfully uploaded",
                 path: imagePath
             });
         } catch (error) {
             console.error("UPLOAD GAMBAR ESSAI ERROR:", error);
-            res.status(500).json({ message: "Upload gagal" });
+            res.status(500).json({ message: "Upload failed" });
         }
     }
 );
