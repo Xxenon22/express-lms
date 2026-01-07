@@ -1,33 +1,26 @@
-// middleware/uploadGambarSoal.js
+// middleware/uploadSoalCreate.js
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const BASE_UPLOAD = path.join(__dirname, "..", "uploads", "soal");
-
-const ensureDir = (dir) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-};
+const BASE_UPLOAD = path.resolve("uploads/soal");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         let type = null;
 
-        if (req.params.type === "pg") type = "pg";
-        if (req.params.type === "essai") type = "essai";
+        if (file.fieldname.startsWith("pg_image_")) {
+            type = "pg";
+        } else if (file.fieldname.startsWith("essai_image_")) {
+            type = "essai";
+        }
 
         if (!type) {
-            return cb(new Error("INVALID_UPLOAD_TYPE"));
+            return cb(new Error("INVALID_UPLOAD_FIELD"));
         }
 
         const dir = path.join(BASE_UPLOAD, type);
-        ensureDir(dir);
+        fs.mkdirSync(dir, { recursive: true });
 
         cb(null, dir);
     },
@@ -45,8 +38,8 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
 };
 
-export const uploadGambarSoal = multer({
+export const uploadSoalCreate = multer({
     storage,
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
