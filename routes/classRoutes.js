@@ -34,35 +34,42 @@ router.get("/followed/me", verifyToken, async (req, res) => {
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
-        const userId = Number(req.users.id);
+        const userId = Number(req.user.id);
         const page = Number(req.query.page || 1);
         const limit = 20;
         const offset = (page - 1) * limit;
 
+        // 1. ambil rombel siswa
+        const userRes = await pool.query(
+            "SELECT rombel_id FROM users WHERE id = $1",
+            [userId]
+        );
+
+        const rombelId = userRes.rows[0]?.rombel_id;
+
+        if (!rombelId) {
+            return res.json({ joined: [], other: [] });
+        }
+
+        // 2. ambil kelas sesuai rombel
         const [kelasRes, followedRes] = await Promise.all([
             pool.query(
                 `
                 SELECT
                     k.id,
+                    k.rombel_id,
                     k.link_wallpaper_kelas,
                     m.nama_mapel,
                     u.username AS guru_name,
-                    u.photo_url AS guru_photo,
-                    CASE
-                        WHEN kd.user_id IS NOT NULL THEN true
-                        ELSE false
-                    END AS is_joined
+                    u.photo_url AS guru_photo
                 FROM kelas k
                 JOIN db_mapel m ON m.id = k.id_mapel
                 JOIN users u ON u.id = k.guru_id
-                LEFT JOIN kelas_diikuti kd
-                    ON kd.kelas_id = k.id
-                    AND kd.user_id = $1
+                WHERE k.rombel_id = $1
                 ORDER BY k.id DESC
                 LIMIT $2 OFFSET $3
-
                 `,
-                [userId, limit, offset]
+                [rombelId, limit, offset]
             ),
             pool.query(
                 `
