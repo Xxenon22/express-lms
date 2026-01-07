@@ -58,7 +58,7 @@ router.get("/:id/file", async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            "SELECT file_url FROM timetables_x_db WHERE id = $1",
+            "SELECT file_url FROM jadwal_x_db WHERE id = $1",
             [id]
         );
 
