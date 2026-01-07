@@ -451,27 +451,42 @@ router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
 /* =========================
    FILE BY BANK SOAL
 ========================= */
-router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) => {
-    const { bank_soal_id } = req.params;
-    const userId = req.users.id;
+router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) => {
+    try {
+        const { bank_soal_id } = req.params;
 
-    const result = await pool.query(`
-        SELECT id, file_name, file_mime, file_jawaban_siswa, created_at
-        FROM jawaban_siswa
-        WHERE bank_soal_id = $1
-          AND user_id = $2
-          AND file_jawaban_siswa IS NOT NULL
-        ORDER BY created_at DESC
-    `, [bank_soal_id, userId]);
+        const result = await pool.query(
+            `
+            SELECT
+                id,
+                user_id,
+                file_name,
+                file_mime,
+                file_jawaban_siswa,
+                created_at
+            FROM jawaban_siswa
+            WHERE bank_soal_id = $1
+              AND file_jawaban_siswa IS NOT NULL
+            ORDER BY created_at DESC
+            `,
+            [bank_soal_id]
+        );
 
-    res.json(result.rows.map(r => ({
-        id: r.id,
-        file_name: r.file_name,
-        file_mime: r.file_mime,
-        url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-        download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,// ❌ r TIDAK ADA
-        created_at: r.created_at
-    })));
+        const files = result.rows.map(row => ({
+            id: row.id,
+            user_id: row.user_id,
+            file_name: row.file_name,
+            file_mime: row.file_mime,
+            created_at: row.created_at,
+            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
+        }));
+
+        res.json(files);
+    } catch (err) {
+        console.error("Fetch files error:", err); // 🔥 PENTING
+        res.status(500).json({ message: "Failed to fetch files" });
+    }
 });
 
 
