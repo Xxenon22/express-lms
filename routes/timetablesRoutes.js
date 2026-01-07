@@ -1,35 +1,12 @@
-import fs from "fs";
-import path from "path";
-import multer from "multer";
 import express from "express";
+import path from "path";
+import fs from "fs";
 import { pool } from "../config/db.js";
 import { pdfUpload } from "../utils/pdfUploader.js";
 
 const router = express.Router();
-const upload = pdfUpload("uploads/timetables-teachers");
+const upload = pdfUpload("uploads/timetables");
 
-const storage = (folder) =>
-    multer.diskStorage({
-        destination(req, file, cb) {
-            const uploadPath = path.join(process.cwd(), folder);
-            fs.mkdirSync(uploadPath, { recursive: true });
-            cb(null, uploadPath);
-        },
-        filename(req, file, cb) {
-            const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-            cb(null, unique + ".pdf");
-        },
-    });
-
-export const pdfUpload = (folder) =>
-    multer({
-        storage: storage(folder),
-        limits: { fileSize: 20 * 1024 * 1024 },
-        fileFilter(req, file, cb) {
-            if (file.mimetype === "application/pdf") cb(null, true);
-            else cb(new Error("Only PDF allowed"));
-        },
-    });
 /**
  * CREATE
  */
@@ -38,7 +15,7 @@ router.post("/", upload.single("jadwal"), async (req, res) => {
         return res.status(400).json({ message: "PDF required" });
     }
 
-    const fileUrl = `/uploads/timetables-teachers/${req.file.filename}`;
+    const fileUrl = `/uploads/timetables/${req.file.filename}`;
 
     const result = await pool.query(
         `INSERT INTO jadwal_db (file_name, file_url)
@@ -53,7 +30,7 @@ router.post("/", upload.single("jadwal"), async (req, res) => {
 });
 
 /**
- * READ LIST
+ * READ
  */
 router.get("/", async (req, res) => {
     const result = await pool.query(

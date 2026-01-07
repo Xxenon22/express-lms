@@ -4,6 +4,8 @@ import multer from "multer";
 import express from "express";
 import { pool } from "../config/db.js";
 import { pdfUpload } from "../utils/pdfUploader.js";
+const router = express.Router();
+const upload = pdfUpload("uploads/timetables-grade-xi");
 
 const storage = (folder) =>
     multer.diskStorage({
@@ -28,8 +30,6 @@ export const pdfUpload = (folder) =>
         },
     });
 
-const router = express.Router();
-const upload = pdfUpload("uploads/timetables-grade-xi");
 
 /**
  * CREATE
