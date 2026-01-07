@@ -1,13 +1,22 @@
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/gambar-soal/"); // folder uploads
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "_" + file.originalname);
-    },
-});
+const createStorage = (folder) => {
+    const uploadPath = path.join("uploads", "soal", folder);
 
-const uploadGambar = multer({ storage });
-export default uploadGambar;
+    if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
+    return multer.diskStorage({
+        destination: (_, __, cb) => cb(null, uploadPath),
+        filename: (_, file, cb) => {
+            const ext = path.extname(file.originalname);
+            cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+        }
+    });
+};
+
+export const uploadPG = multer({ storage: createStorage("pg") });
+export const uploadEssai = multer({ storage: createStorage("essai") });
