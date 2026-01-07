@@ -229,7 +229,7 @@ router.get("/all", verifyToken, async (req, res) => {
 
         const result = await pool.query(
             `
-            SELECT js.*, u.username, u.photo_url
+            SELECT js.*, u.username, u.photo_profile
             FROM jawaban_siswa js
             JOIN users u ON u.id = js.user_id
             WHERE js.bank_soal_id = $1

@@ -34,42 +34,28 @@ router.get("/followed/me", verifyToken, async (req, res) => {
 ============================================ */
 router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
-        const userId = Number(req.user.id);
+        const userId = Number(req.users.id);
         const page = Number(req.query.page || 1);
         const limit = 20;
         const offset = (page - 1) * limit;
 
-        // 1. ambil rombel siswa
-        const userRes = await pool.query(
-            "SELECT rombel_id FROM users WHERE id = $1",
-            [userId]
-        );
-
-        const rombelId = userRes.rows[0]?.rombel_id;
-
-        if (!rombelId) {
-            return res.json({ joined: [], other: [] });
-        }
-
-        // 2. ambil kelas sesuai rombel
+        /* ===============================
+           1. Ambil kelas + followed
+        =============================== */
         const [kelasRes, followedRes] = await Promise.all([
             pool.query(
                 `
                 SELECT
                     k.id,
                     k.rombel_id,
-                    k.link_wallpaper_kelas,
-                    m.nama_mapel,
-                    u.username AS guru_name,
-                    u.photo_url AS guru_photo
+                    k.id_mapel,
+                    k.guru_id,
+                    k.link_wallpaper_kelas
                 FROM kelas k
-                JOIN db_mapel m ON m.id = k.id_mapel
-                JOIN users u ON u.id = k.guru_id
-                WHERE k.rombel_id = $1
                 ORDER BY k.id DESC
-                LIMIT $2 OFFSET $3
+                LIMIT $1 OFFSET $2
                 `,
-                [rombelId, limit, offset]
+                [limit, offset]
             ),
             pool.query(
                 `
@@ -81,6 +67,82 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
             )
         ]);
 
+        /* ===============================
+           2. Ambil rombel (sekali)
+        =============================== */
+        const rombelIds = [
+            ...new Set(
+                kelasRes.rows
+                    .map(k => k.rombel_id)
+                    .filter(id => id !== null)
+            )
+        ];
+
+        let rombelMap = {};
+
+        if (rombelIds.length > 0) {
+            const rombelRes = await pool.query(
+                `
+                SELECT
+                    r.id,
+                    nr.number AS name_rombel,
+                    gl.grade_lvl,
+                    mj.nama_jurusan AS major
+                FROM rombel r
+                JOIN number_rombel nr ON r.name_rombel = nr.id
+                JOIN grade_level gl ON r.grade_id = gl.id
+                JOIN jurusan mj ON r.jurusan_id = mj.id
+                WHERE r.id = ANY($1)
+                `,
+                [rombelIds]
+            );
+
+            rombelMap = Object.fromEntries(
+                rombelRes.rows.map(r => [r.id, r])
+            );
+        }
+
+        /* ===============================
+           3. Ambil mapel & guru (ringan)
+        =============================== */
+        const [mapelRes, guruRes] = await Promise.all([
+            pool.query(`SELECT id, nama_mapel FROM db_mapel`),
+            pool.query(`SELECT id, username, photo_profile FROM users`)
+        ]);
+
+        const mapelMap = Object.fromEntries(
+            mapelRes.rows.map(m => [m.id, m.nama_mapel])
+        );
+
+        const guruMap = Object.fromEntries(
+            guruRes.rows.map(g => [
+                g.id,
+                {
+                    username: g.username,
+                    photo: g.photo_profile
+                }
+            ])
+        );
+
+        /* ===============================
+           4. Gabungkan data kelas
+        =============================== */
+        const kelasList = kelasRes.rows.map(k => ({
+            id: k.id,
+            link_wallpaper_kelas: k.link_wallpaper_kelas,
+
+            nama_mapel: mapelMap[k.id_mapel] || null,
+
+            guru_id: k.guru_id,
+            guru_name: guruMap[k.guru_id]?.username || null,
+            guru_photo: guruMap[k.guru_id]?.photo || null,
+
+            rombel: rombelMap[k.rombel_id] || null
+        }));
+
+        /* ===============================
+           5. Pisahkan joined / other
+        =============================== */
         const followedSet = new Set(
             followedRes.rows.map(r => r.kelas_id)
         );
@@ -88,11 +150,14 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         const joined = [];
         const other = [];
 
-        for (const k of kelasRes.rows) {
-            if (followedSet.has(k.id)) joined.push(k);
-            else other.push(k);
+        for (const kelas of kelasList) {
+            if (followedSet.has(kelas.id)) joined.push(kelas);
+            else other.push(kelas);
         }
 
+        /* ===============================
+           6. Response
+        =============================== */
         res.json({ joined, other });
 
     } catch (err) {
@@ -100,6 +165,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+
 
 /* ============================================
    FOLLOW kelas
@@ -180,7 +246,7 @@ router.get("/", verifyToken, async (req, res) => {
                 m.nama_mapel,
                 mj.nama_jurusan AS major,
                 u.username AS guru_name,
-                u.photo_url AS guru_photo
+                u.photo_profile AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
@@ -309,7 +375,7 @@ router.get("/:id", async (req, res) => {
                 mj.nama_jurusan AS major,
 
                 u.username AS guru_name,
-                u.photo_url AS guru_photo,
+                u.photo_profile AS guru_photo,
 
                 mp.id AS module_id,
                 mp.judul AS module_judul,
