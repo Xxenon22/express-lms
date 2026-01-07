@@ -1,7 +1,7 @@
+// middleware/uploadGambarSoal.js
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-// import router from "../routes/authRoutes";
 
 const createStorage = (folder) => {
     const uploadPath = path.join("uploads", "soal", folder);
@@ -21,7 +21,7 @@ const createStorage = (folder) => {
 
 const fileFilter = (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
-        cb(new Error("The file must be an image"), false);
+        cb(new Error("INVALID_IMAGE_TYPE"), false);
     } else {
         cb(null, true);
     }
@@ -39,18 +39,23 @@ export const uploadEssai = multer({
     fileFilter
 });
 
-router.use((err, req, res, next) => {
-    if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(413).json({
-            message: "Maximum image size 10MB"
-        });
+/**
+ * 🔥 GLOBAL ERROR HANDLER UNTUK MULTER
+ */
+export const uploadErrorHandler = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(413).json({
+                message: "Maximum image size is 5MB"
+            });
+        }
     }
 
-    if (err.message === "File harus berupa gambar") {
+    if (err.message === "INVALID_IMAGE_TYPE") {
         return res.status(400).json({
-            message: "File must be an image (jpg, png, jpeg)"
+            message: "File must be an image (jpg, jpeg, png)"
         });
     }
 
     next(err);
-});
+};
