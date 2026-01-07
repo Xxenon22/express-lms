@@ -287,7 +287,7 @@ router.get("/siswa/:userId/kelas/:kelasId", verifyToken, async (req, res) => {
             mp.created_at,
             p.pdf_selesai,
             p.video_selesai,
-            u.photo_profile AS guru_foto
+            u.photo_url AS guru_foto
         FROM module_pembelajaran mp
         LEFT JOIN progress_materi p 
             ON p.materi_id = mp.id AND p.user_id = $1
@@ -328,7 +328,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
                 p.video_selesai,
 
                 dm.nama_mapel,
-                u.photo_profile AS guru_foto
+                u.photo_url AS guru_foto
 
             FROM module_pembelajaran mp
 
