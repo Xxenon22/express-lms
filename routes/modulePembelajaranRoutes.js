@@ -200,45 +200,6 @@
 // });
 
 
-// // GET materi by kelasId (hanya yang BELUM selesai)
-// router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
-//     try {
-//         const { kelasId } = req.params;
-//         const userId = req.users.id;
-//         const guruId = req.users.id;   // guru (materi)
-
-//         const result = await pool.query(
-//             `
-//             SELECT
-//                 m.id,
-//                 m.judul,
-//                 m.video_url,
-//                 m.deskripsi,
-//                 m.guru_id,
-//                 m.bank_soal_id,
-//                 m.judul_penugasan,
-//                 m.link_zoom,
-//                 m.kelas_id,
-//                 m.pass_code,
-//                 m.created_at,
-//                 jm.status_selesai
-//             FROM module_pembelajaran m
-//             LEFT JOIN progress_materi jm
-//                 ON jm.materi_id = m.id
-//                AND jm.user_id = $2
-//             WHERE m.kelas_id = $1
-//             AND m.guru_id = $3
-//             ORDER BY m.created_at DESC
-//             `,
-//             [kelasId, userId, guruId]
-//         );
-
-//         res.json(result.rows);
-//     } catch (error) {
-//         console.error("GET /module-pembelajaran/kelas/:kelasId", error);
-//         res.status(500).json({ message: "Failed retrieve Module by id" });
-//     }
-// });
 
 // // DELETE materi by id
 // router.delete("/:id", async (req, res) => {
@@ -621,36 +582,6 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
     }
 });
 
-/* ================= FAST UPDATE (NO FILE) ================= */
-router.put("/:id", verifyToken, async (req, res) => {
-    const { id } = req.params;
-    const {
-        judul,
-        video_url,
-        deskripsi,
-        link_zoom,
-        pass_code,
-        bank_soal_id
-    } = req.body;
-
-    const { rowCount } = await pool.query(
-        `
-        UPDATE module_pembelajaran
-        SET judul=$1,
-            video_url=$2,
-            deskripsi=$3,
-            link_zoom=$4,
-            pass_code=$5,
-            bank_soal_id=$6
-        WHERE id=$7
-        `,
-        [judul, video_url, deskripsi, link_zoom, pass_code, bank_soal_id, id]
-    );
-
-    if (!rowCount) return res.status(404).json({ message: "Not found" });
-    res.json({ message: "Updated" });
-});
-
 /* ================= UPDATE KELAS (TANPA DELETE MASSAL) ================= */
 router.put("/:id/kelas", verifyToken, async (req, res) => {
     const { id } = req.params;
@@ -877,5 +808,77 @@ router.get("/kelas/:kelasId/history", verifyToken, async (req, res) => {
         });
     }
 });
+
+/* ================= FAST UPDATE (NO FILE) ================= */
+router.put("/:id", verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const {
+        judul,
+        video_url,
+        deskripsi,
+        link_zoom,
+        pass_code,
+        bank_soal_id
+    } = req.body;
+
+    const { rowCount } = await pool.query(
+        `
+        UPDATE module_pembelajaran
+        SET judul=$1,
+            video_url=$2,
+            deskripsi=$3,
+            link_zoom=$4,
+            pass_code=$5,
+            bank_soal_id=$6
+        WHERE id=$7
+        `,
+        [judul, video_url, deskripsi, link_zoom, pass_code, bank_soal_id, id]
+    );
+
+    if (!rowCount) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Updated" });
+});
+
+
+// GET materi by kelasId (hanya yang BELUM selesai)
+router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
+    try {
+        const { kelasId } = req.params;
+        const userId = req.users.id;
+        const guruId = req.users.id;   // guru (materi)
+
+        const result = await pool.query(
+            `
+            SELECT
+                m.id,
+                m.judul,
+                m.video_url,
+                m.deskripsi,
+                m.guru_id,
+                m.bank_soal_id,
+                m.judul_penugasan,
+                m.link_zoom,
+                m.kelas_id,
+                m.pass_code,
+                m.created_at,
+                jm.status_selesai
+            FROM module_pembelajaran m
+            LEFT JOIN progress_materi jm
+                ON jm.materi_id = m.id
+               AND jm.user_id = $2
+            WHERE m.kelas_id = $1
+            AND m.guru_id = $3
+            ORDER BY m.created_at DESC
+            `,
+            [kelasId, userId, guruId]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error("GET /module-pembelajaran/kelas/:kelasId", error);
+        res.status(500).json({ message: "Failed retrieve Module by id" });
+    }
+});
+
 
 export default router;

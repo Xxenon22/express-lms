@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
         p.username,
         p.role,
         p.phone_number,
-        p.photo_url,
+        p.photo_url AS photo_url,
         p.teacher_subject,
         p.jurusan_id,
         p.grade_id,
