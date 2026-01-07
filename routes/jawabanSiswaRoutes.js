@@ -372,48 +372,48 @@ router.get("/all-with-soal", async (req, res) => {
 /* =========================
    STREAM FILE DARI DB
 ========================= */
-// router.get("/file-db/:id", async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const isDownload = req.query.download === "1";
+router.get("/file-db/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const isDownload = req.query.download === "1";
 
-//         const result = await pool.query(
-//             `SELECT file_jawaban_siswa, file_mime, file_name
-//              FROM jawaban_siswa
-//              WHERE id = $1`,
-//             [id]
-//         );
+        const result = await pool.query(
+            `SELECT file_jawaban_siswa, file_mime, file_name
+             FROM jawaban_siswa
+             WHERE id = $1`,
+            [id]
+        );
 
-//         if (!result.rows.length) {
-//             return res.status(404).send("File not found");
-//         }
+        if (!result.rows.length) {
+            return res.status(404).send("File not found");
+        }
 
-//         const file = result.rows[0];
+        const file = result.rows[0];
 
-//         // CORS (aman)
-//         res.setHeader("Access-Control-Allow-Origin", "*");
+        // CORS (aman)
+        res.setHeader("Access-Control-Allow-Origin", "*");
 
-//         res.setHeader("Content-Type", file.file_mime);
+        res.setHeader("Content-Type", file.file_mime);
 
-//         // 🔥 INI KUNCINYA
-//         if (isDownload) {
-//             res.setHeader(
-//                 "Content-Disposition",
-//                 `attachment; filename="${file.file_name}"`
-//             );
-//         } else {
-//             res.setHeader(
-//                 "Content-Disposition",
-//                 `inline; filename="${file.file_name}"`
-//             );
-//         }
+        // 🔥 INI KUNCINYA
+        if (isDownload) {
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${file.file_name}"`
+            );
+        } else {
+            res.setHeader(
+                "Content-Disposition",
+                `inline; filename="${file.file_name}"`
+            );
+        }
 
-//         res.send(file.file_jawaban_siswa);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).send("Failed to load file");
-//     }
-// });
+        res.send(file.file_jawaban_siswa);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Failed to load file");
+    }
+});
 
 /* =========================
    REVIEW JAWABAN SISWA
@@ -468,7 +468,8 @@ router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) =
         id: r.id,
         file_name: r.file_name,
         file_mime: r.file_mime,
-        url: `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`,
+        url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+        download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${r.id}`, // ❌ r TIDAK ADA
         created_at: r.created_at
     })));
 });
