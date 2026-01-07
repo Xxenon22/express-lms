@@ -54,7 +54,7 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "User not authenticated" });
         }
 
-        const photoUrl = `/uploads/profile/profile-${userId}${path.extname(req.file.originalname)}`;
+        const photoUrl = `/uploads/users/profile-${userId}${path.extname(req.file.originalname)}`;
 
         // Update the user's photo URL in the database
         const result = await pool.query(
