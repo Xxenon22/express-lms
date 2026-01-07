@@ -26,6 +26,7 @@ const storage = multer.diskStorage({
             return cb(new Error("User ID is missing."));
         }
         const extension = path.extname(file.originalname); // Get the file extension
+        console.log(`Saving file as: users-${userId}${extension}`); // Log nama file yang akan disimpan
         cb(null, `users-${userId}${extension}`);
     }
 });
