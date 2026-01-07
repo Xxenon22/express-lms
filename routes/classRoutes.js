@@ -36,8 +36,8 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
         const userId = Number(req.users.id);
         const page = Number(req.query.page || 1);
-        const limit = 20;
-        const offset = (page - 1) * limit;
+        // const limit = 20;
+        // const offset = (page - 1) * limit;
 
         /* ===============================
            1. Ambil kelas + followed
@@ -53,9 +53,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                     k.link_wallpaper_kelas
                 FROM kelas k
                 ORDER BY k.id DESC
-                LIMIT $1 OFFSET $2
                 `,
-                [limit, offset]
             ),
             pool.query(
                 `
