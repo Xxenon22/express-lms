@@ -7,13 +7,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ABSOLUTE PATH (AMAN)
-const BASE_UPLOAD_PATH = path.join(
-    __dirname,
-    "..",
-    "uploads",
-    "soal"
-);
+const BASE_UPLOAD_PATH = path.join(__dirname, "..", "uploads", "soal");
 
 const ensureDir = (dir) => {
     if (!fs.existsSync(dir)) {
@@ -23,12 +17,18 @@ const ensureDir = (dir) => {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        let sub = "general";
+        // AMBIL TYPE DARI URL
+        const type = req.originalUrl.includes("/pg")
+            ? "pg"
+            : req.originalUrl.includes("/essai")
+                ? "essai"
+                : null;
 
-        if (file.fieldname.startsWith("pg_")) sub = "pg";
-        if (file.fieldname.startsWith("essai_")) sub = "essai";
+        if (!type) {
+            return cb(new Error("INVALID_UPLOAD_TYPE"));
+        }
 
-        const target = path.join(BASE_UPLOAD_PATH, sub);
+        const target = path.join(BASE_UPLOAD_PATH, type);
         ensureDir(target);
 
         cb(null, target);
