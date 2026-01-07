@@ -165,7 +165,7 @@ router.get("/", verifyToken, async (req, res) => {
                 m.nama_mapel,
                 mj.nama_jurusan AS major,
                 u.username AS guru_name,
-                u.photo_profile AS guru_photo
+                u.photo_url AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
             LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
@@ -294,7 +294,7 @@ router.get("/:id", async (req, res) => {
                 mj.nama_jurusan AS major,
 
                 u.username AS guru_name,
-                u.photo_profile AS guru_photo,
+                u.photo_url AS guru_photo,
 
                 mp.id AS module_id,
                 mp.judul AS module_judul,

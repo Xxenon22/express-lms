@@ -45,7 +45,7 @@ router.get("/:userId", verifyToken, async (req, res) => {
         const result = await pool.query(
             `SELECT
                 p.*,
-                u.photo_profile AS user_photo
+                u.photo_url AS user_photo
                 FROM progress_materi p 
                 JOIN users u ON p.user_id = u.id
              WHERE user_id = $1`,
