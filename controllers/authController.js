@@ -63,31 +63,37 @@ export const register = async (req, res) => {
     try {
         const { email, username, password, confirmPassword } = req.body;
 
-        if (!email || !username || !password || !confirmPassword)
+        if (!email || !username || !password || !confirmPassword) {
             return res.status(400).json({ message: "All fields are required" });
+        }
 
-        if (password !== confirmPassword)
+        if (password !== confirmPassword) {
             return res.status(400).json({ message: "Passwords do not match" });
+        }
 
         const userExist = await findUserByEmail(email);
-        if (userExist)
+        if (userExist) {
             return res.status(400).json({ message: "User already exists" });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ⛔ OTP DIMATIKAN
+        // OTP DIMATIKAN → code & expires NULL
         const newUser = await createUser(
             email,
             username,
             hashedPassword,
             "student",
-            null,      // code
-            null       // expires
+            null,
+            null
         );
 
-        // 🔓 LANGSUNG AKTIFKAN USER
-        await verifyUserByEmail(email);
-        // atau update langsung is_verified = true
+        // LANGSUNG AKTIFKAN USER
+        await updateUser(email, {
+            is_verified: true,
+            verification_code: null,
+            verification_expires: null
+        });
 
         return res.json({
             message: "Signup success. Account is active.",
@@ -95,6 +101,7 @@ export const register = async (req, res) => {
                 id: newUser.id,
                 email: newUser.email,
                 username: newUser.username,
+                role: newUser.role
             }
         });
 
