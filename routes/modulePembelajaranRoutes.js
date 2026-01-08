@@ -452,7 +452,7 @@ const router = express.Router();
 /* ================= MULTER SETUP ================= */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/modules");
+        cb(null, "uploads/materi");
     },
     filename: (req, file, cb) => {
         const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
