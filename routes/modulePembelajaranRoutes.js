@@ -315,34 +315,6 @@
 //     }
 // });
 
-// router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const file = req.file;
-
-//         if (!file) {
-//             return res.status(400).json({ message: "PDF file required" });
-//         }
-
-//         const result = await pool.query(
-//             `
-//             UPDATE module_pembelajaran
-//             SET file_pdf=$1,
-//                 file_name=$2,
-//                 file_mime=$3
-//             WHERE id=$4
-//             RETURNING id
-//             `,
-//             [file.buffer, file.originalname, file.mimetype, id]
-//         );
-
-//         res.json({ message: "PDF updated successfully" });
-//     } catch (err) {
-//         console.error("PDF UPDATE ERROR:", err);
-//         res.status(500).json({ message: "failed to update PDF" });
-//     }
-// });
-
 // // GET materi history siswa
 // router.get("/kelas/:kelasId/history", verifyToken, async (req, res) => {
 //     const { kelasId } = req.params;
@@ -901,6 +873,34 @@ router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
     } catch (error) {
         console.error("DELETE BY UUID ERROR:", error);
         res.status(500).json({ message: "Failed to delete material" });
+    }
+});
+
+router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ message: "PDF file required" });
+        }
+
+        const result = await pool.query(
+            `
+            UPDATE module_pembelajaran
+            SET file_pdf=$1,
+                file_name=$2,
+                file_mime=$3
+            WHERE id=$4
+            RETURNING id
+            `,
+            [file.buffer, file.originalname, file.mimetype, id]
+        );
+
+        res.json({ message: "PDF updated successfully" });
+    } catch (err) {
+        console.error("PDF UPDATE ERROR:", err);
+        res.status(500).json({ message: "failed to update PDF" });
     }
 });
 
