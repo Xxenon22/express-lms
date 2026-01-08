@@ -32,130 +32,200 @@ router.get("/followed/me", verifyToken, async (req, res) => {
 /* ============================================
    GET Siswa yang mengikuti kelas
 ============================================ */
+// router.get("/student/dashboard", verifyToken, async (req, res) => {
+//     try {
+//         const userId = Number(req.users.id);
+
+//         /* ===============================
+//            1. Ambil kelas + followed
+//         =============================== */
+//         const [kelasRes, followedRes] = await Promise.all([
+//             pool.query(
+//                 `
+//                 SELECT
+//                     k.id,
+//                     k.rombel_id,
+//                     k.id_mapel,
+//                     k.guru_id,
+//                     k.link_wallpaper_kelas
+//                 FROM kelas k
+//                 ORDER BY k.id DESC
+//                 `,
+//             ),
+//             pool.query(
+//                 `
+//                 SELECT kelas_id
+//                 FROM kelas_diikuti
+//                 WHERE user_id = $1
+//                 `,
+//                 [userId]
+//             )
+//         ]);
+
+//         /* ===============================
+//            2. Ambil rombel (sekali)
+//         =============================== */
+//         const rombelIds = [
+//             ...new Set(
+//                 kelasRes.rows
+//                     .map(k => k.rombel_id)
+//                     .filter(id => id !== null)
+//             )
+//         ];
+
+//         let rombelMap = {};
+
+//         if (rombelIds.length > 0) {
+//             const rombelRes = await pool.query(
+//                 `
+//                 SELECT
+//                     r.id,
+//                     nr.number AS name_rombel,
+//                     gl.grade_lvl,
+//                     mj.nama_jurusan AS major
+//                 FROM rombel r
+//                 JOIN number_rombel nr ON r.name_rombel = nr.id
+//                 JOIN grade_level gl ON r.grade_id = gl.id
+//                 JOIN jurusan mj ON r.jurusan_id = mj.id
+//                 WHERE r.id = ANY($1)
+//                 `,
+//                 [rombelIds]
+//             );
+
+//             rombelMap = Object.fromEntries(
+//                 rombelRes.rows.map(r => [r.id, r])
+//             );
+//         }
+
+//         /* ===============================
+//            3. Ambil mapel & guru (ringan)
+//         =============================== */
+//         const [mapelRes, guruRes] = await Promise.all([
+//             pool.query(`SELECT id, nama_mapel FROM db_mapel`),
+//             pool.query(`SELECT id, username, photo_url FROM users`)
+//         ]);
+
+//         const mapelMap = Object.fromEntries(
+//             mapelRes.rows.map(m => [m.id, m.nama_mapel])
+//         );
+
+//         const guruMap = Object.fromEntries(
+//             guruRes.rows.map(g => [
+//                 g.id,
+//                 {
+//                     username: g.username,
+//                     photo: g.photo_url
+//                 }
+//             ])
+//         );
+
+//         /* ===============================
+//            4. Gabungkan data kelas
+//         =============================== */
+//         const kelasList = kelasRes.rows.map(k => ({
+//             id: k.id,
+//             link_wallpaper_kelas: k.link_wallpaper_kelas,
+
+//             nama_mapel: mapelMap[k.id_mapel] || null,
+
+//             guru_id: k.guru_id,
+//             guru_name: guruMap[k.guru_id]?.username || null,
+//             guru_photo: guruMap[k.guru_id]?.photo || null,
+
+//             rombel: rombelMap[k.rombel_id] || null
+//         }));
+
+//         /* ===============================
+//            5. Pisahkan joined / other
+//         =============================== */
+//         const followedSet = new Set(
+//             followedRes.rows.map(r => r.kelas_id)
+//         );
+
+//         const joined = [];
+//         const other = [];
+
+//         for (const kelas of kelasList) {
+//             if (followedSet.has(kelas.id)) joined.push(kelas);
+//             else other.push(kelas);
+//         }
+
+//         /* ===============================
+//            6. Response
+//         =============================== */
+//         res.json({ joined, other });
+
+//     } catch (err) {
+//         console.error("Dashboard error:", err);
+//         res.status(500).json({ message: "Server error" });
+//     }
+// });
 router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
         const userId = Number(req.users.id);
-        const page = Number(req.query.page || 1);
-        // const limit = 20;
-        // const offset = (page - 1) * limit;
 
-        /* ===============================
-           1. Ambil kelas + followed
-        =============================== */
-        const [kelasRes, followedRes] = await Promise.all([
-            pool.query(
-                `
-                SELECT
-                    k.id,
-                    k.rombel_id,
-                    k.id_mapel,
-                    k.guru_id,
-                    k.link_wallpaper_kelas
-                FROM kelas k
-                ORDER BY k.id DESC
-                `,
-            ),
-            pool.query(
-                `
-                SELECT kelas_id
-                FROM kelas_diikuti
-                WHERE user_id = $1
-                `,
-                [userId]
-            )
-        ]);
+        const kelasRes = await pool.query(`
+            SELECT
+                k.id,
+                k.link_wallpaper_kelas,
 
-        /* ===============================
-           2. Ambil rombel (sekali)
-        =============================== */
-        const rombelIds = [
-            ...new Set(
-                kelasRes.rows
-                    .map(k => k.rombel_id)
-                    .filter(id => id !== null)
-            )
-        ];
+                m.nama_mapel,
 
-        let rombelMap = {};
+                k.guru_id,
+                u.username AS guru_name,
+                u.photo_url AS guru_photo,
 
-        if (rombelIds.length > 0) {
-            const rombelRes = await pool.query(
-                `
-                SELECT
-                    r.id,
-                    nr.number AS name_rombel,
-                    gl.grade_lvl,
-                    mj.nama_jurusan AS major
-                FROM rombel r
-                JOIN number_rombel nr ON r.name_rombel = nr.id
-                JOIN grade_level gl ON r.grade_id = gl.id
-                JOIN jurusan mj ON r.jurusan_id = mj.id
-                WHERE r.id = ANY($1)
-                `,
-                [rombelIds]
-            );
+                r.id AS rombel_id,
+                gl.grade_lvl,
+                mj.nama_jurusan AS major,
+                nr.number AS name_rombel,
 
-            rombelMap = Object.fromEntries(
-                rombelRes.rows.map(r => [r.id, r])
-            );
-        }
+                CASE
+                    WHEN kd.user_id IS NOT NULL THEN true
+                    ELSE false
+                END AS sudah_diikuti
+            FROM kelas k
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN users u ON k.guru_id = u.id
 
-        /* ===============================
-           3. Ambil mapel & guru (ringan)
-        =============================== */
-        const [mapelRes, guruRes] = await Promise.all([
-            pool.query(`SELECT id, nama_mapel FROM db_mapel`),
-            pool.query(`SELECT id, username, photo_url FROM users`)
-        ]);
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN grade_level gl ON r.grade_id = gl.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
 
-        const mapelMap = Object.fromEntries(
-            mapelRes.rows.map(m => [m.id, m.nama_mapel])
-        );
+            LEFT JOIN kelas_diikuti kd 
+                ON kd.kelas_id = k.id AND kd.user_id = $1
 
-        const guruMap = Object.fromEntries(
-            guruRes.rows.map(g => [
-                g.id,
-                {
-                    username: g.username,
-                    photo: g.photo_url
-                }
-            ])
-        );
-
-        /* ===============================
-           4. Gabungkan data kelas
-        =============================== */
-        const kelasList = kelasRes.rows.map(k => ({
-            id: k.id,
-            link_wallpaper_kelas: k.link_wallpaper_kelas,
-
-            nama_mapel: mapelMap[k.id_mapel] || null,
-
-            guru_id: k.guru_id,
-            guru_name: guruMap[k.guru_id]?.username || null,
-            guru_photo: guruMap[k.guru_id]?.photo || null,
-
-            rombel: rombelMap[k.rombel_id] || null
-        }));
-
-        /* ===============================
-           5. Pisahkan joined / other
-        =============================== */
-        const followedSet = new Set(
-            followedRes.rows.map(r => r.kelas_id)
-        );
+            ORDER BY k.id DESC
+        `, [userId]);
 
         const joined = [];
         const other = [];
 
-        for (const kelas of kelasList) {
-            if (followedSet.has(kelas.id)) joined.push(kelas);
+        for (const row of kelasRes.rows) {
+            const kelas = {
+                id: row.id,
+                link_wallpaper_kelas: row.link_wallpaper_kelas,
+
+                nama_mapel: row.nama_mapel,
+
+                guru_id: row.guru_id,
+                guru_name: row.guru_name,
+                guru_photo: row.guru_photo,
+
+                rombel: row.rombel_id ? {
+                    grade_lvl: row.grade_lvl,
+                    major: row.major,
+                    name_rombel: row.name_rombel
+                } : null,
+
+                sudah_diikuti: row.sudah_diikuti
+            };
+
+            if (row.sudah_diikuti) joined.push(kelas);
             else other.push(kelas);
         }
 
-        /* ===============================
-           6. Response
-        =============================== */
         res.json({ joined, other });
 
     } catch (err) {
