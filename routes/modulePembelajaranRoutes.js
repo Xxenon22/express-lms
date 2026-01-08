@@ -452,24 +452,24 @@ const router = express.Router();
 /* ================= MULTER SETUP ================= */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = "uploads/materi";
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+        cb(null, "uploads/modules");
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${uuidv4()}.pdf`);
+        const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(null, `${unique}.pdf`);
     }
 });
 
 const upload = multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 },
-    fileFilter: (_, file, cb) => {
-        file.mimetype === "application/pdf"
-            ? cb(null, true)
-            : cb(new Error("Only PDF allowed"));
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype !== "application/pdf") {
+            return cb(new Error("Only PDF allowed"));
+        }
+        cb(null, true);
     }
 });
+
 
 /* ================= GET MODULE (GURU) ================= */
 router.get("/", verifyToken, async (req, res) => {
@@ -635,17 +635,17 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
 });
 
 /* ================= GET PDF ================= */
-router.get("/:id/pdf", async (req, res) => {
-    const { rows } = await pool.query(
-        "SELECT file_url FROM module_pembelajaran WHERE id=$1",
-        [req.params.id]
-    );
+// router.get("/:id/pdf", async (req, res) => {
+//     const { rows } = await pool.query(
+//         "SELECT file_url FROM module_pembelajaran WHERE id=$1",
+//         [req.params.id]
+//     );
 
-    if (!rows.length) return res.sendStatus(404);
+//     if (!rows.length) return res.sendStatus(404);
 
-    const filePath = path.join(process.cwd(), rows[0].file_url);
-    res.sendFile(filePath);
-});
+//     const filePath = path.join(process.cwd(), rows[0].file_url);
+//     res.sendFile(filePath);
+// });
 
 /* ================= DELETE ================= */
 router.delete("/:id", verifyToken, async (req, res) => {
@@ -879,26 +879,54 @@ router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
 router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        const file = req.file;
 
-        if (!file) {
+        if (!req.file) {
             return res.status(400).json({ message: "PDF file required" });
         }
 
-        const result = await pool.query(
+        const filePath = `/uploads/modules/${req.file.filename}`;
+
+        await pool.query(
             `
             UPDATE module_pembelajaran
-            SET file_url=$1
-            WHERE id=$2
-            RETURNING id
+            SET file_url = $1
+            WHERE id = $2
             `,
-            [file.buffer, id]
+            [filePath, id]
         );
 
-        res.json({ message: "PDF updated successfully" });
+        res.json({
+            message: "PDF updated successfully",
+            file_url: filePath
+        });
     } catch (err) {
         console.error("PDF UPDATE ERROR:", err);
         res.status(500).json({ message: "failed to update PDF" });
+    }
+});
+/* ================= GET PDF ================= */
+router.get("/:id/pdf", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT file_url FROM module_pembelajaran WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rowCount === 0 || !result.rows[0].file_url) {
+            return res.status(404).json({ message: "PDF not found" });
+        }
+
+        const filePath = path.join(
+            process.cwd(),
+            result.rows[0].file_url
+        );
+
+        res.sendFile(filePath);
+    } catch (err) {
+        console.error("PDF VIEW ERROR:", err);
+        res.status(500).json({ message: "Failed to load PDF" });
     }
 });
 
