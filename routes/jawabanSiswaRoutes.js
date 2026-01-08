@@ -489,6 +489,49 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
     }
 });
 
+// GET FILE JAWABAN SISWA (LOGIN)
+router.get(
+    "/files-by-bank-siswa/:bank_soal_id",
+    verifyToken,
+    async (req, res) => {
+        try {
+            const { bank_soal_id } = req.params;
+            const userId = req.users.id;
+
+            const result = await pool.query(
+                `
+        SELECT
+          id,
+          file_name,
+          file_mime,
+          created_at
+        FROM jawaban_siswa
+        WHERE bank_soal_id = $1
+          AND user_id = $2
+          AND file_jawaban_siswa IS NOT NULL
+        ORDER BY created_at DESC
+        `,
+                [bank_soal_id, userId]
+            );
+
+            res.json(
+                result.rows.map(row => ({
+                    id: row.id,
+                    nama_file: row.file_name,
+                    mime: row.file_mime,
+                    created_at: row.created_at,
+                    url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                    download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
+                }))
+            );
+        } catch (err) {
+            console.error("Fetch siswa files error:", err);
+            res.status(500).json({ message: "Failed to fetch files" });
+        }
+    }
+);
+
+
 
 // GET FILE JAWABAN PER SOAL
 router.get(
