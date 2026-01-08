@@ -892,7 +892,7 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
             WHERE id=$2
             RETURNING id
             `,
-            [file.buffer, file.originalname, file.mimetype, id]
+            [file.buffer, id]
         );
 
         res.json({ message: "PDF updated successfully" });
