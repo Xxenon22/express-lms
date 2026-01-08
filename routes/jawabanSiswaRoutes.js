@@ -41,60 +41,6 @@ const upload = multer({
     }
 });
 
-router.post(
-    "/upload/:materiId",
-    verifyToken,
-    upload.single("file"),
-    async (req, res) => {
-        try {
-            const { materiId } = req.params;
-            const userId = req.users.id;
-            const file = req.file;
-
-            if (!file) {
-                return res.status(400).json({ message: "No file uploaded" });
-            }
-
-            const filePath = `/uploads/jawaban_siswa_file/${file.filename}`;
-
-            const result = await pool.query(
-                `
-                INSERT INTO jawaban_siswa
-                (user_id, materi_id, file_jawaban_siswa, file_name, file_mime, file_size)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING *
-                `,
-                [
-                    userId,
-                    materiId,
-                    filePath,
-                    file.originalname,
-                    file.mimetype,
-                    file.size
-                ]
-            );
-
-            const row = result.rows[0];
-
-            res.json({
-                file: {
-                    id: row.id,
-                    file_name: row.file_name,
-                    file_mime: row.file_mime,
-                    created_at: row.created_at,
-                    url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`,
-                    download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`
-                }
-            });
-
-        } catch (err) {
-            console.error("UPLOAD ERROR:", err);
-            res.status(500).json({ message: "Upload failed" });
-        }
-    }
-);
-
-
 /* =========================
    UPLOAD FILE JAWABAN (DB)
 ========================= */
@@ -372,48 +318,48 @@ router.get("/all-with-soal", async (req, res) => {
 /* =========================
    STREAM FILE DARI DB
 ========================= */
-router.get("/file-db/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const isDownload = req.query.download === "1";
+// router.get("/file-db/:id", async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const isDownload = req.query.download === "1";
 
-        const result = await pool.query(
-            `SELECT file_jawaban_siswa, file_mime, file_name
-             FROM jawaban_siswa
-             WHERE id = $1`,
-            [id]
-        );
+//         const result = await pool.query(
+//             `SELECT file_jawaban_siswa, file_mime, file_name
+//              FROM jawaban_siswa
+//              WHERE id = $1`,
+//             [id]
+//         );
 
-        if (!result.rows.length) {
-            return res.status(404).send("File not found");
-        }
+//         if (!result.rows.length) {
+//             return res.status(404).send("File not found");
+//         }
 
-        const file = result.rows[0];
+//         const file = result.rows[0];
 
-        // CORS (aman)
-        res.setHeader("Access-Control-Allow-Origin", "*");
+//         // CORS (aman)
+//         res.setHeader("Access-Control-Allow-Origin", "*");
 
-        res.setHeader("Content-Type", file.file_mime);
+//         res.setHeader("Content-Type", file.file_mime);
 
-        // 🔥 INI KUNCINYA
-        if (isDownload) {
-            res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="${file.file_name}"`
-            );
-        } else {
-            res.setHeader(
-                "Content-Disposition",
-                `inline; filename="${file.file_name}"`
-            );
-        }
+//         // 🔥 INI KUNCINYA
+//         if (isDownload) {
+//             res.setHeader(
+//                 "Content-Disposition",
+//                 `attachment; filename="${file.file_name}"`
+//             );
+//         } else {
+//             res.setHeader(
+//                 "Content-Disposition",
+//                 `inline; filename="${file.file_name}"`
+//             );
+//         }
 
-        res.send(file.file_jawaban_siswa);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Failed to load file");
-    }
-});
+//         res.send(file.file_jawaban_siswa);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Failed to load file");
+//     }
+// });
 
 /* =========================
    REVIEW JAWABAN SISWA
@@ -468,8 +414,7 @@ router.get("/files-by-bank-siswa/:bank_soal_id", verifyToken, async (req, res) =
         id: r.id,
         file_name: r.file_name,
         file_mime: r.file_mime,
-        url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-        download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
+        url: `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`,
         created_at: r.created_at
     })));
 });
@@ -531,7 +476,7 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
             file_name: row.file_name,
             file_mime: row.file_mime,
             url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-            download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${r.id}`,
+            download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
             created_at: row.created_at,
         }));
 
