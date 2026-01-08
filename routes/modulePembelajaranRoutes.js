@@ -880,5 +880,28 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
     }
 });
 
+router.delete("/uuid/:materiUuid", verifyToken, async (req, res) => {
+    try {
+        const { materiUuid } = req.params;
+        const guruId = req.users.id;
+
+        const result = await pool.query(
+            `
+            DELETE FROM module_pembelajaran
+            WHERE materi_uuid = $1
+              AND guru_id = $2
+            `,
+            [materiUuid, guruId]
+        );
+
+        res.json({
+            message: "Material successfully removed from all classes",
+            deleted: result.rowCount
+        });
+    } catch (error) {
+        console.error("DELETE BY UUID ERROR:", error);
+        res.status(500).json({ message: "Failed to delete material" });
+    }
+});
 
 export default router;
