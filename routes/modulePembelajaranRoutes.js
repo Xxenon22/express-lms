@@ -884,7 +884,7 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "PDF file required" });
         }
 
-        const filePath = `/uploads/modules/${req.file.filename}`;
+        const filePath = `/uploads/materi/${req.file.filename}`;
 
         await pool.query(
             `
