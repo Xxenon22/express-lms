@@ -888,7 +888,7 @@ router.put("/:id/pdf", verifyToken, upload.single("file"), async (req, res) => {
         const result = await pool.query(
             `
             UPDATE module_pembelajaran
-            SET file_url=$1,
+            SET file_url=$1
             WHERE id=$2
             RETURNING id
             `,
