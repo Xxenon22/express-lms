@@ -264,29 +264,6 @@
 //     }
 // });
 
-// // GET MATERI BY ID
-// router.get("/by-id/:id", async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const result = await pool.query(
-//             `SELECT id, judul, video_url, deskripsi, guru_id, bank_soal_id,
-//                     judul_penugasan, link_zoom, kelas_id, pass_code, created_at
-//              FROM module_pembelajaran
-//              WHERE id = $1`,
-//             [id]
-//         );
-
-//         if (result.rows.length === 0) {
-//             return res.status(404).json({ message: "Material not found" });
-//         }
-
-//         res.json(result.rows[0]); // ✅ kirim satu objek, bukan array
-//     } catch (error) {
-//         console.error("SELECT /module-pembelajaran/:id", error);
-//         res.status(500).json({ message: "Failed to retrieve material by ID" });
-//     }
-// });
-
 // // Ambil 1 module pembelajaran berdasarkan soalId
 // router.get("/by-soal/:soalId", async (req, res) => {
 //     try {
@@ -929,5 +906,28 @@ router.get("/:id/pdf", async (req, res) => {
         res.status(500).json({ message: "Failed to load PDF" });
     }
 });
+
+router.get("/by-id/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `SELECT id, judul, video_url, deskripsi, guru_id, bank_soal_id,
+                    judul_penugasan, link_zoom, kelas_id, pass_code, created_at
+             FROM module_pembelajaran
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Material not found" });
+        }
+
+        res.json(result.rows[0]); // ✅ kirim satu objek, bukan array
+    } catch (error) {
+        console.error("SELECT /module-pembelajaran/:id", error);
+        res.status(500).json({ message: "Failed to retrieve material by ID" });
+    }
+});
+
 
 export default router;
