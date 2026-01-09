@@ -1,20 +1,29 @@
+import express from "express";
 import { pool } from "../config/db.js";
 
-const maintenanceMiddleware = async (req, res, next) => {
-    try {
-        const result = await pool.query(`
-            SELECT status
-            FROM maintance
-            LIMIT 1
-        `);
+const router = express.Router();
 
-        res.json({
-            status: result.rows[0]?.status ?? false
-        });
-    } catch (err) {
-        console.error("Maintenance middleware error:", err);
-        res.status(500).json({ status: false });
-    }
-};
+// get status
+router.get("/", async (req, res) => {
+    const result = await pool.query(
+        "SELECT status FROM maintance LIMIT 1"
+    );
 
-export default maintenanceMiddleware;
+    res.json({
+        status: result.rows[0]?.status ?? false
+    });
+});
+
+// update status (admin only)
+router.put("/", async (req, res) => {
+    const { status } = req.body;
+
+    await pool.query(
+        "UPDATE maintance SET status = $1",
+        [status]
+    );
+
+    res.json({ success: true });
+});
+
+export default router;
