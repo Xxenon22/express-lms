@@ -33,7 +33,8 @@ import classFollowRoutes from "./routes/classFollowRoutes.js";
 import progressMateri from "./routes/progressRoutes.js";
 import jawabanSiswa from "./routes/jawabanSiswaRoutes.js";
 import rombelNumber from "./routes/rombelNumRoutes.js";
-import maintanance from "./middleware/maintanceMiddleware.js";
+import maintenanceMiddleware from "./middleware/maintanceMiddleware.js";
+import maintenanceRoutes from "./routes/maintananceRoute.js";
 
 dotenv.config();
 const app = express();
@@ -67,6 +68,7 @@ const __dirname = path.dirname(__filename);
 
 // ====================== ROUTES ======================
 app.use("/api", maintenanceMiddleware);
+app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/kelas", classRoutes);
 app.use("/api/mapel", mapel);
