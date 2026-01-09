@@ -11,6 +11,7 @@ export const RombelModel = {
             SELECT 
                 r.id,
                 r.name_rombel,
+                r.colab_class,
                 n.number AS rombel_number,
                 g.id AS grade_id, 
                 g.grade_lvl AS grade_name,
