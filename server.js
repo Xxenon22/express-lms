@@ -67,8 +67,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ====================== ROUTES ======================
-app.use("/api", maintenanceMiddleware);
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api", maintenanceMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/kelas", classRoutes);
 app.use("/api/mapel", mapel);
