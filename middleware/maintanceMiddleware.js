@@ -3,7 +3,7 @@ import { pool } from "../config/db.js";
 const maintenanceMiddleware = async (req, res, next) => {
     try {
         const result = await pool.query(`
-            SELECT status FROM maintenance
+            SELECT status FROM maintance
             LIMIT 1
         `);
 
