@@ -16,7 +16,7 @@ router.get("/", verifyToken, async (req, res) => {
             u.username AS guru_name,
             r.name_rombel,
             g.grade_lvl,
-            mj.nama_jurusan AS major 
+            mj.nama_jurusan AS major, 
             m.nama_mapel,
             k.link_wallpaper_kelas
         FROM forum_discus f
