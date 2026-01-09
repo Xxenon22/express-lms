@@ -317,7 +317,7 @@ router.get("/", verifyToken, async (req, res) => {
                 u.photo_url AS guru_photo
             FROM kelas k
             LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON nr.id = r.name_rombel
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN db_mapel m ON k.id_mapel = m.id
             LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
