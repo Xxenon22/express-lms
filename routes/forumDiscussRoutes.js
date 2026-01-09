@@ -25,7 +25,7 @@ router.get("/", verifyToken, async (req, res) => {
         JOIN rombel r ON k.rombel_id = r.id
         JOIN grade_level g ON r.grade_id = g.id
         JOIN db_mapel m ON k.id_mapel = m.id
-        LEFT JOIN jurusan mj ON f.kelas_id = mj.id
+        LEFT JOIN jurusan mj ON f.rombel_id = mj.id
         WHERE f.guru_id = $1
     `, [guruId]);
 
