@@ -93,7 +93,6 @@ app.use("/api/timetables-grade-xi", timetableXI);
 app.use("/api/kelas-diikuti", classFollowRoutes);
 app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
-app.use("api/maintanance", maintanance)
 
 // ================== UPLOADS & STATIC FILES ==================
 
