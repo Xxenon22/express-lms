@@ -33,6 +33,7 @@ import classFollowRoutes from "./routes/classFollowRoutes.js";
 import progressMateri from "./routes/progressRoutes.js";
 import jawabanSiswa from "./routes/jawabanSiswaRoutes.js";
 import rombelNumber from "./routes/rombelNumRoutes.js";
+import maintanance from "./middleware/maintanceMiddleware.js";
 
 dotenv.config();
 const app = express();
@@ -65,6 +66,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ====================== ROUTES ======================
+app.use("/api", maintenanceMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/kelas", classRoutes);
 app.use("/api/mapel", mapel);
@@ -89,6 +91,7 @@ app.use("/api/timetables-grade-xi", timetableXI);
 app.use("/api/kelas-diikuti", classFollowRoutes);
 app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
+app.use("api/maintanance", maintanance)
 
 // ================== UPLOADS & STATIC FILES ==================
 
