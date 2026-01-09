@@ -19,7 +19,7 @@ export const RombelModel = {
             FROM rombel r
             LEFT JOIN grade_level g ON r.grade_id = g.id
             LEFT JOIN jurusan j ON r.jurusan_id = j.id
-            LEFT JOIN number_rombel n ON n.id = r.name_rombel
+            LEFT JOIN number_rombel n ON r.name_rombel = n.id            
             ORDER BY r.id ASC
         `);
         return result.rows;
