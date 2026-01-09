@@ -16,7 +16,7 @@ router.get("/", verifyToken, async (req, res) => {
             u.username AS guru_name,
             r.name_rombel,
             g.grade_lvl,
-            mj.nama_jurusan AS major, 
+            mj.nama_jurusan AS major 
             m.nama_mapel,
             k.link_wallpaper_kelas
         FROM forum_discus f
@@ -25,7 +25,7 @@ router.get("/", verifyToken, async (req, res) => {
         JOIN rombel r ON k.rombel_id = r.id
         JOIN grade_level g ON r.grade_id = g.id
         JOIN db_mapel m ON k.id_mapel = m.id
-        LEFT JOIN jurusan mj ON f.rombel_id = mj.id
+        LEFT JOIN jurusan mj ON k.kelas_id = mj.id
         WHERE f.guru_id = $1
     `, [guruId]);
 
