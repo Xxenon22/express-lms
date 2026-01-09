@@ -28,15 +28,14 @@ export const RombelModel = {
     // ========================
     // CREATE
     // ========================
-    async create({ name_rombel, grade_id, jurusan_id }) {
+    async create({ name_rombel, grade_id, jurusan_id, colab_class }) {
 
         const result = await pool.query(
-            `INSERT INTO rombel (name_rombel, grade_id, jurusan_id)
-             VALUES ($1, $2, $3)
+            `INSERT INTO rombel (name_rombel, grade_id, jurusan_id, colab_class)
+             VALUES ($1, $2, $3, $4)
              RETURNING *`,
-            [name_rombel, grade_id, jurusan_id]
+            [name_rombel, grade_id, jurusan_id, colab_class]
         );
-
         return result.rows[0];
     },
 
