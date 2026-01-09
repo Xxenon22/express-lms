@@ -8,16 +8,12 @@ const maintenanceMiddleware = async (req, res, next) => {
             LIMIT 1
         `);
 
-        if (result.rows[0]?.status) {
-            return res.status(503).json({
-                maintenance: true
-            });
-        }
-
-        next();
+        res.json({
+            status: result.rows[0]?.status ?? false
+        });
     } catch (err) {
         console.error("Maintenance middleware error:", err);
-        next(); // jangan matikan server kalau error
+        res.status(500).json({ status: false });
     }
 };
 
