@@ -45,6 +45,32 @@ router.post("/", async (req, res) => {
 });
 
 // =======================
+// CREATE ROMBEL collab class
+// =======================
+router.post("/collab", async (req, res) => {
+    try {
+        const { colab_class } = req.body;
+
+        // VALIDASI WAJIB
+        if (!colab_class) {
+            return res.status(400).json({
+                message: "Collab Class is required"
+            });
+        }
+
+        const rombel = await RombelModel.create({
+            colab_class
+        });
+
+        res.json(rombel);
+
+    } catch (err) {
+        console.error("CREATE ROMBEL COLLAB ERROR:", err);
+        res.status(500).json({ message: "Error creating COllab Class" });
+    }
+});
+
+// =======================
 // UPDATE ROMBEL
 // =======================
 router.put("/:id", async (req, res) => {
