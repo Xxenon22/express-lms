@@ -378,7 +378,8 @@ router.get("/students/:kelasId", verifyToken, async (req, res) => {
             `
             SELECT
                 u.id AS user_id,
-                u.username AS name
+                u.username AS name,
+                u.photo_url
             FROM kelas_diikuti kd
             JOIN users u ON kd.user_id = u.id
             WHERE kd.kelas_id = $1
