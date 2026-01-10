@@ -28,15 +28,28 @@ export const RombelModel = {
     // ========================
     // CREATE
     // ========================
-    async create({ name_rombel = null, grade_id = null, jurusan_id = null, colab_class = null }) {
-
-        const result = await pool.query(
-            `INSERT INTO rombel (name_rombel, grade_id, jurusan_id, colab_class)
-             VALUES ($1, $2, $3, $4)
-             RETURNING *`,
-            [name_rombel, grade_id, jurusan_id, colab_class]
+    async create({ name_rombel, grade_id, jurusan_id }) {
+        const { rows } = await pool.query(
+            `
+            INSERT INTO rombel (name_rombel, grade_id, jurusan_id)
+            VALUES ($1, $2, $3)
+            RETURNING *
+            `,
+            [name_rombel, grade_id, jurusan_id]
         );
-        return result.rows[0];
+        return rows[0];
+    },
+
+    async createCollab({ colab_class }) {
+        const { rows } = await pool.query(
+            `
+            INSERT INTO rombel (colab_class)
+            VALUES ($1)
+            RETURNING *
+            `,
+            [colab_class]
+        );
+        return rows[0];
     },
 
     // ========================
