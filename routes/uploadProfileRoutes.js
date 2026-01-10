@@ -51,53 +51,45 @@ router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const userId = req.users.id;  // Ensure userId is available
-        if (!userId) {
-            return res.status(400).json({ message: "User not authenticated" });
-        }
+        const userId = req.users.id;
+        const ext = path.extname(req.file.originalname);
 
-        const photoUrl = `/uploads/users/users-${userId}${path.extname(req.file.originalname)}`;
-        // Update the user's photo URL in the database
-        const result = await pool.query(
-            `
-            UPDATE users
-            SET photo_url = $1
-            WHERE id = $2
-            RETURNING photo_url
-            `,
+        const photoUrl = `/uploads/users/users-${userId}${ext}`;
+
+        await pool.query(
+            `UPDATE users SET photo_url = $1 WHERE id = $2`,
             [photoUrl, userId]
         );
 
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.json({ message: "Profile photo updated", userId, photoUrl });
+        res.json({
+            message: "Profile photo updated",
+            photoUrl
+        });
     } catch (err) {
-        console.error("Upload profile error:", err);
-        res.status(500).json({ error: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Upload failed" });
     }
 });
 
 // Route to access profile photo
-router.get("/:userId", async (req, res) => {
-    try {
-        const { userId } = req.params;
+// router.get("/:userId", async (req, res) => {
+//     try {
+//         const { userId } = req.params;
 
-        const result = await pool.query(
-            "SELECT photo_url FROM users WHERE id = $1",
-            [userId]
-        );
+//         const result = await pool.query(
+//             "SELECT photo_url FROM users WHERE id = $1",
+//             [userId]
+//         );
 
-        if (!result.rows.length || !result.rows[0].photo_url) {
-            return res.status(404).send("Image not found");
-        }
+//         if (!result.rows.length || !result.rows[0].photo_url) {
+//             return res.status(404).send("Image not found");
+//         }
 
-        res.sendFile(path.join(process.cwd(), result.rows[0].photo_url));
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error fetching image");
-    }
-});
+//         res.sendFile(path.join(process.cwd(), result.rows[0].photo_url));
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Error fetching image");
+//     }
+// });
 
 export default router;
