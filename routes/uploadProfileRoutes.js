@@ -7,96 +7,40 @@ import fs from "fs";
 
 const router = express.Router();
 
-// Multer setup for file upload
+const UPLOAD_DIR = "/var/www/uploads/users";
+
+// pastikan folder ada
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Directory where profile images are stored
-        const uploadDir = "/var/www/uploads/users";
-        // Ensure the directory exists, create it if not
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-            console.log("Directory created: ", uploadDir);
-        }
-        cb(null, uploadDir);
-    },
+    destination: (_, __, cb) => cb(null, UPLOAD_DIR),
     filename: (req, file, cb) => {
-        // Using user ID to generate the filename
-        const userId = req.users.id;  // Ensure userId is available
-        if (!userId) {
-            return cb(new Error("User ID is missing."));
-        }
-        const extension = path.extname(file.originalname).toLowerCase(); // Get the file extension
-        console.log(`Saving file as: users-${userId}${extension}`); // Log nama file yang akan disimpan
-        cb(null, `users-${userId}${extension}`);
+        cb(null, `users-${req.user.id}.jpg`); // 🔥 OVERWRITE
     }
 });
 
-const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // Max file size: 10MB
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type. Only JPG, JPEG, and PNG are allowed.'));
-        }
-    }
-});
-
+const upload = multer({ storage });
 // Route to upload profile photo
-router.put("/photo-profile", verifyToken, upload.single("profile"), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: "No file uploaded" });
-        }
 
-        const userId = req.users.id;
-        const ext = path.extname(req.file.originalname);
+router.put(
+    "/photo-profile",
+    verifyToken,
+    upload.single("profile"),
+    async (req, res) => {
+        const photoPath = `/uploads/users/users-${req.user.id}.jpg`;
 
-        const photoUrl = `/uploads/users/users-${userId}${ext}`;
-
-        const old = await pool.query(
-            `UPDATE users SET photo_url = $1 WHERE id = $2`,
-            [photoUrl, userId]
+        await pool.query(
+            "UPDATE users SET photo_url = $1 WHERE id = $2",
+            [photoPath, req.user.id]
         );
 
-        if (old.rows[0]?.photo_url) {
-            const oldPath = path.join("/var/www", old.rows[0].photo_url);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
-        }
-
         res.json({
-            message: "Profile photo updated",
-            photoUrl
+            message: "Photo updated",
+            path: photoPath // 🔥 STATIC PATH
         });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Upload failed" });
     }
-});
-
-// Route to access profile photo
-// router.get("/:userId", async (req, res) => {
-//     try {
-//         const { userId } = req.params;
-
-//         const result = await pool.query(
-//             "SELECT photo_url FROM users WHERE id = $1",
-//             [userId]
-//         );
-
-//         if (!result.rows.length || !result.rows[0].photo_url) {
-//             return res.status(404).send("Image not found");
-//         }
-
-//         res.sendFile(path.join(process.cwd(), result.rows[0].photo_url));
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).send("Error fetching image");
-//     }
-// });
+);
 
 export default router;
