@@ -704,7 +704,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
                 ON p.materi_id = mp.id
                AND p.user_id = $1
 
-            LEFT JOIN users u
+            JOIN users u
                 ON u.id = mp.guru_id
 
             LEFT JOIN kelas k
