@@ -179,6 +179,7 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 gl.grade_lvl,
                 mj.nama_jurusan AS major,
                 nr.number AS name_rombel,
+                r.colab_class,
 
                 CASE
                     WHEN kd.user_id IS NOT NULL THEN true
@@ -195,6 +196,8 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
 
             LEFT JOIN kelas_diikuti kd 
                 ON kd.kelas_id = k.id AND kd.user_id = $1
+                LEFT JOIN rombel cc
+                
 
             ORDER BY k.id DESC
         `, [userId]);
@@ -213,14 +216,23 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 guru_name: row.guru_name,
                 guru_photo: row.guru_photo,
 
-                rombel: row.rombel_id ? {
-                    grade_lvl: row.grade_lvl,
-                    major: row.major,
-                    name_rombel: row.name_rombel
-                } : null,
+                rombel: row.colab_class
+                    ? {
+                        type: "collab",
+                        colab_class: row.colab_class
+                    }
+                    : row.rombel_id
+                        ? {
+                            type: "regular",
+                            grade_lvl: row.grade_lvl,
+                            major: row.major,
+                            name_rombel: row.name_rombel
+                        }
+                        : null,
 
                 sudah_diikuti: row.sudah_diikuti
             };
+
 
             if (row.sudah_diikuti) joined.push(kelas);
             else other.push(kelas);
