@@ -11,217 +11,82 @@ router.get("/followed/me", verifyToken, async (req, res) => {
     try {
         const userId = req.users.id;
 
-        const result = await pool.query(`
-            SELECT kd.*, k.rombel_id, k.id_mapel, 
-                   m.nama_mapel, 
-                   u.username AS guru_name
-            FROM kelas_diikuti kd
-            INNER JOIN kelas k ON kd.kelas_id = k.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            WHERE kd.user_id = $1
-        `, [userId]);
+        const { rows } = await pool.query(`
+      SELECT
+        k.id,
+        m.nama_mapel,
+        u.username AS guru_name,
+        r.colab_class,
+        gl.grade_lvl,
+        mj.nama_jurusan AS major,
+        nr.number AS name_rombel
+      FROM kelas_diikuti kd
+      JOIN kelas k ON kd.kelas_id = k.id
+      LEFT JOIN db_mapel m ON k.id_mapel = m.id
+      LEFT JOIN users u ON k.guru_id = u.id
+      LEFT JOIN rombel r ON k.rombel_id = r.id
+      LEFT JOIN grade_level gl ON r.grade_id = gl.id
+      LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+      WHERE kd.user_id = $1
+    `, [userId]);
 
-        res.json(result.rows);
+        res.json(rows);
     } catch (err) {
-        console.error("Error GET /kelas/followed:", err);
+        console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
 
-/* ============================================
-   GET Siswa yang mengikuti kelas
-============================================ */
-// router.get("/student/dashboard", verifyToken, async (req, res) => {
-//     try {
-//         const userId = Number(req.users.id);
-
-//         /* ===============================
-//            1. Ambil kelas + followed
-//         =============================== */
-//         const [kelasRes, followedRes] = await Promise.all([
-//             pool.query(
-//                 `
-//                 SELECT
-//                     k.id,
-//                     k.rombel_id,
-//                     k.id_mapel,
-//                     k.guru_id,
-//                     k.link_wallpaper_kelas
-//                 FROM kelas k
-//                 ORDER BY k.id DESC
-//                 `,
-//             ),
-//             pool.query(
-//                 `
-//                 SELECT kelas_id
-//                 FROM kelas_diikuti
-//                 WHERE user_id = $1
-//                 `,
-//                 [userId]
-//             )
-//         ]);
-
-//         /* ===============================
-//            2. Ambil rombel (sekali)
-//         =============================== */
-//         const rombelIds = [
-//             ...new Set(
-//                 kelasRes.rows
-//                     .map(k => k.rombel_id)
-//                     .filter(id => id !== null)
-//             )
-//         ];
-
-//         let rombelMap = {};
-
-//         if (rombelIds.length > 0) {
-//             const rombelRes = await pool.query(
-//                 `
-//                 SELECT
-//                     r.id,
-//                     nr.number AS name_rombel,
-//                     gl.grade_lvl,
-//                     mj.nama_jurusan AS major
-//                 FROM rombel r
-//                 JOIN number_rombel nr ON r.name_rombel = nr.id
-//                 JOIN grade_level gl ON r.grade_id = gl.id
-//                 JOIN jurusan mj ON r.jurusan_id = mj.id
-//                 WHERE r.id = ANY($1)
-//                 `,
-//                 [rombelIds]
-//             );
-
-//             rombelMap = Object.fromEntries(
-//                 rombelRes.rows.map(r => [r.id, r])
-//             );
-//         }
-
-//         /* ===============================
-//            3. Ambil mapel & guru (ringan)
-//         =============================== */
-//         const [mapelRes, guruRes] = await Promise.all([
-//             pool.query(`SELECT id, nama_mapel FROM db_mapel`),
-//             pool.query(`SELECT id, username, photo_url FROM users`)
-//         ]);
-
-//         const mapelMap = Object.fromEntries(
-//             mapelRes.rows.map(m => [m.id, m.nama_mapel])
-//         );
-
-//         const guruMap = Object.fromEntries(
-//             guruRes.rows.map(g => [
-//                 g.id,
-//                 {
-//                     username: g.username,
-//                     photo: g.photo_url
-//                 }
-//             ])
-//         );
-
-//         /* ===============================
-//            4. Gabungkan data kelas
-//         =============================== */
-//         const kelasList = kelasRes.rows.map(k => ({
-//             id: k.id,
-//             link_wallpaper_kelas: k.link_wallpaper_kelas,
-
-//             nama_mapel: mapelMap[k.id_mapel] || null,
-
-//             guru_id: k.guru_id,
-//             guru_name: guruMap[k.guru_id]?.username || null,
-//             guru_photo: guruMap[k.guru_id]?.photo || null,
-
-//             rombel: rombelMap[k.rombel_id] || null
-//         }));
-
-//         /* ===============================
-//            5. Pisahkan joined / other
-//         =============================== */
-//         const followedSet = new Set(
-//             followedRes.rows.map(r => r.kelas_id)
-//         );
-
-//         const joined = [];
-//         const other = [];
-
-//         for (const kelas of kelasList) {
-//             if (followedSet.has(kelas.id)) joined.push(kelas);
-//             else other.push(kelas);
-//         }
-
-//         /* ===============================
-//            6. Response
-//         =============================== */
-//         res.json({ joined, other });
-
-//     } catch (err) {
-//         console.error("Dashboard error:", err);
-//         res.status(500).json({ message: "Server error" });
-//     }
-// });
 router.get("/student/dashboard", verifyToken, async (req, res) => {
     try {
         const userId = Number(req.users.id);
 
-        const kelasRes = await pool.query(`
-            SELECT
-                k.id,
-                k.link_wallpaper_kelas,
+        const { rows } = await pool.query(`
+      SELECT
+        k.id,
+        k.link_wallpaper_kelas,
+        m.nama_mapel,
 
-                m.nama_mapel,
+        u.id AS guru_id,
+        u.username AS guru_name,
+        u.photo_url AS guru_photo,
 
-                k.guru_id,
-                u.username AS guru_name,
-                u.photo_url AS guru_photo,
+        r.colab_class,
+        gl.grade_lvl,
+        mj.nama_jurusan AS major,
+        nr.number AS name_rombel,
 
-                r.id AS rombel_id,
-                gl.grade_lvl,
-                mj.nama_jurusan AS major,
-                nr.number AS name_rombel,
-                r.colab_class,
-
-                CASE
-                    WHEN kd.user_id IS NOT NULL THEN true
-                    ELSE false
-                END AS sudah_diikuti
-            FROM kelas k
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN grade_level gl ON r.grade_id = gl.id
-            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-
-            LEFT JOIN kelas_diikuti kd 
-                ON kd.kelas_id = k.id AND kd.user_id = $1
-                LEFT JOIN rombel cc
-                
-
-            ORDER BY k.id DESC
-        `, [userId]);
+        (kd.user_id IS NOT NULL) AS sudah_diikuti
+      FROM kelas k
+      LEFT JOIN db_mapel m ON k.id_mapel = m.id
+      LEFT JOIN users u ON k.guru_id = u.id
+      LEFT JOIN rombel r ON k.rombel_id = r.id
+      LEFT JOIN grade_level gl ON r.grade_id = gl.id
+      LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+      LEFT JOIN kelas_diikuti kd 
+        ON kd.kelas_id = k.id AND kd.user_id = $1
+      ORDER BY k.id DESC
+    `, [userId]);
 
         const joined = [];
         const other = [];
 
-        for (const row of kelasRes.rows) {
+        for (const row of rows) {
             const kelas = {
                 id: row.id,
                 link_wallpaper_kelas: row.link_wallpaper_kelas,
-
                 nama_mapel: row.nama_mapel,
-
                 guru_id: row.guru_id,
                 guru_name: row.guru_name,
                 guru_photo: row.guru_photo,
-
                 rombel: row.colab_class
                     ? {
                         type: "collab",
                         colab_class: row.colab_class
                     }
-                    : row.rombel_id
+                    : row.name_rombel
                         ? {
                             type: "regular",
                             grade_lvl: row.grade_lvl,
@@ -229,19 +94,15 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                             name_rombel: row.name_rombel
                         }
                         : null,
-
                 sudah_diikuti: row.sudah_diikuti
             };
 
-
-            if (row.sudah_diikuti) joined.push(kelas);
-            else other.push(kelas);
+            row.sudah_diikuti ? joined.push(kelas) : other.push(kelas);
         }
 
         res.json({ joined, other });
-
     } catch (err) {
-        console.error("Dashboard error:", err);
+        console.error(err);
         res.status(500).json({ message: "Server error" });
     }
 });
@@ -318,34 +179,48 @@ router.get("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
 
-        const result = await pool.query(`
-            SELECT 
-                k.id,
-                k.link_wallpaper_kelas,
-                
-                nr.number AS name_rombel,
-                g.grade_lvl,
-                mj.nama_jurusan AS major,
-                r.colab_class,
+        const { rows } = await pool.query(`
+      SELECT
+        k.id,
+        k.link_wallpaper_kelas,
+        m.nama_mapel,
+        u.username AS guru_name,
+        u.photo_url AS guru_photo,
 
-                m.nama_mapel,
-                u.username AS guru_name,
-                u.photo_url AS guru_photo
-            FROM kelas k
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-            LEFT JOIN grade_level g ON r.grade_id = g.id
-            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            WHERE k.guru_id = $1
-            ORDER BY k.id ASC
+        r.colab_class,
+        gl.grade_lvl,
+        mj.nama_jurusan AS major,
+        nr.number AS name_rombel
+      FROM kelas k
+      LEFT JOIN rombel r ON k.rombel_id = r.id
+      LEFT JOIN grade_level gl ON r.grade_id = gl.id
+      LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+      LEFT JOIN db_mapel m ON k.id_mapel = m.id
+      LEFT JOIN users u ON k.guru_id = u.id
+      WHERE k.guru_id = $1
+      ORDER BY k.id DESC
+    `, [guruId]);
 
-        `, [guruId]);
-
-        res.json(result.rows);
+        res.json(rows.map(r => ({
+            id: r.id,
+            link_wallpaper_kelas: r.link_wallpaper_kelas,
+            nama_mapel: r.nama_mapel,
+            guru_name: r.guru_name,
+            guru_photo: r.guru_photo,
+            rombel: r.colab_class
+                ? { type: "collab", colab_class: r.colab_class }
+                : r.name_rombel
+                    ? {
+                        type: "regular",
+                        grade_lvl: r.grade_lvl,
+                        major: r.major,
+                        name_rombel: r.name_rombel
+                    }
+                    : null
+        })));
     } catch (err) {
-        console.error("Error GET /kelas:", err);
+        console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
@@ -480,83 +355,77 @@ router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        if (isNaN(id)) return res.status(400).json({ error: "Invalid ID format" });
+        const { rows } = await pool.query(`
+      SELECT
+        k.id AS kelas_id,
+        k.link_wallpaper_kelas,
+        m.nama_mapel,
 
-        const q = `
-            SELECT 
-                k.id AS kelas_id, 
-                k.link_wallpaper_kelas,
-                m.nama_mapel, 
+        r.colab_class,
+        gl.grade_lvl,
+        mj.nama_jurusan AS major,
+        nr.number AS name_rombel,
 
-                nr.number AS name_rombel,
-                gl.grade_lvl,
-                mj.nama_jurusan AS major,
+        u.username AS guru_name,
+        u.photo_url AS guru_photo,
 
-                u.username AS guru_name,
-                u.photo_url AS guru_photo,
+        mp.id AS module_id,
+        mp.judul,
+        mp.deskripsi,
+        mp.video_url,
+        mp.file_url,
+        mp.created_at
+      FROM kelas k
+      LEFT JOIN rombel r ON k.rombel_id = r.id
+      LEFT JOIN grade_level gl ON r.grade_id = gl.id
+      LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+      LEFT JOIN db_mapel m ON k.id_mapel = m.id
+      LEFT JOIN users u ON k.guru_id = u.id
+      LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
+      WHERE k.id = $1
+      ORDER BY mp.created_at DESC
+    `, [id]);
 
-                mp.id AS module_id,
-                mp.judul AS module_judul,
-                mp.judul_penugasan,
-                mp.deskripsi,
-                mp.video_url,
-                mp.file_url,
-                mp.created_at AS module_created_at,
-
-                bs.id AS bank_soal_id,
-                bs.judul_penugasan AS bank_soal_judul
-            FROM kelas k
-            LEFT JOIN rombel r ON k.rombel_id = r.id
-            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-            LEFT JOIN grade_level gl ON r.grade_id = gl.id
-            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
-            LEFT JOIN db_mapel m ON k.id_mapel = m.id
-            LEFT JOIN users u ON k.guru_id = u.id
-            LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
-            LEFT JOIN bank_soal bs ON mp.bank_soal_id = bs.id
-            WHERE k.id = $1
-            ORDER BY mp.created_at DESC
-        `;
-
-        const { rows } = await pool.query(q, [id]);
-
-        if (rows.length === 0) {
+        if (!rows.length) {
             return res.status(404).json({ error: "Class not found" });
         }
 
-        const kelasData = {
-            kelas_id: rows[0].kelas_id,
-            nama_mapel: rows[0].nama_mapel,
-            name_rombel: rows[0].name_rombel,
-            grade_lvl: rows[0].grade_lvl,
-            major: rows[0].major,
-            guru_name: rows[0].guru_name,
-            guru_photo: rows[0].guru_photo,
-            link_wallpaper_kelas: rows[0].link_wallpaper_kelas,
+        const base = rows[0];
+
+        res.json({
+            kelas_id: base.kelas_id,
+            nama_mapel: base.nama_mapel,
+            guru_name: base.guru_name,
+            guru_photo: base.guru_photo,
+            link_wallpaper_kelas: base.link_wallpaper_kelas,
+            rombel: base.colab_class
+                ? { type: "collab", colab_class: base.colab_class }
+                : base.name_rombel
+                    ? {
+                        type: "regular",
+                        grade_lvl: base.grade_lvl,
+                        major: base.major,
+                        name_rombel: base.name_rombel
+                    }
+                    : null,
             modules: rows
                 .filter(r => r.module_id)
                 .map(r => ({
-                    module_id: r.module_id,
-                    judul: r.module_judul,
-                    judul_penugasan: r.judul_penugasan,
+                    id: r.module_id,
+                    judul: r.judul,
                     deskripsi: r.deskripsi,
                     video_url: r.video_url,
                     file_url: r.file_url,
-                    created_at: r.module_created_at,
-                    bank_soal: r.bank_soal_id ? {
-                        id: r.bank_soal_id,
-                        judul: r.bank_soal_judul
-                    } : null
+                    created_at: r.created_at
                 }))
-        };
-
-        res.status(200).json(kelasData);
-
+        });
     } catch (err) {
-        console.error("Error GET /kelas/:id with modules:", err);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
     }
 });
+
 
 
 router.use((req, res, next) => {
