@@ -5,7 +5,7 @@ export const verifyToken = (req, res, next) => {
     console.log("Authorization header:", authHeader);
 
     if (!authHeader) {
-        return res.status(403).json({ message: "No token provided" });
+        return res.status(401).json({ message: "No token provided" });
     }
 
     const token = authHeader.split(" ")[1]; // ambil token setelah Bearer
@@ -20,6 +20,6 @@ export const verifyToken = (req, res, next) => {
         next();
     } catch (err) {
         console.error("JWT verify error:", err.message);
-        return res.status(403).json({ message: "Invalid or expired token" });
+        return res.status(401).json({ message: "Invalid or expired token" });
     }
 };
