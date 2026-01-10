@@ -322,11 +322,11 @@ router.get("/", verifyToken, async (req, res) => {
             SELECT 
                 k.id,
                 k.link_wallpaper_kelas,
-                k.colab_class,
-
+                
                 nr.number AS name_rombel,
                 g.grade_lvl,
                 mj.nama_jurusan AS major,
+                r.colab_class,
 
                 m.nama_mapel,
                 u.username AS guru_name,
