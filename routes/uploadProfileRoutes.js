@@ -33,7 +33,7 @@ router.put(
 
         await pool.query(
             "UPDATE users SET photo_url = $1 WHERE id = $2",
-            [photoPath, req.user.id]
+            [photoPath, req.users.id]
         );
 
         res.json({
