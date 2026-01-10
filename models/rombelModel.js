@@ -7,22 +7,27 @@ export const RombelModel = {
     // GET ALL
     // ========================
     async getAll() {
-        const result = await pool.query(`
-            SELECT 
-                r.id,
-                r.name_rombel,
-                n.number AS rombel_number,
-                g.id AS grade_id, 
-                g.grade_lvl AS grade_name,
-                j.id AS jurusan_id,
-                j.nama_jurusan AS major
-            FROM rombel r
-            LEFT JOIN grade_level g ON r.grade_id = g.id
-            LEFT JOIN jurusan j ON r.jurusan_id = j.id
-            LEFT JOIN number_rombel n ON r.name_rombel = n.id            
-            ORDER BY r.id ASC
-        `);
-        return result.rows;
+        const { rows } = await pool.query(`
+        SELECT
+            r.id,
+            r.name_rombel,
+            r.grade_id,
+            r.jurusan_id,
+            r.colab_class,
+
+            gl.grade_lvl AS grade_name,
+            j.nama_jurusan AS major,
+            nr.number AS rombel_number
+
+        FROM rombel r
+        LEFT JOIN grade_level gl ON gl.id = r.grade_id
+        LEFT JOIN jurusan j ON j.id = r.jurusan_id
+        LEFT JOIN number_rombel nr ON nr.id = r.name_rombel
+
+        ORDER BY r.id DESC
+    `);
+
+        return rows;
     },
 
     // ========================
