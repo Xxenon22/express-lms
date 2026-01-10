@@ -11,7 +11,7 @@ const router = express.Router();
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Directory where profile images are stored
-        const uploadDir = path.join(process.cwd(), 'uploads', 'users');
+        const uploadDir = "/var/www/uploads/users";
         // Ensure the directory exists, create it if not
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });

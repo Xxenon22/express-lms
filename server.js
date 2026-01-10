@@ -98,7 +98,7 @@ app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== STATIC FILES (UPLOADS) ==================
 app.use("/uploads", express.static(UPLOAD_ROOT));
-app.use("/api/uploads/photo-profile", uploadProfileRoutes);
+app.use("/api/uploads", uploadProfileRoutes);
 
 
 // ================== SERVER START ==================
