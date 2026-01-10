@@ -98,6 +98,8 @@ app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== STATIC FILES (UPLOADS) ==================
 app.use("/uploads", express.static(UPLOAD_ROOT));
+app.use("/api/uploads/photo-profile", uploadProfileRoutes);
+
 
 // ================== SERVER START ==================
 const PORT = process.env.PORT || 5000;
