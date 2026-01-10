@@ -588,4 +588,44 @@ router.get("/download/:id", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Failed to download file" });
     }
 });
+
+/* =========================
+   DOWNLOAD FILE JAWABAN SISWA UNTUK GURU
+========================= */
+router.get("/download/:token", async (req, res) => {
+    try {
+        const payload = jwt.verify(req.params.token, process.env.FILE_SECRET);
+
+        const result = await pool.query(
+            `
+      SELECT file_jawaban_siswa, file_name, file_mime
+      FROM jawaban_siswa
+      WHERE id = $1
+      `,
+            [payload.fileId]
+        );
+
+        if (!result.rowCount) {
+            return res.status(404).end();
+        }
+
+        const file = result.rows[0];
+        const absolutePath = path.join("/var/www", file.file_jawaban_siswa);
+
+        if (!fs.existsSync(absolutePath)) {
+            return res.status(404).end();
+        }
+
+        res.setHeader("Content-Type", file.file_mime);
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${file.file_name}"`
+        );
+
+        res.sendFile(absolutePath);
+    } catch {
+        return res.status(403).end();
+    }
+});
+
 export default router;
