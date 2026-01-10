@@ -17,7 +17,7 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 const storage = multer.diskStorage({
     destination: (_, __, cb) => cb(null, UPLOAD_DIR),
     filename: (req, file, cb) => {
-        cb(null, `users-${req.user.id}.jpg`); // 🔥 OVERWRITE
+        cb(null, `users-${req.users.id}.jpg`); // 🔥 OVERWRITE
     }
 });
 
@@ -29,7 +29,7 @@ router.put(
     verifyToken,
     upload.single("profile"),
     async (req, res) => {
-        const photoPath = `/uploads/users/users-${req.user.id}.jpg`;
+        const photoPath = `/uploads/users/users-${req.users.id}.jpg`;
 
         await pool.query(
             "UPDATE users SET photo_url = $1 WHERE id = $2",
