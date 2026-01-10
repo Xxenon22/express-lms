@@ -692,7 +692,11 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
                 p.video_selesai,
 
                 dm.nama_mapel,
-                u.photo_url AS guru_foto
+                u.photo_url AS guru_foto,
+                r.rombel_id,
+                mj.nama_jurusan AS major,
+                g.grade_lvl,
+                n.number
 
             FROM module_pembelajaran mp
 
@@ -712,6 +716,18 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
 
             LEFT JOIN db_mapel dm
                 ON dm.id = k.id_mapel
+
+            LEFT JOIN rombel r
+                ON k.rombel_id = r.id
+            
+            LEFT JOIN number_rombel n 
+                ON n.id = r.name_rombel
+
+            LEFT JOIN jurusan mj 
+                ON mj.id = r.jurusan_id
+                
+            LEFT JOIN grade_level g
+                ON g.id = r.grade_id
 
             ORDER BY mp.created_at DESC
         `;
