@@ -7,47 +7,15 @@ import { uploadGambarSoal } from "../middleware/uploadGambarSoal.js";
 import { safeUnlink } from "../utils/safeFile.js";
 const router = express.Router();
 
-router.post(
-    "/:type",
-    verifyToken,
-    uploadGambarSoal.single("gambar"),
-    async (req, res) => {
-        const { type } = req.params;
-
-        const column =
-            type === "pg" ? "gambar" :
-                type === "essai" ? "gambar_soal_essai" : null;
-
-        if (!column) {
-            return res.status(400).json({ message: "Tipe tidak valid" });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ message: "File tidak ditemukan" });
-        }
-
-        // 1️⃣ CREATE SOAL BARU
-        const insert = await pool.query(
-            `INSERT INTO soal_pilgan DEFAULT VALUES RETURNING id`
-        );
-
-        const soalId = insert.rows[0].id;
-
-        // 2️⃣ UPDATE GAMBAR
-        const imagePath = `/uploads/soal/${type}/${req.file.filename}`;
-
-        await pool.query(
-            `UPDATE soal_pilgan SET ${column} = $1 WHERE id = $2`,
-            [imagePath, soalId]
-        );
-
-        res.json({
-            id: soalId,
-            path: imagePath
-        });
+router.post("/:type", uploadGambarSoal.single("gambar"), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: "File required" });
     }
-);
 
+    const path = `/uploads/soal/${req.params.type}/${req.file.filename}`;
+
+    res.json({ path });
+});
 /* =========================================
    DELETE GAMBAR (PG / ESSAI)
 ========================================= */
