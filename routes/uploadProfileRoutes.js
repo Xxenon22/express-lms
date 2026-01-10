@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
         if (!userId) {
             return cb(new Error("User ID is missing."));
         }
-        const extension = path.extname(file.originalname); // Get the file extension
+        const extension = path.extname(file.originalname).toLowerCase(); // Get the file extension
         console.log(`Saving file as: users-${userId}${extension}`); // Log nama file yang akan disimpan
         cb(null, `users-${userId}${extension}`);
     }
@@ -56,10 +56,17 @@ router.put("/photo-profile", verifyToken, upload.single("profile"), async (req, 
 
         const photoUrl = `/uploads/users/users-${userId}${ext}`;
 
-        await pool.query(
+        const old = await pool.query(
             `UPDATE users SET photo_url = $1 WHERE id = $2`,
             [photoUrl, userId]
         );
+
+        if (old.rows[0]?.photo_url) {
+            const oldPath = path.join("/var/www", old.rows[0].photo_url);
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
+        }
 
         res.json({
             message: "Profile photo updated",
