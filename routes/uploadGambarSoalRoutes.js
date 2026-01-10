@@ -8,15 +8,11 @@ import { safeUnlink } from "../utils/safeFile.js";
 const router = express.Router();
 
 router.post(
-    "/:type/:soal_id",
+    "/:type",
     verifyToken,
     uploadGambarSoal.single("gambar"),
     async (req, res) => {
-        const { type, soal_id } = req.params;
-
-        if (!soal_id || soal_id === "null") {
-            return res.status(400).json({ message: "Invalid soal ID" });
-        }
+        const { type } = req.params;
 
         const column =
             type === "pg" ? "gambar" :
@@ -30,17 +26,27 @@ router.post(
             return res.status(400).json({ message: "File tidak ditemukan" });
         }
 
+        // 1️⃣ CREATE SOAL BARU
+        const insert = await pool.query(
+            `INSERT INTO soal_pilgan DEFAULT VALUES RETURNING id`
+        );
+
+        const soalId = insert.rows[0].id;
+
+        // 2️⃣ UPDATE GAMBAR
         const imagePath = `/uploads/soal/${type}/${req.file.filename}`;
 
         await pool.query(
             `UPDATE soal_pilgan SET ${column} = $1 WHERE id = $2`,
-            [imagePath, soal_id]
+            [imagePath, soalId]
         );
 
-        res.json({ path: imagePath });
+        res.json({
+            id: soalId,
+            path: imagePath
+        });
     }
 );
-
 
 /* =========================================
    DELETE GAMBAR (PG / ESSAI)
