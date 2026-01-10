@@ -98,6 +98,10 @@ app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== STATIC FILES (UPLOADS) ==================
+app.use("/api/jawaban-siswa", jawabanSiswa);
+
+app.use("/api/gambar-soal", uploadGambarSoal);
+
 app.use(
     "/uploads",
     express.static("/var/www/uploads", {
