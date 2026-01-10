@@ -14,69 +14,25 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         const result = await pool.query(`
       SELECT 
         rpk.*,
-
         r.name_rombel,
         g.grade_lvl AS name_grade,
-        m.nama_jurusan AS major,
-
         dm.nama_mapel AS subject,
         p.phase,
         t.username AS teacher_name,
         i.name AS instructor_name,
-
-        -- 🔥 KELAS UTAMA
-        CONCAT(
-            g.grade_lvl, ' ',
-            m.nama_jurusan, ' ',
-            r.name_rombel
-        ) AS main_class,
-
-        -- 🔥 KELAS COLAB (ARRAY)
-        COALESCE(
-            ARRAY_AGG(
-                DISTINCT CONCAT(
-                    g2.grade_lvl, ' ',
-                    m2.nama_jurusan, ' ',
-                    r2.name_rombel
-                )
-            ) FILTER (WHERE r2.id IS NOT NULL),
-            '{}'
-        ) AS colab_class
-
-    FROM rpk_db rpk
-
-    -- kelas utama
-    LEFT JOIN rombel r ON rpk.rombel_id = r.id
-    LEFT JOIN grade_level g ON r.grade_id = g.id
-    LEFT JOIN jurusan m ON r.jurusan_id = m.id
-
-    -- mapel
-    LEFT JOIN kelas k ON k.id = rpk.kelas_id
-    LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
-
-    -- phase & guru
-    LEFT JOIN db_phase p ON rpk.phase_id = p.id
-    LEFT JOIN users t ON rpk.guru_id = t.id
-    LEFT JOIN db_guru i ON rpk.instructor = i.id
-
-    -- 🔥 COLLAB KELAS
-    LEFT JOIN kelas k2 ON k2.id = rc.kelas_id
-    LEFT JOIN rombel r2 ON r2.id = k2.rombel_id
-    LEFT JOIN grade_level g2 ON r2.grade_id = g2.id
-    LEFT JOIN jurusan m2 ON r2.jurusan_id = m2.id
-
-    WHERE rpk.guru_id = $1
-    GROUP BY
-        rpk.id,
-        r.name_rombel,
-        g.grade_lvl,
-        m.nama_jurusan,
-        dm.nama_mapel,
-        p.phase,
-        t.username,
-        i.name
-    ORDER BY rpk.created_at DESC;
-
+        m.nama_jurusan AS major,
+        r.colab_class
+      FROM rpk_db rpk
+      LEFT JOIN rombel r ON rpk.rombel_id = r.id
+      LEFT JOIN kelas k ON k.id = rpk.kelas_id
+      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
+      LEFT JOIN grade_level g ON r.grade_id = g.id
+      LEFT JOIN jurusan m ON r.jurusan_id = m.id
+      LEFT JOIN db_phase p ON rpk.phase_id = p.id
+      LEFT JOIN users t ON rpk.guru_id = t.id
+      LEFT JOIN db_guru i ON rpk.instructor = i.id
+      WHERE rpk.guru_id = $1
+      ORDER BY rpk.created_at DESC
     `, [guruId]);
 
         res.json(result.rows);

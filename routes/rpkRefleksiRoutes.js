@@ -12,71 +12,24 @@ router.get("/", verifyToken, async (req, res) => {
         const guruId = req.users.id;
 
         const result = await pool.query(`
-      SELECT
-        rr.*,
-
-        rb.name_rombel,
-        g.grade_lvl AS name_grade,
-        j.nama_jurusan AS major,
-
-        COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
-        u.username AS teacher_name,
-        dg.name AS instructor_name,
-
-        -- 🔥 KELAS UTAMA
-        CONCAT(
-          g.grade_lvl, ' ',
-          j.nama_jurusan, ' ',
-          rb.name_rombel
-        ) AS main_class,
-
-        -- 🔥 KELAS COLAB (ARRAY)
-        COALESCE(
-          ARRAY_AGG(
-            DISTINCT CONCAT(
-              g2.grade_lvl, ' ',
-              j2.nama_jurusan, ' ',
-              rb2.name_rombel
-            )
-          ) FILTER (WHERE rb2.id IS NOT NULL),
-          '{}'
-        ) AS colab_class
-
+      SELECT rr.*,
+             rb.name_rombel,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade,
+             j.nama_jurusan AS major,
+             rb.colab_class
       FROM rpk_refleksi rr
-
-      -- kelas utama
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-      LEFT JOIN grade_level g ON rb.grade_id = g.id
-      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
-
-      -- kelas & mapel
       LEFT JOIN kelas k ON k.id = rr.kelas_id
       LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
       LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
-
-      -- guru & instruktur
       LEFT JOIN users u ON rr.guru_id = u.id
       LEFT JOIN db_guru dg ON rr.instructor = dg.id
-
-      -- 🔥 COLLAB
-      LEFT JOIN rpk_refleksi_kelas_colab rc ON rc.refleksi_id = rr.id
-      LEFT JOIN kelas k2 ON k2.id = rc.kelas_id
-      LEFT JOIN rombel rb2 ON rb2.id = k2.rombel_id
-      LEFT JOIN grade_level g2 ON rb2.grade_id = g2.id
-      LEFT JOIN jurusan j2 ON rb2.jurusan_id = j2.id
-
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
       WHERE rr.guru_id = $1
-      GROUP BY
-        rr.id,
-        rb.name_rombel,
-        g.grade_lvl,
-        j.nama_jurusan,
-        dm_kelas.nama_mapel,
-        dm_lama.nama_mapel,
-        u.username,
-        dg.name
-
-      ORDER BY rr.hari_tanggal DESC
     `, [guruId]);
 
         res.json(result.rows);
