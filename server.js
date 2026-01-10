@@ -98,7 +98,16 @@ app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== STATIC FILES (UPLOADS) ==================
-app.use("/uploads", express.static(UPLOAD_ROOT));
+app.use(
+    "/uploads",
+    express.static("/var/www/uploads", {
+        setHeaders: (res) => {
+            res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+        },
+    })
+);
 
 
 // ================== SERVER START ==================
