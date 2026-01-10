@@ -866,21 +866,60 @@ router.put(
                 return res.status(400).json({ message: "PDF file required" });
             }
 
-            // path yang disimpan ke DB (RELATIF, BENAR)
-            const filePath = `/uploads/materi/${req.file.filename}`;
+            // 1️⃣ Ambil materi_uuid & file lama
+            const materiRes = await pool.query(
+                `
+                SELECT materi_uuid, file_url
+                FROM module_pembelajaran
+                WHERE id = $1
+                `,
+                [id]
+            );
 
+            if (!materiRes.rows.length) {
+                return res.status(404).json({ message: "Material not found" });
+            }
+
+            const { materi_uuid, file_url: oldFile } = materiRes.rows[0];
+
+            // 2️⃣ File baru
+            const newFile = `/uploads/materi/${req.file.filename}`;
+
+            // 3️⃣ UPDATE SEMUA ROW (INI KUNCI UTAMA)
             await pool.query(
                 `
                 UPDATE module_pembelajaran
                 SET file_url = $1
-                WHERE id = $2
+                WHERE materi_uuid = $2
                 `,
-                [filePath, id]
+                [newFile, materi_uuid]
             );
 
+            // 4️⃣ CEK APAKAH FILE LAMA MASIH DIPAKAI
+            const check = await pool.query(
+                `
+                SELECT COUNT(*) 
+                FROM module_pembelajaran
+                WHERE file_url = $1
+                `,
+                [oldFile]
+            );
+
+            // 5️⃣ HAPUS FILE LAMA (ASYNC, TANPA unlinkSync)
+            if (check.rows[0].count === "0") {
+                fs.unlink(
+                    path.join("/var/www", oldFile),
+                    (err) => {
+                        if (err) {
+                            console.warn("Old file not deleted:", err.message);
+                        }
+                    }
+                );
+            }
+
             res.json({
-                message: "PDF updated successfully",
-                file_url: filePath
+                message: "PDF updated for all classes safely",
+                file_url: newFile
             });
 
         } catch (err) {
