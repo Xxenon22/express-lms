@@ -693,7 +693,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
 
                 dm.nama_mapel,
                 u.photo_url AS guru_foto,
-                k.rombel_id,
+                r.id AS rombel_id,
                 mj.nama_jurusan AS major,
                 g.grade_lvl,
                 n.number
@@ -717,8 +717,8 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
             LEFT JOIN db_mapel dm
                 ON dm.id = k.id_mapel
 
-            LEFT JOIN rombel k
-                ON k.rombel_id = k.id
+            LEFT JOIN rombel r
+                ON k.rombel_id = r.id
             
             LEFT JOIN number_rombel n 
                 ON n.id = r.name_rombel
