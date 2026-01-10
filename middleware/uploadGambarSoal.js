@@ -2,6 +2,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { safeUnlink } from "../utils/safeFile.js";
 
 const BASE_UPLOAD = "/var/www/uploads/jawaban_siswa_file";
 

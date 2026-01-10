@@ -6,31 +6,32 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { safeUnlink } from "../utils/safeFile.js";
 
 const router = express.Router()
 
-const uploadDir = "/var/www/uploads/jawaban_siswa_file";
+const UPLOAD_ROOT = "/var/www/uploads";
+const uploadDir = path.join(UPLOAD_ROOT, "jawaban_siswa_file");
 
-// pastikan folder ada
+/* =========================
+   PASTIKAN FOLDER ADA
+========================= */
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
+    destination: (_, __, cb) => cb(null, uploadDir),
+    filename: (_, file, cb) => {
         const ext = path.extname(file.originalname);
-        const unique = crypto.randomUUID();
-        cb(null, `${unique}${ext}`);
-    }
+        cb(null, `${crypto.randomUUID()}${ext}`);
+    },
 });
 
 const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (_, file, cb) => {
         const allowed = [
             "image/jpeg",
             "image/png",
@@ -38,8 +39,9 @@ const upload = multer({
             "application/pdf",
         ];
         cb(null, allowed.includes(file.mimetype));
-    }
+    },
 });
+
 
 /* =========================
    UPLOAD FILE JAWABAN (DB)
@@ -60,7 +62,7 @@ router.post(
             const saved = [];
 
             for (const file of req.files) {
-                const filePath = `/uploads/jawaban_siswa_file/${file.filename}`;
+                const relativePath = `/uploads/jawaban_siswa_file/${file.filename}`;
 
                 const result = await pool.query(
                     `
@@ -82,10 +84,10 @@ router.post(
                         soal_id || null,
                         bank_soal_id,
                         materi_id || null,
-                        filePath,
+                        relativePath,
                         file.mimetype,
                         file.originalname,
-                        file.size
+                        file.size,
                     ]
                 );
 
@@ -99,18 +101,15 @@ router.post(
                     nama_file: r.file_name,
                     mime: r.file_mime,
                     url: `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`,
-                    created_at: r.created_at
-                }))
+                    created_at: r.created_at,
+                })),
             });
-
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });
         }
     }
 );
-
-
 
 /* =========================
    SIMPAN JAWABAN (MULTIPLE)
@@ -316,52 +315,6 @@ router.get("/all-with-soal", async (req, res) => {
 });
 
 /* =========================
-   STREAM FILE DARI DB
-========================= */
-// router.get("/file-db/:id", async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const isDownload = req.query.download === "1";
-
-//         const result = await pool.query(
-//             `SELECT file_jawaban_siswa, file_mime, file_name
-//              FROM jawaban_siswa
-//              WHERE id = $1`,
-//             [id]
-//         );
-
-//         if (!result.rows.length) {
-//             return res.status(404).send("File not found");
-//         }
-
-//         const file = result.rows[0];
-
-//         // CORS (aman)
-//         res.setHeader("Access-Control-Allow-Origin", "*");
-
-//         res.setHeader("Content-Type", file.file_mime);
-
-//         // 🔥 INI KUNCINYA
-//         if (isDownload) {
-//             res.setHeader(
-//                 "Content-Disposition",
-//                 `attachment; filename="${file.file_name}"`
-//             );
-//         } else {
-//             res.setHeader(
-//                 "Content-Disposition",
-//                 `inline; filename="${file.file_name}"`
-//             );
-//         }
-
-//         res.send(file.file_jawaban_siswa);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).send("Failed to load file");
-//     }
-// });
-
-/* =========================
    REVIEW JAWABAN SISWA
 ========================= */
 router.get("/review/:bank_soal_id", verifyToken, async (req, res) => {
@@ -495,21 +448,28 @@ router.delete("/file/:id", verifyToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.users.id;
 
-    const result = await pool.query(`
+    const result = await pool.query(
+        `
         DELETE FROM jawaban_siswa
         WHERE id = $1 AND user_id = $2
         RETURNING file_jawaban_siswa
-    `, [id, userId]);
+        `,
+        [id, userId]
+    );
 
     if (!result.rowCount) {
         return res.status(404).json({ message: "Not found" });
     }
 
-    const filePath = path.join(process.cwd(), result.rows[0].file_jawaban_siswa);
-    // if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    const relativePath = result.rows[0].file_jawaban_siswa;
+    if (relativePath) {
+        const absolutePath = path.join("/var/www", relativePath);
+        await safeUnlink(absolutePath);
+    }
 
-    res.json({ message: "File deleted" });
+    res.json({ message: "File deleted successfully" });
 });
+
 
 
 /* =========================
@@ -528,12 +488,25 @@ router.put(
                 return res.status(400).json({ message: "File is required" });
             }
 
-            const file = req.file;
+            /* 🔴 AMBIL FILE LAMA (INI YANG KAMU TANYA) */
+            const old = await pool.query(
+                `SELECT file_jawaban_siswa FROM jawaban_siswa WHERE id=$1 AND user_id=$2`,
+                [id, userId]
+            );
+
+            if (!old.rowCount) {
+                return res.status(404).json({ message: "Not found" });
+            }
+
+            const oldPath = old.rows[0].file_jawaban_siswa
+                ? path.join("/var/www", old.rows[0].file_jawaban_siswa)
+                : null;
+
+            const relativePath = `/uploads/jawaban_siswa_file/${req.file.filename}`;
 
             const result = await pool.query(
                 `
-                UPDATE jawaban_siswa
-                SET
+                UPDATE jawaban_siswa SET
                     file_jawaban_siswa = $1,
                     file_mime = $2,
                     file_name = $3,
@@ -543,19 +516,18 @@ router.put(
                 RETURNING *
                 `,
                 [
-                    file.buffer,
-                    file.mimetype,
-                    file.originalname,
-                    file.buffer.length,
+                    relativePath,
+                    req.file.mimetype,
+                    req.file.originalname,
+                    req.file.size,
                     id,
-                    userId
+                    userId,
                 ]
             );
 
-            if (!result.rowCount) {
-                return res.status(404).json({
-                    message: "File not found or not authorized"
-                });
+            /* 🟢 HAPUS FILE LAMA SETELAH UPDATE SUKSES */
+            if (oldPath) {
+                await safeUnlink(oldPath);
             }
 
             const row = result.rows[0];
@@ -566,18 +538,16 @@ router.put(
                     id: row.id,
                     file_name: row.file_name,
                     file_mime: row.file_mime,
-                    url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
-                    created_at: row.created_at
-                }
+                    url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`,
+                    created_at: row.created_at,
+                },
             });
-
         } catch (err) {
             console.error("Update file error:", err);
             res.status(500).json({ message: err.message });
         }
     }
 );
-
 /* =========================
    DOWNLOAD FILE JAWABAN SISWA
 ========================= */
@@ -595,12 +565,12 @@ router.get("/download/:id", verifyToken, async (req, res) => {
             [id, userId]
         );
 
-        if (!result.rows.length) {
+        if (!result.rowCount) {
             return res.status(404).json({ message: "File not found" });
         }
 
         const file = result.rows[0];
-        const absolutePath = path.join(process.cwd(), file.file_jawaban_siswa);
+        const absolutePath = path.join("/var/www", file.file_jawaban_siswa);
 
         if (!fs.existsSync(absolutePath)) {
             return res.status(404).json({ message: "File missing on server" });
@@ -618,5 +588,4 @@ router.get("/download/:id", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Failed to download file" });
     }
 });
-
 export default router;

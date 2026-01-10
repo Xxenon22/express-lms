@@ -3,6 +3,7 @@ import path from "path";
 import express from "express";
 import { pool } from "../config/db.js";
 import { pdfUpload } from "../utils/pdfUploader.js";
+import { safeUnlink } from "../utils/safeFile.js";
 
 const router = express.Router();
 
@@ -78,7 +79,7 @@ router.delete("/:id", async (req, res) => {
             UPLOAD_ROOT,
             old.rows[0].file_url.replace("/uploads/", "")
         );
-        // if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await safeUnlink(filePath);
     }
 
     await pool.query("DELETE FROM jadwal_x_db WHERE id=$1", [req.params.id]);

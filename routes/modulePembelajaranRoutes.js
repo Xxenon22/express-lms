@@ -238,32 +238,6 @@
 //     }
 // });
 
-// router.get("/:id/pdf", async (req, res) => {
-//     try {
-//         const { id } = req.params;
-
-//         const result = await pool.query(
-//             "SELECT file_url FROM module_pembelajaran WHERE id=$1",
-//             [id]
-//         );
-
-//         if (!result.rows.length) {
-//             return res.status(404).json({ message: "File not found" });
-//         }
-
-//         const filePath = path.join(process.cwd(), result.rows[0].file_url);
-
-//         if (!fs.existsSync(filePath)) {
-//             return res.status(404).json({ message: "PDF missing on server" });
-//         }
-
-//         res.sendFile(filePath);
-//     } catch (err) {
-//         console.error("PDF LOAD ERROR:", err);
-//         res.status(500).json({ message: "failed to load PDF" });
-//     }
-// });
-
 // // Ambil 1 module pembelajaran berdasarkan soalId
 // router.get("/by-soal/:soalId", async (req, res) => {
 //     try {
@@ -620,7 +594,7 @@ router.put("/:id/kelas", verifyToken, async (req, res) => {
 
 //     if (!rows.length) return res.sendStatus(404);
 
-//     const filePath = path.join(process.cwd(), rows[0].file_url);
+//     const filePath = path.join("/var/www", rows[0].file_url);
 //     res.sendFile(filePath);
 // });
 
@@ -916,7 +890,7 @@ router.get("/:id/pdf", async (req, res) => {
         }
 
         const filePath = path.join(
-            process.cwd(),
+            "/var/www",
             result.rows[0].file_url
         );
 
