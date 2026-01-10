@@ -810,14 +810,18 @@ router.get("/kelas/:kelasId", verifyToken, async (req, res) => {
                 m.kelas_id,
                 m.pass_code,
                 m.created_at,
-                jm.status_selesai
+                jm.status_selesai,
+                u.photo_url AS guru_foto
             FROM module_pembelajaran m
             LEFT JOIN progress_materi jm
                 ON jm.materi_id = m.id
-               AND jm.user_id = $2
+            AND jm.user_id = $2
+            LEFT JOIN users u
+                ON u.id = m.guru_id
             WHERE m.kelas_id = $1
             AND m.guru_id = $3
             ORDER BY m.created_at DESC
+
             `,
             [kelasId, userId, guruId]
         );
