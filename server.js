@@ -70,6 +70,7 @@ const UPLOAD_ROOT = "/var/www/uploads";
 
 // ====================== ROUTES ======================
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/uploads", uploadProfileRoutes);
 app.use("/api", maintenanceMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/kelas", classRoutes);
@@ -98,7 +99,6 @@ app.use("/api/jawaban-siswa", jawabanSiswa);
 
 // ================== STATIC FILES (UPLOADS) ==================
 app.use("/uploads", express.static(UPLOAD_ROOT));
-app.use("/api/uploads", uploadProfileRoutes);
 
 
 // ================== SERVER START ==================

@@ -45,7 +45,7 @@ const upload = multer({
 });
 
 // Route to upload profile photo
-router.put("/", verifyToken, upload.single("profile"), async (req, res) => {
+router.put("/photo-profile", verifyToken, upload.single("profile"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded" });
