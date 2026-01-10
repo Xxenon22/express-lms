@@ -65,6 +65,8 @@ app.use(express.urlencoded({ extended: true }));
 // setup dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const UPLOAD_ROOT = "/var/www/uploads";
+
 
 // ====================== ROUTES ======================
 app.use("/api/maintenance", maintenanceRoutes);
@@ -94,47 +96,8 @@ app.use("/api/kelas-diikuti", classFollowRoutes);
 app.use("/api/progress-materi", progressMateri);
 app.use("/api/jawaban-siswa", jawabanSiswa);
 
-// ================== UPLOADS & STATIC FILES ==================
-
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// upload soal
-app.use("/api/gambar-soal", uploadGambarSoal);
-app.use(
-    "/uploads/gambar-soal",
-    express.static(path.join(__dirname, "uploads/gambar-soal"))
-);
-
-// Static files (uploads) access
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// Upload routes
-app.use("/api/uploads/photo-profile", uploadProfileRoutes);
-
-
-// timetables
-app.use(
-    "/uploads/timetables",
-    express.static(path.join(__dirname, "uploads/timetables"))
-);
-app.use(
-    "/uploads/timetables-grade-x",
-    express.static(path.join(__dirname, "uploads/timetables-grade-x"))
-);
-
-app.use(
-    "/uploads/timetables-grade-xi",
-    express.static(path.join(__dirname, "uploads/timetables-grade-xi"))
-);
-
-// Wallpapers
-app.use("/api/wallpapers", express.static(path.join(process.cwd(), "uploads/wallpapers")));
-
-// File Jawaban Siswa
-app.use(
-    "/uploads/file-jawaban-siswa",
-    express.static(path.join(__dirname, "uploads/file-jawaban-siswa"))
-);
+// ================== STATIC FILES (UPLOADS) ==================
+app.use("/uploads", express.static(UPLOAD_ROOT));
 
 // ================== SERVER START ==================
 const PORT = process.env.PORT || 5000;
