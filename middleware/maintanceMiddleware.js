@@ -8,7 +8,6 @@ const MAINTENANCE_WHITELIST = [
     "gigaananta674@gmail.com"
 ];
 
-// endpoint yang tetap boleh diakses
 const MAINTENANCE_BYPASS_PATHS = [
     "/auth/login",
     "/auth/register",
@@ -18,42 +17,53 @@ const MAINTENANCE_BYPASS_PATHS = [
 
 const maintenanceMiddleware = async (req, res, next) => {
     try {
-        // 1️⃣ Bypass endpoint penting
+        // 1️⃣ bypass endpoint publik
         if (MAINTENANCE_BYPASS_PATHS.some(p => req.path.startsWith(p))) {
             return next();
         }
 
-        let userEmail = null;
-
-        // 2️⃣ Ambil user dari JWT (jika sudah login)
-        const authHeader = req.headers.authorization;
-        if (authHeader) {
-            const token = authHeader.split(" ")[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            userEmail = decoded.email;
-        }
-
-        // 3️⃣ Bypass whitelist user
-        if (userEmail && MAINTENANCE_WHITELIST.includes(userEmail)) {
-            return next();
-        }
-
-        // 4️⃣ Cek status maintenance
+        // 2️⃣ cek status maintenance dulu
         const result = await pool.query(
             "SELECT status FROM maintance LIMIT 1"
         );
 
-        if (result.rows[0]?.status) {
-            return res.status(503).json({
-                maintenance: true,
-                message: "System is under maintenance"
-            });
+        const isMaintenance = result.rows[0]?.status ?? false;
+
+        if (!isMaintenance) {
+            return next(); // maintenance OFF
         }
 
-        next();
+        // 3️⃣ maintenance ON → cek whitelist
+        let userEmail = null;
+        const authHeader = req.headers.authorization;
+
+        if (authHeader?.startsWith("Bearer ")) {
+            try {
+                const token = authHeader.split(" ")[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userEmail = decoded.email;
+            } catch {
+                // token expired / rusak → anggap user biasa
+                userEmail = null;
+            }
+        }
+
+        if (userEmail && MAINTENANCE_WHITELIST.includes(userEmail)) {
+            return next();
+        }
+
+        // 4️⃣ block semua user non-whitelist
+        return res.status(503).json({
+            maintenance: true,
+            message: "System is under maintenance"
+        });
+
     } catch (err) {
-        console.error("Maintenance middleware error:", err);
-        next();
+        console.error("Maintenance fatal error:", err);
+        return res.status(503).json({
+            maintenance: true,
+            message: "System is under maintenance"
+        });
     }
 };
 

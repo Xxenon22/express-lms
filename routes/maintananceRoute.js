@@ -3,7 +3,7 @@ import { pool } from "../config/db.js";
 
 const router = express.Router();
 
-// get status
+// GET status maintenance
 router.get("/", async (req, res) => {
     const result = await pool.query(
         "SELECT status FROM maintance LIMIT 1"
@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
     });
 });
 
-// update status (admin only)
+// UPDATE status (admin)
 router.put("/", async (req, res) => {
     const { status } = req.body;
 
