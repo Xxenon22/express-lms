@@ -9,7 +9,7 @@ import crypto from "crypto";
 
 const router = express.Router()
 
-const uploadDir = path.join(process.cwd(), "uploads/jawaban_siswa_file");
+const uploadDir = "/var/www/uploads/jawaban_siswa_file";
 
 // pastikan folder ada
 if (!fs.existsSync(uploadDir)) {
