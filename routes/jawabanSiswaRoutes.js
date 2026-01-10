@@ -506,7 +506,7 @@ router.delete("/file/:id", verifyToken, async (req, res) => {
     }
 
     const filePath = path.join(process.cwd(), result.rows[0].file_jawaban_siswa);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    // if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     res.json({ message: "File deleted" });
 });

@@ -78,7 +78,7 @@ router.delete("/:id", async (req, res) => {
             UPLOAD_ROOT,
             old.rows[0].file_url.replace("/uploads/", "")
         );
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        // if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
     await pool.query("DELETE FROM jadwal_x_db WHERE id=$1", [req.params.id]);

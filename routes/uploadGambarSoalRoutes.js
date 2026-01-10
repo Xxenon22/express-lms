@@ -131,7 +131,7 @@ router.post(
 
             if (old.rows.length && old.rows[0][column]) {
                 const oldPath = path.join(process.cwd(), old.rows[0][column]);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+                // if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
             }
 
             const imagePath = `/uploads/soal/${type}/${req.file.filename}`;
@@ -183,7 +183,7 @@ router.delete("/:type/:soal_id", verifyToken, async (req, res) => {
         const filePath = path.join(process.cwd(), result.rows[0][column]);
 
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+            // fs.unlinkSync(filePath);
         }
 
         await pool.query(
