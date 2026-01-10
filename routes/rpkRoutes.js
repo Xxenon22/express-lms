@@ -12,32 +12,32 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         const guruId = req.params.id;
 
         const result = await pool.query(`
-      SELECT 
-        rpk.*,
-        r.name_rombel,
-        g.grade_lvl AS name_grade,
-        dm.nama_mapel AS subject,
-        p.phase,
-        t.username AS teacher_name,
-        i.name AS instructor_name,
-        m.nama_jurusan AS major,
-        r.colab_class
-      FROM rpk_db rpk
-      LEFT JOIN rombel r ON rpk.rombel_id = r.id
-      LEFT JOIN kelas k ON k.id = rpk.kelas_id
-      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
-      LEFT JOIN grade_level g ON r.grade_id = g.id
-      LEFT JOIN jurusan m ON r.jurusan_id = m.id
-      LEFT JOIN db_phase p ON rpk.phase_id = p.id
-      LEFT JOIN users t ON rpk.guru_id = t.id
-      LEFT JOIN db_guru i ON rpk.instructor = i.id
-      WHERE rpk.guru_id = $1
-      ORDER BY rpk.created_at DESC
-    `, [guruId]);
+            SELECT 
+                rpk.*,
+                r.name_rombel,
+                r.colab_class,              -- ✅ FIXED
+                g.grade_lvl       AS name_grade,
+                m.nama_jurusan    AS major,
+                dm.nama_mapel    AS subject,
+                p.phase,
+                t.username       AS teacher_name,
+                i.name           AS instructor_name
+            FROM rpk_db rpk
+            LEFT JOIN rombel r        ON rpk.rombel_id = r.id
+            LEFT JOIN kelas k         ON rpk.kelas_id = k.id
+            LEFT JOIN db_mapel dm     ON dm.id = k.id_mapel
+            LEFT JOIN grade_level g   ON r.grade_id = g.id
+            LEFT JOIN jurusan m       ON r.jurusan_id = m.id
+            LEFT JOIN db_phase p      ON rpk.phase_id = p.id
+            LEFT JOIN users t         ON rpk.guru_id = t.id
+            LEFT JOIN db_guru i       ON rpk.instructor = i.id
+            WHERE rpk.guru_id = $1
+            ORDER BY rpk.created_at DESC
+        `, [guruId]);
 
         res.json(result.rows);
     } catch (err) {
-        console.error("Error fetch all Learning Plan:", err);
+        console.error("Error fetch all RPK:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -50,58 +50,49 @@ router.get("/:id", verifyToken, async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(`
-      SELECT 
-        rpk.id,
-        rpk.rombel_id,
-        rpk.phase_id,
-        rpk.guru_id,
-        rpk.instructor,
-        rpk.tutor,
-        rpk.hari_tanggal,
-        rpk.waktu,
-        rpk.tujuan_pembelajaran,
-        rpk.lintas_disiplin_ilmu,
-        rpk.pemanfaatan_digital,
-        rpk.kemitraan_pembelajaran,
-        rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
-        rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
-        r.name_rombel,
-        dm.nama_mapel AS subject,  -- ✅ ambil subject dari kelas
-        g.grade_lvl,
-        p.phase,
-        t.username AS teacher_name,
-        i.name AS instructor_name,
-        m.nama_jurusan AS major,
-        mem.memahami,
-        mem.asesmen_memahami,
-        mem.berkesadaran AS memahami_berkesadaran,
-        mem.bermakna AS memahami_bermakna,
-        mem.menggembirakan AS memahami_menggembirakan,
-        ma.mengaplikasikan,
-        ma.asesmen_mengaplikasikan,
-        ma.berkesadaran AS mengaplikasikan_berkesadaran,
-        ma.bermakna AS mengaplikasikan_bermakna,
-        ma.menggembirakan AS mengaplikasikan_menggembirakan,
-        me.merefleksi,
-        me.asesmen_merefleksi,
-        me.berkesadaran AS merefleksi_berkesadaran,
-        me.bermakna AS merefleksi_bermakna,
-        me.menggembirakan AS merefleksi_menggembirakan
-      FROM rpk_db rpk
-      LEFT JOIN rombel r ON rpk.rombel_id = r.id
-      LEFT JOIN kelas k ON k.id = rpk.kelas_id
-      LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
-      LEFT JOIN grade_level g ON r.grade_id = g.id
-      LEFT JOIN jurusan m ON r.jurusan_id = m.id
-      LEFT JOIN db_phase p ON rpk.phase_id = p.id
-      LEFT JOIN users t ON rpk.guru_id = t.id
-      LEFT JOIN db_guru i ON rpk.instructor = i.id
-      LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
-      LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
-      LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
-      WHERE rpk.id = $1
-      LIMIT 1
-    `, [id]);
+            SELECT 
+                rpk.*,
+                r.name_rombel,
+                r.colab_class,              -- ✅ FIXED
+                g.grade_lvl       AS name_grade,
+                m.nama_jurusan    AS major,
+                dm.nama_mapel    AS subject,
+                p.phase,
+                t.username       AS teacher_name,
+                i.name           AS instructor_name,
+
+                mem.memahami,
+                mem.asesmen_memahami,
+                mem.berkesadaran AS memahami_berkesadaran,
+                mem.bermakna     AS memahami_bermakna,
+                mem.menggembirakan AS memahami_menggembirakan,
+
+                ma.mengaplikasikan,
+                ma.asesmen_mengaplikasikan,
+                ma.berkesadaran AS mengaplikasikan_berkesadaran,
+                ma.bermakna     AS mengaplikasikan_bermakna,
+                ma.menggembirakan AS mengaplikasikan_menggembirakan,
+
+                me.merefleksi,
+                me.asesmen_merefleksi,
+                me.berkesadaran AS merefleksi_berkesadaran,
+                me.bermakna     AS merefleksi_bermakna,
+                me.menggembirakan AS merefleksi_menggembirakan
+            FROM rpk_db rpk
+            LEFT JOIN rombel r ON rpk.rombel_id = r.id
+            LEFT JOIN kelas k ON rpk.kelas_id = k.id
+            LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
+            LEFT JOIN grade_level g ON r.grade_id = g.id
+            LEFT JOIN jurusan m ON r.jurusan_id = m.id
+            LEFT JOIN db_phase p ON rpk.phase_id = p.id
+            LEFT JOIN users t ON rpk.guru_id = t.id
+            LEFT JOIN db_guru i ON rpk.instructor = i.id
+            LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
+            LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
+            LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
+            WHERE rpk.id = $1
+            LIMIT 1
+        `, [id]);
 
         res.json(result.rows[0]);
     } catch (error) {
