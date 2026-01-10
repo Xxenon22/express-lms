@@ -12,52 +12,35 @@ router.post(
     verifyToken,
     uploadGambarSoal.single("gambar"),
     async (req, res) => {
-        try {
-            const { type, soal_id } = req.params;
+        const { type, soal_id } = req.params;
 
-            const column =
-                type === "pg"
-                    ? "gambar"
-                    : type === "essai"
-                        ? "gambar_soal_essai"
-                        : null;
-
-            if (!column) {
-                return res.status(400).json({ message: "Tipe tidak valid" });
-            }
-
-            if (!req.file) {
-                return res.status(400).json({ message: "File tidak ditemukan" });
-            }
-
-            // ambil gambar lama
-            const old = await pool.query(
-                `SELECT ${column} FROM soal_pilgan WHERE id = $1`,
-                [soal_id]
-            );
-            if (old.rows.length && old.rows[0][column]) {
-                const oldPath = path.join("/var/www", old.rows[0][column]);
-                await safeUnlink(oldPath);
-            }
-
-            const imagePath = `/uploads/soal/${type}/${req.file.filename}`;
-
-            await pool.query(
-                `UPDATE soal_pilgan SET ${column} = $1 WHERE id = $2`,
-                [imagePath, soal_id]
-            );
-
-            res.json({
-                message: "Gambar berhasil diupdate",
-                path: imagePath
-            });
-
-        } catch (err) {
-            console.error("UPLOAD GAMBAR ERROR:", err);
-            res.status(500).json({ message: "Upload gagal" });
+        if (!soal_id || soal_id === "null") {
+            return res.status(400).json({ message: "Invalid soal ID" });
         }
+
+        const column =
+            type === "pg" ? "gambar" :
+                type === "essai" ? "gambar_soal_essai" : null;
+
+        if (!column) {
+            return res.status(400).json({ message: "Tipe tidak valid" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "File tidak ditemukan" });
+        }
+
+        const imagePath = `/uploads/soal/${type}/${req.file.filename}`;
+
+        await pool.query(
+            `UPDATE soal_pilgan SET ${column} = $1 WHERE id = $2`,
+            [imagePath, soal_id]
+        );
+
+        res.json({ path: imagePath });
     }
 );
+
 
 /* =========================================
    DELETE GAMBAR (PG / ESSAI)
