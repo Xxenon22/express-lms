@@ -60,7 +60,6 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
     LEFT JOIN db_guru i ON rpk.instructor = i.id
 
     -- 🔥 COLLAB KELAS
-    LEFT JOIN rpk_kelas_colab rc ON rc.rpk_id = rpk.id
     LEFT JOIN kelas k2 ON k2.id = rc.kelas_id
     LEFT JOIN rombel r2 ON r2.id = k2.rombel_id
     LEFT JOIN grade_level g2 ON r2.grade_id = g2.id
