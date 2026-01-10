@@ -459,7 +459,7 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* ================= POST MODULE ================= */
-router.post("/", verifyToken, upload.single("file"), async (req, res) => {
+router.post("/", verifyToken, uploadMateriPDF.single("file"), async (req, res) => {
     try {
         const {
             judul,
