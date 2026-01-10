@@ -9,7 +9,7 @@ const router = express.Router();
 const UPLOAD_ROOT = "/var/www/uploads";
 const FOLDER = "timetables";
 
-const upload = pdfUpload(path.join(UPLOAD_ROOT, FOLDER));
+const upload = pdfUpload(FOLDER);
 
 /**
  * CREATE
