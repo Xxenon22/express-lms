@@ -193,7 +193,7 @@ export const registerTeacher = async (req, res) => {
 //                 email: user.email
 //             },
 //             process.env.JWT_SECRET,
-//             { expiresIn: "1d" }
+//             { expiresIn: "24h" }
 //         );
 
 //         return res.json({
@@ -265,7 +265,7 @@ export const login = async (req, res) => {
                 username: user.username
             },
             process.env.JWT_SECRET,
-            { expiresIn: "15s" }
+            { expiresIn: "24h" }
         );
 
         return res.json({
@@ -313,7 +313,7 @@ export const login = async (req, res) => {
 //                 username: user.username
 //             },
 //             process.env.JWT_SECRET,
-//             { expiresIn: "1d" }
+//             { expiresIn: "24h" }
 //         );
 
 //         return res.json({
