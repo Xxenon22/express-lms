@@ -2,12 +2,8 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const BASE_UPLOAD = path.join(__dirname, "..", "uploads", "soal");
+const BASE_UPLOAD = "/var/www/uploads/jawaban_siswa_file";
 
 const ensureDir = (dir) => {
     if (!fs.existsSync(dir)) {
