@@ -400,7 +400,7 @@ router.get(
                 soal_id: row.soal_id,
                 nama_file: row.file_name,
                 mime: row.file_mime,
-                url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+                url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
                 created_at: row.created_at,
             }))
         );
@@ -428,7 +428,7 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
             user_id: row.user_id,
             file_name: row.file_name,
             file_mime: row.file_mime,
-            url: `https://${req.get("host")}/api/jawaban-siswa/file-db/${row.id}`,
+            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
             download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
             created_at: row.created_at,
         }));
