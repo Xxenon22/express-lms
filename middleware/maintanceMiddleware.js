@@ -22,44 +22,40 @@ const maintenanceMiddleware = async (req, res, next) => {
             return next();
         }
 
-        // 2️⃣ cek status maintenance dulu
+        // 2️⃣ cek status maintenance
         const result = await pool.query(
             "SELECT status FROM maintance LIMIT 1"
         );
 
         const isMaintenance = result.rows[0]?.status ?? false;
-
-        if (!isMaintenance) {
-            return next(); // maintenance OFF
-        }
+        if (!isMaintenance) return next();
 
         // 3️⃣ maintenance ON → cek whitelist
-        let userEmail = null;
+        let email = null;
         const authHeader = req.headers.authorization;
 
         if (authHeader?.startsWith("Bearer ")) {
             try {
                 const token = authHeader.split(" ")[1];
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                userEmail = decoded.email;
+                email = decoded.email;
             } catch {
-                // token expired / rusak → anggap user biasa
-                userEmail = null;
+                email = null;
             }
         }
 
-        if (userEmail && MAINTENANCE_WHITELIST.includes(userEmail)) {
-            return next();
+        if (email && MAINTENANCE_WHITELIST.includes(email)) {
+            return next(); // ✅ whitelist lolos
         }
 
-        // 4️⃣ block semua user non-whitelist
+        // 4️⃣ block user lain
         return res.status(503).json({
             maintenance: true,
             message: "System is under maintenance"
         });
 
     } catch (err) {
-        console.error("Maintenance fatal error:", err);
+        console.error("Maintenance error:", err);
         return res.status(503).json({
             maintenance: true,
             message: "System is under maintenance"
