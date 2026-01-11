@@ -16,7 +16,7 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
                 rpk.*,
                 r.name_rombel,
                 r.colab_class,              -- ✅ FIXED
-                g.grade_lvl       AS name_grade,
+                g.grade_lvl,
                 m.nama_jurusan    AS major,
                 dm.nama_mapel    AS subject,
                 p.phase,
@@ -54,7 +54,7 @@ router.get("/:id", verifyToken, async (req, res) => {
                 rpk.*,
                 r.name_rombel,
                 r.colab_class,              -- ✅ FIXED
-                g.grade_lvl       AS name_grade,
+                g.grade_lvl,
                 m.nama_jurusan    AS major,
                 dm.nama_mapel    AS subject,
                 p.phase,
