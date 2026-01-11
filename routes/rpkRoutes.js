@@ -23,8 +23,8 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
                 t.username       AS teacher_name,
                 i.name           AS instructor_name
             FROM rpk_db rpk
-            JOIN rombel r        ON r.id = rpk.rombel_id
             LEFT JOIN kelas k         ON rpk.kelas_id = k.id
+            LEFT JOIN rombel r        ON r.id = k.rombel_id
             LEFT JOIN db_mapel dm     ON dm.id = k.id_mapel
             LEFT JOIN grade_level g   ON r.grade_id = g.id
             LEFT JOIN jurusan m       ON r.jurusan_id = m.id
