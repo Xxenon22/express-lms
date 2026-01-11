@@ -53,13 +53,13 @@ router.get("/:id", verifyToken, async (req, res) => {
             SELECT 
                 rpk.*,
                 r.name_rombel,
-                r.colab_class,              -- ✅ FIXED
+                r.colab_class,
                 g.grade_lvl,
-                m.nama_jurusan    AS major,
-                dm.nama_mapel    AS subject,
+                m.nama_jurusan AS major,
+                dm.nama_mapel  AS subject,
                 p.phase,
-                t.username       AS teacher_name,
-                i.name           AS instructor_name,
+                t.username     AS teacher_name,
+                i.name         AS instructor_name,
 
                 mem.memahami,
                 mem.asesmen_memahami,
@@ -78,20 +78,23 @@ router.get("/:id", verifyToken, async (req, res) => {
                 me.berkesadaran AS merefleksi_berkesadaran,
                 me.bermakna     AS merefleksi_bermakna,
                 me.menggembirakan AS merefleksi_menggembirakan
+
             FROM rpk_db rpk
-            LEFT JOIN kelas k ON rpk.kelas_id = k.id
-            LEFT JOIN rombel r ON rpk.rombel_id = r.id
-            LEFT JOIN db_mapel dm ON dm.id = k.id_mapel
-            LEFT JOIN grade_level g ON r.grade_id = g.id
-            LEFT JOIN jurusan m ON r.jurusan_id = m.id
-            LEFT JOIN db_phase p ON rpk.phase_id = p.id
-            LEFT JOIN users t ON rpk.guru_id = t.id
-            LEFT JOIN db_guru i ON rpk.instructor = i.id
-            LEFT JOIN rpk_memahami mem ON rpk.memahami_id = mem.id
+            LEFT JOIN kelas k           ON rpk.kelas_id = k.id
+            LEFT JOIN rombel r          ON r.id = k.rombel_id
+            LEFT JOIN db_mapel dm       ON dm.id = k.id_mapel
+            LEFT JOIN grade_level g     ON r.grade_id = g.id
+            LEFT JOIN jurusan m         ON r.jurusan_id = m.id
+            LEFT JOIN db_phase p        ON rpk.phase_id = p.id
+            LEFT JOIN users t           ON rpk.guru_id = t.id
+            LEFT JOIN db_guru i         ON rpk.instructor = i.id
+            LEFT JOIN rpk_memahami mem  ON rpk.memahami_id = mem.id
             LEFT JOIN rpk_mengaplikasikan ma ON rpk.mengaplikasikan_id = ma.id
             LEFT JOIN rpk_merefleksi me ON rpk.merefleksi_id = me.id
+
             WHERE rpk.id = $1
-            LIMIT 1
+            LIMIT 1;
+
         `, [id]);
 
         res.json(result.rows[0]);
