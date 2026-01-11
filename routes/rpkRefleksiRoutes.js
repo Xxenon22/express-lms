@@ -178,6 +178,7 @@ router.put("/:id", verifyToken, async (req, res) => {
         const { id } = req.params;
 
         const {
+            kelas_id,
             rombel_id,
             hari_tanggal,
             instructor = null,
