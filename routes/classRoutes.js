@@ -389,9 +389,9 @@ router.get("/:id", async (req, res) => {
                 : base.name_rombel
                     ? {
                         type: "regular",
-                        grade_lvl: base.grade_lvl,
-                        major: base.major,
-                        name_rombel: base.name_rombel
+                        grade_lvl: base.grade_lvl || "",
+                        major: base.major || "",
+                        name_rombel: base.name_rombel || ""
                     }
                     : null,
             modules: rows
