@@ -83,6 +83,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 
         const result = await pool.query(`
       SELECT rr.*,
+             rb.id AS rombel_id,
              rb.name_rombel,
              COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
              u.username AS teacher_name,
