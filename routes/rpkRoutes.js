@@ -153,50 +153,87 @@ router.post("/", verifyToken, async (req, res) => {
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
+        const guruId = req.users.id; // ✅ dari token
+
         const {
-            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-            lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-            dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-            phase_id, rombel_id, guru_id, instructor,
-            memahami_id, mengaplikasikan_id, merefleksi_id, kelas_id
+            tutor,
+            hari_tanggal,
+            waktu,
+            tujuan_pembelajaran,
+            lintas_disiplin_ilmu,
+            pemanfaatan_digital,
+            kemitraan_pembelajaran,
+            dpl_1, dpl_2, dpl_3, dpl_4,
+            dpl_5, dpl_6, dpl_7, dpl_8,
+            phase_id,
+            rombel_id,
+            kelas_id,
+            instructor,
+            memahami_id,
+            mengaplikasikan_id,
+            merefleksi_id
         } = req.body;
 
-        const updateQuery = `
-      UPDATE rpk_db 
-      SET tutor = COALESCE($1, tutor),
-          hari_tanggal = COALESCE($2, hari_tanggal),
-          waktu = COALESCE($3, waktu),
-          tujuan_pembelajaran = COALESCE($4, tujuan_pembelajaran),
-          lintas_disiplin_ilmu = COALESCE($5, lintas_disiplin_ilmu),
-          pemanfaatan_digital = COALESCE($6, pemanfaatan_digital),
-          kemitraan_pembelajaran = COALESCE($7, kemitraan_pembelajaran),
-          dpl_1 = COALESCE($8, dpl_1),
-          dpl_2 = COALESCE($9, dpl_2),
-          dpl_3 = COALESCE($10, dpl_3),
-          dpl_4 = COALESCE($11, dpl_4),
-          dpl_5 = COALESCE($12, dpl_5),
-          dpl_6 = COALESCE($13, dpl_6),
-          dpl_7 = COALESCE($14, dpl_7),
-          dpl_8 = COALESCE($15, dpl_8),
-          phase_id = COALESCE($16, phase_id),
-          rombel_id = COALESCE($17, rombel_id),
-          guru_id = COALESCE($18, guru_id),
-          instructor = COALESCE($19, instructor),
-          memahami_id = COALESCE($20, memahami_id),
-          mengaplikasikan_id = COALESCE($21, mengaplikasikan_id),
-          merefleksi_id = COALESCE($22, merefleksi_id),
-          kelas_id = COALESCE($23, kelas_id)
-      WHERE id = $24
-      RETURNING *;
-    `;
+        const result = await pool.query(`
+            UPDATE rpk_db
+            SET
+                tutor = COALESCE($1, tutor),
+                hari_tanggal = COALESCE($2, hari_tanggal),
+                waktu = COALESCE($3, waktu),
+                tujuan_pembelajaran = COALESCE($4, tujuan_pembelajaran),
+                lintas_disiplin_ilmu = COALESCE($5, lintas_disiplin_ilmu),
+                pemanfaatan_digital = COALESCE($6, pemanfaatan_digital),
+                kemitraan_pembelajaran = COALESCE($7, kemitraan_pembelajaran),
 
-        const result = await pool.query(updateQuery, [
-            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-            lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-            dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-            phase_id, rombel_id, guru_id, instructor,
-            memahami_id, mengaplikasikan_id, merefleksi_id, kelas_id, id
+                dpl_1 = COALESCE($8, dpl_1),
+                dpl_2 = COALESCE($9, dpl_2),
+                dpl_3 = COALESCE($10, dpl_3),
+                dpl_4 = COALESCE($11, dpl_4),
+                dpl_5 = COALESCE($12, dpl_5),
+                dpl_6 = COALESCE($13, dpl_6),
+                dpl_7 = COALESCE($14, dpl_7),
+                dpl_8 = COALESCE($15, dpl_8),
+
+                phase_id = COALESCE($16, phase_id),
+                rombel_id = COALESCE($17, rombel_id),
+                kelas_id = COALESCE($18, kelas_id),
+                instructor = COALESCE($19, instructor),
+
+                memahami_id = COALESCE($20, memahami_id),
+                mengaplikasikan_id = COALESCE($21, mengaplikasikan_id),
+                merefleksi_id = COALESCE($22, merefleksi_id)
+
+            WHERE id = $23
+              AND guru_id = $24
+            RETURNING *;
+        `, [
+            tutor,
+            hari_tanggal,
+            waktu,
+            tujuan_pembelajaran,
+            lintas_disiplin_ilmu,
+            pemanfaatan_digital,
+            kemitraan_pembelajaran,
+
+            dpl_1, dpl_2, dpl_3, dpl_4,
+            dpl_5, dpl_6, dpl_7, dpl_8,
+
+            phase_id,
+            rombel_id,
+            kelas_id,
+            instructor,
+
+            memahami_id,
+            mengaplikasikan_id,
+            merefleksi_id,
+
+            id,
+            guruId
         ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "RPK not found or unauthorized" });
+        }
 
         res.json(result.rows[0]);
     } catch (err) {
