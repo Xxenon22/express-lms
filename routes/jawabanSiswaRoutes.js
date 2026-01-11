@@ -111,33 +111,38 @@ router.post(
     }
 );
 
-/* =========================
-   SIMPAN JAWABAN (MULTIPLE)
-========================= */
 router.post("/", verifyToken, async (req, res) => {
     try {
-        const jawabanList = req.body;
         const userId = req.users.id;
 
-        if (!Array.isArray(jawabanList)) {
-            return res.status(400).json({ message: "Answer must be an Array" });
+        // 🔥 FIX: terima array atau object
+        const jawabanList = Array.isArray(req.body)
+            ? req.body
+            : req.body.jawaban;
+
+        if (!Array.isArray(jawabanList) || jawabanList.length === 0) {
+            return res.status(400).json({
+                message: "Jawaban harus berupa array dan tidak boleh kosong",
+            });
         }
 
         const inserted = [];
 
         for (const j of jawabanList) {
+            if (!j.soal_id || !j.bank_soal_id) continue;
+
             const result = await pool.query(
                 `
                 INSERT INTO jawaban_siswa
                     (user_id, soal_id, bank_soal_id, jawaban,
-                     jawaban_essai, refleksi_siswa, file_jawaban_siswa, created_at)
+                     jawaban_essai, refleksi_siswa, materi_id, created_at)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
-                ON CONFLICT (user_id, soal_id)
+                ON CONFLICT (user_id, soal_id, bank_soal_id)
                 DO UPDATE SET
                     jawaban = EXCLUDED.jawaban,
                     jawaban_essai = EXCLUDED.jawaban_essai,
                     refleksi_siswa = EXCLUDED.refleksi_siswa,
-                    file_jawaban_siswa = EXCLUDED.file_jawaban_siswa,
+                    materi_id = EXCLUDED.materi_id,
                     created_at = NOW()
                 RETURNING *
                 `,
@@ -145,10 +150,10 @@ router.post("/", verifyToken, async (req, res) => {
                     userId,
                     j.soal_id,
                     j.bank_soal_id,
-                    j.jawaban,
-                    j.jawaban_essai,
-                    j.refleksi_siswa,
-                    j.file_jawaban_siswa || null,
+                    j.jawaban || null,
+                    j.jawaban_essai || null,
+                    j.refleksi_siswa || null,
+                    j.materi_id || null,
                 ]
             );
 
@@ -156,7 +161,7 @@ router.post("/", verifyToken, async (req, res) => {
         }
 
         res.json({
-            message: "Answer saved successfully",
+            message: "Jawaban berhasil disimpan",
             data: inserted,
         });
     } catch (err) {
@@ -264,55 +269,60 @@ router.put("/nilai", verifyToken, async (req, res) => {
 router.get("/all-with-soal", async (req, res) => {
     try {
         const { bank_soal_id } = req.query;
-
         if (!bank_soal_id) {
-            return res.status(400).json({ message: "bank_soal_id wajib diisi" });
+            return res.status(400).json({ message: "bank_soal_id required" });
         }
 
-        const result = await pool.query(
-            `
+        const result = await pool.query(`
             SELECT
                 js.id AS jawaban_id,
                 js.user_id,
+                js.soal_id,
                 js.jawaban,
                 js.jawaban_essai,
                 js.refleksi_siswa,
                 js.nilai,
                 js.file_jawaban_siswa,
-                sp.id AS soal_id,
+                js.file_name,
+                js.file_mime,
+                js.created_at,
+
                 sp.pertanyaan,
-                sp.pg_a,
-                sp.pg_b,
-                sp.pg_c,
-                sp.pg_d,
-                sp.pg_e,
+                sp.pg_a, sp.pg_b, sp.pg_c, sp.pg_d, sp.pg_e,
                 sp.kunci_jawaban,
                 sp.gambar,
                 sp.pertanyaan_essai,
                 sp.gambar_soal_essai
+
             FROM jawaban_siswa js
-            LEFT JOIN soal_pilgan sp
-                ON js.soal_id = sp.id
+            LEFT JOIN soal_pilgan sp ON js.soal_id = sp.id
             WHERE js.bank_soal_id = $1
-            `,
-            [bank_soal_id]
-        );
+            ORDER BY js.user_id, js.created_at
+        `, [bank_soal_id]);
 
         const data = result.rows.map(r => ({
             ...r,
-            file_url: r.file_name
-                ? `${req.protocol}://${req.get("host")}/api/jawaban-siswa/file-db/${r.jawaban_id}`
+
+            // 🔑 DETEKSI TIPE DATA
+            tipe:
+                r.file_jawaban_siswa ? "file"
+                    : r.refleksi_siswa ? "refleksi"
+                        : r.jawaban_essai ? "essay"
+                            : r.jawaban ? "pilgan"
+                                : "unknown",
+
+            file_url: r.file_jawaban_siswa
+                ? `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`
                 : null,
         }));
 
         res.json(data);
-    } catch (error) {
-        console.error("Failed to retrieve answers and questions:", error);
-        res.status(500).json({
-            message: "Failed to retrieve answers and questions",
-        });
+    } catch (err) {
+        console.error("all-with-soal error:", err);
+        res.status(500).json({ message: "Failed fetch jawaban" });
     }
 });
+
 
 /* =========================
    REVIEW JAWABAN SISWA
@@ -551,43 +561,28 @@ router.put(
 /* =========================
    DOWNLOAD FILE JAWABAN SISWA
 ========================= */
-router.get("/download/:id", verifyToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.users.id;
+router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) => {
+    const { bank_soal_id } = req.params;
 
-        const result = await pool.query(
-            `
-            SELECT file_jawaban_siswa, file_name, file_mime
-            FROM jawaban_siswa
-            WHERE id = $1 AND user_id = $2
-            `,
-            [id, userId]
-        );
+    const result = await pool.query(`
+        SELECT id, user_id, file_name, file_mime, file_jawaban_siswa, created_at
+        FROM jawaban_siswa
+        WHERE bank_soal_id = $1
+          AND file_jawaban_siswa IS NOT NULL
+        ORDER BY created_at DESC
+    `, [bank_soal_id]);
 
-        if (!result.rowCount) {
-            return res.status(404).json({ message: "File not found" });
-        }
-
-        const file = result.rows[0];
-        const absolutePath = path.join("/var/www", file.file_jawaban_siswa);
-
-        if (!fs.existsSync(absolutePath)) {
-            return res.status(404).json({ message: "File missing on server" });
-        }
-
-        res.setHeader("Content-Type", file.file_mime);
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="${file.file_name}"`
-        );
-
-        res.sendFile(absolutePath);
-    } catch (err) {
-        console.error("Download error:", err);
-        res.status(500).json({ message: "Failed to download file" });
-    }
+    res.json(result.rows.map(row => ({
+        id: row.id,
+        user_id: row.user_id,
+        file_name: row.file_name,
+        file_mime: row.file_mime,
+        url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`, // 🔥 STATIC
+        download_url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`,
+        created_at: row.created_at,
+    })));
 });
+
 
 /* =========================
    DOWNLOAD FILE JAWABAN SISWA UNTUK GURU
