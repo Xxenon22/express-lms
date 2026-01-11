@@ -370,6 +370,7 @@ router.get("/:id", async (req, res) => {
       LEFT JOIN db_mapel m ON k.id_mapel = m.id
       LEFT JOIN users u ON k.guru_id = u.id
       LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
+      LEFT JOIN bank_soal bs ON bs.module_id = mp.id
       WHERE k.id = $1
       ORDER BY mp.created_at DESC
     `, [id]);
@@ -400,14 +401,15 @@ router.get("/:id", async (req, res) => {
                 .filter(r => r.module_id)
                 .map(r => ({
                     id: r.module_id,
-                    bank_soal_id: r.bank_soal_id,
                     kelas_id: r.kelas_id,
                     judul: r.judul,
                     deskripsi: r.deskripsi,
                     video_url: r.video_url,
                     file_url: r.file_url,
-                    created_at: r.created_at
+                    created_at: r.created_at,
+                    bank_soal_id: r.bank_soal_id
                 }))
+
         });
     } catch (err) {
         console.error(err);
