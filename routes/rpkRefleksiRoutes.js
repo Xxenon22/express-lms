@@ -85,15 +85,15 @@ router.get("/:id", verifyToken, async (req, res) => {
       SELECT rr.*,
              rb.id AS rombel_id,
              rb.name_rombel,
+             rb.colab_class,
              COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
              u.username AS teacher_name,
              dg.name AS instructor_name,
              g.grade_lvl AS name_grade,
-             j.nama_jurusan AS major,
-             rb.colab_class
+             j.nama_jurusan AS major
       FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rb.id = rr.rombel_id
       LEFT JOIN kelas k ON k.id = rr.kelas_id
-      LEFT JOIN rombel rb ON rb.id = k.rombel_id
       LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
       LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
       LEFT JOIN users u ON rr.guru_id = u.id
@@ -192,22 +192,24 @@ router.put("/:id", verifyToken, async (req, res) => {
         } = req.body;
 
         const result = await pool.query(`
-            UPDATE rpk_refleksi
-            SET 
-                rombel_id = $1,
-                instructor = $2,
-                hari_tanggal = $3,
-                waktu = $4,
-                refleksi_siswa = $5,
-                refleksi_guru = $6,
-                tngkt_pencapaian = $7,
-                desk_pencapaian = $8,
-                follow_up = $9,
-                pendampingan_siswa = $10,
-                keterangan = $11
-            WHERE id = $12
+           UPDATE rpk_refleksi
+                SET
+                kelas_id = $1,
+                rombel_id = $2,
+                instructor = $3,
+                hari_tanggal = $4,
+                waktu = $5,
+                refleksi_siswa = $6,
+                refleksi_guru = $7,
+                tngkt_pencapaian = $8,
+                desk_pencapaian = $9,
+                follow_up = $10,
+                pendampingan_siswa = $11,
+                keterangan = $12
+                WHERE id = $13
             RETURNING *
         `, [
+            kelas_id,
             rombel_id,
             instructor,
             hari_tanggal,
@@ -220,7 +222,8 @@ router.put("/:id", verifyToken, async (req, res) => {
             pendampingan_siswa,
             keterangan,
             id
-        ]);
+        ]
+        );
 
         res.json(result.rows[0]);
     } catch (err) {
