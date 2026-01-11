@@ -296,7 +296,7 @@ router.get("/all-with-soal", async (req, res) => {
 
             FROM jawaban_siswa js
             LEFT JOIN soal_pilgan sp ON js.soal_id = sp.id
-            WHERE js.bank_soal_id = $1
+            WHERE js.soal_id = $1
             ORDER BY js.user_id, js.created_at
         `, [assignmentId]);
 
