@@ -56,8 +56,8 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
              j.nama_jurusan AS major,
              rb.colab_class
       FROM rpk_refleksi rr
-      LEFT JOIN kelas k ON k.id = rr.kelas_id
       LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.id = rr.kelas_id
       LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
       LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
       LEFT JOIN users u ON rr.guru_id = u.id
@@ -92,8 +92,8 @@ router.get("/:id", verifyToken, async (req, res) => {
              g.grade_lvl AS name_grade,
              j.nama_jurusan AS major
       FROM rpk_refleksi rr
-      LEFT JOIN kelas k ON k.id = rr.kelas_id
-      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+    LEFT JOIN kelas k ON k.id = rr.kelas_id
+      LEFT JOIN rombel rb ON rb.id = k.rombel_id
       LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
       LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
       LEFT JOIN users u ON rr.guru_id = u.id
