@@ -12,27 +12,24 @@ router.get("/", verifyToken, async (req, res) => {
         const guruId = req.users.id;
 
         const result = await pool.query(`
-            SELECT 
-                rr.*,
-                rb.name_rombel,
-                rb.colab_class,              -- ✅ TAMBAH INI
-                g.grade_lvl AS name_grade,
-                j.nama_jurusan AS major,
-                COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
-                u.username AS teacher_name,
-                dg.name AS instructor_name
-            FROM rpk_refleksi rr
-            LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.id = rr.kelas_id
-            LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
-            LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
-            LEFT JOIN users u ON rr.guru_id = u.id
-            LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN grade_level g ON rb.grade_id = g.id
-            LEFT JOIN jurusan j ON rb.jurusan_id = j.id
-            WHERE rr.guru_id = $1
-            ORDER BY rr.hari_tanggal DESC
-        `, [guruId]);
+      SELECT rr.*,
+             rb.name_rombel,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade,
+             j.nama_jurusan AS major
+      FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.id = rr.kelas_id
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
+      LEFT JOIN users u ON rr.guru_id = u.id
+      LEFT JOIN db_guru dg ON rr.instructor = dg.id
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
+      WHERE rr.guru_id = $1
+    `, [guruId]);
 
         res.json(result.rows);
     } catch (error) {
@@ -40,7 +37,6 @@ router.get("/", verifyToken, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 /* =====================================================
    GET ALL BY TEACHER (ADMIN)
@@ -50,27 +46,24 @@ router.get("/all-rpk2/:id", verifyToken, async (req, res) => {
         const guruId = req.params.id;
 
         const result = await pool.query(`
-            SELECT 
-                rr.*,
-                rb.name_rombel,
-                rb.colab_class,              -- ✅ TAMBAH
-                g.grade_lvl AS name_grade,
-                j.nama_jurusan AS major,
-                COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
-                u.username AS teacher_name,
-                dg.name AS instructor_name
-            FROM rpk_refleksi rr
-            LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.id = rr.kelas_id
-            LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
-            LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
-            LEFT JOIN users u ON rr.guru_id = u.id
-            LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN grade_level g ON rb.grade_id = g.id
-            LEFT JOIN jurusan j ON rb.jurusan_id = j.id
-            WHERE rr.guru_id = $1
-            ORDER BY rr.hari_tanggal DESC
-        `, [guruId]);
+      SELECT rr.*,
+             rb.name_rombel,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade,
+             j.nama_jurusan AS major
+      FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.id = rr.kelas_id
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
+      LEFT JOIN users u ON rr.guru_id = u.id
+      LEFT JOIN db_guru dg ON rr.instructor = dg.id
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
+      WHERE rr.guru_id = $1
+    `, [guruId]);
 
         res.json(result.rows);
     } catch (error) {
@@ -87,27 +80,25 @@ router.get("/:id", verifyToken, async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(`
-            SELECT 
-                rr.*,
-                rb.name_rombel,
-                rb.colab_class,              -- ✅ TAMBAH
-                g.grade_lvl AS name_grade,
-                j.nama_jurusan AS major,
-                COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
-                u.username AS teacher_name,
-                dg.name AS instructor_name
-            FROM rpk_refleksi rr
-            LEFT JOIN rombel rb ON rr.rombel_id = rb.id
-            LEFT JOIN kelas k ON k.id = rr.kelas_id
-            LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
-            LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
-            LEFT JOIN users u ON rr.guru_id = u.id
-            LEFT JOIN db_guru dg ON rr.instructor = dg.id
-            LEFT JOIN grade_level g ON rb.grade_id = g.id
-            LEFT JOIN jurusan j ON rb.jurusan_id = j.id
-            WHERE rr.id = $1
-            LIMIT 1
-        `, [id]);
+      SELECT rr.*,
+             rb.name_rombel,
+             COALESCE(dm_kelas.nama_mapel, dm_lama.nama_mapel) AS subject,
+             u.username AS teacher_name,
+             dg.name AS instructor_name,
+             g.grade_lvl AS name_grade,
+             j.nama_jurusan AS major
+      FROM rpk_refleksi rr
+      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+      LEFT JOIN kelas k ON k.id = rr.kelas_id
+      LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
+      LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
+      LEFT JOIN users u ON rr.guru_id = u.id
+      LEFT JOIN db_guru dg ON rr.instructor = dg.id
+      LEFT JOIN grade_level g ON rb.grade_id = g.id
+      LEFT JOIN jurusan j ON rb.jurusan_id = j.id
+      WHERE rr.id = $1
+      LIMIT 1
+    `, [id]);
 
         if (!result.rows.length) {
             return res.status(404).json({ message: "Learning Reflection not found" });
@@ -119,7 +110,6 @@ router.get("/:id", verifyToken, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 /* =====================================================
    CREATE
