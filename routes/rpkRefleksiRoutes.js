@@ -18,9 +18,10 @@ router.get("/", verifyToken, async (req, res) => {
              u.username AS teacher_name,
              dg.name AS instructor_name,
              g.grade_lvl AS name_grade,
-             j.nama_jurusan AS major
+             j.nama_jurusan AS major,
+             rb.colab_class
       FROM rpk_refleksi rr
-      LEFT JOIN rombel rb ON rr.rombel_id = rb.id
+    JOIN rombel rb ON rb.id = k.rombel_id
       LEFT JOIN kelas k ON k.id = rr.kelas_id
       LEFT JOIN db_mapel dm_kelas ON dm_kelas.id = k.id_mapel
       LEFT JOIN db_mapel dm_lama ON dm_lama.id = rr.mapel_id
