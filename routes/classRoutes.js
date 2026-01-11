@@ -359,7 +359,8 @@ router.get("/:id", async (req, res) => {
         mp.deskripsi,
         mp.video_url,
         mp.file_url,
-        mp.created_at
+        mp.created_at,
+        mp.bank_soal_id       
       FROM kelas k
       LEFT JOIN rombel r ON k.rombel_id = r.id
       LEFT JOIN grade_level gl ON r.grade_id = gl.id
@@ -398,6 +399,7 @@ router.get("/:id", async (req, res) => {
                 .filter(r => r.module_id)
                 .map(r => ({
                     id: r.module_id,
+                    bank_soal_id: r.bank_soal_id,
                     judul: r.judul,
                     deskripsi: r.deskripsi,
                     video_url: r.video_url,
