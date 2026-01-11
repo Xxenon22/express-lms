@@ -268,9 +268,9 @@ router.put("/nilai", verifyToken, async (req, res) => {
 ========================= */
 router.get("/all-with-soal", async (req, res) => {
     try {
-        const { bank_soal_id } = req.query;
-        if (!bank_soal_id) {
-            return res.status(400).json({ message: "bank_soal_id required" });
+        const { assignmentId } = req.query; // module_pembelajaran.id
+        if (!assignmentId) {
+            return res.status(400).json({ message: "assignmentId required" });
         }
 
         const result = await pool.query(`
@@ -298,7 +298,7 @@ router.get("/all-with-soal", async (req, res) => {
             LEFT JOIN soal_pilgan sp ON js.soal_id = sp.id
             WHERE js.bank_soal_id = $1
             ORDER BY js.user_id, js.created_at
-        `, [bank_soal_id]);
+        `, [assignmentId]);
 
         const data = result.rows.map(r => ({
             ...r,
