@@ -266,61 +266,47 @@ router.put("/nilai", verifyToken, async (req, res) => {
 /* =========================
    GET JAWABAN + SOAL
 ========================= */
-router.get("/all-with-soal", async (req, res) => {
-    try {
-        const { assignmentId } = req.query; // module_pembelajaran.id
-        if (!assignmentId) {
-            return res.status(400).json({ message: "assignmentId required" });
-        }
+router.get("/by-bank-soal/:bank_soal_id", verifyToken, async (req, res) => {
+    const bankSoalId = Number(req.params.bank_soal_id);
 
-        const result = await pool.query(`
-            SELECT
-                js.id AS jawaban_id,
-                js.user_id,
-                js.soal_id,
-                js.jawaban,
-                js.jawaban_essai,
-                js.refleksi_siswa,
-                js.nilai,
-                js.file_jawaban_siswa,
-                js.file_name,
-                js.file_mime,
-                js.created_at,
+    const result = await pool.query(`
+    SELECT
+      js.id AS jawaban_id,
+      js.user_id,
+      u.username,
+      js.soal_id,
+      js.jawaban,
+      js.jawaban_essai,
+      js.refleksi_siswa,
+      js.nilai,
+      js.file_jawaban_siswa,
+      js.file_name,
+      js.file_mime,
+      js.created_at,
 
-                sp.pertanyaan,
-                sp.pg_a, sp.pg_b, sp.pg_c, sp.pg_d, sp.pg_e,
-                sp.kunci_jawaban,
-                sp.gambar,
-                sp.pertanyaan_essai,
-                sp.gambar_soal_essai
+      sp.pertanyaan,
+      sp.pg_a, sp.pg_b, sp.pg_c, sp.pg_d, sp.pg_e,
+      sp.kunci_jawaban,
+      sp.pertanyaan_essai
+    FROM jawaban_siswa js
+    JOIN users u ON u.id = js.user_id
+    LEFT JOIN soal_pilgan sp ON js.soal_id = sp.id
+    WHERE js.bank_soal_id = $1
+    ORDER BY u.username, js.created_at
+  `, [bankSoalId]);
 
-            FROM jawaban_siswa js
-            LEFT JOIN soal_pilgan sp ON js.soal_id = sp.id
-            WHERE js.bank_soal_id = $1
-            ORDER BY js.user_id, js.created_at
-        `, [assignmentId]);
-
-        const data = result.rows.map(r => ({
-            ...r,
-
-            // 🔑 DETEKSI TIPE DATA
-            tipe:
-                r.file_jawaban_siswa ? "file"
-                    : r.refleksi_siswa ? "refleksi"
-                        : r.jawaban_essai ? "essay"
-                            : r.jawaban ? "pilgan"
-                                : "unknown",
-
-            file_url: r.file_jawaban_siswa
-                ? `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`
-                : null,
-        }));
-
-        res.json(data);
-    } catch (err) {
-        console.error("all-with-soal error:", err);
-        res.status(500).json({ message: "Failed fetch jawaban" });
-    }
+    res.json(result.rows.map(r => ({
+        ...r,
+        tipe:
+            r.file_jawaban_siswa ? "file"
+                : r.refleksi_siswa ? "refleksi"
+                    : r.jawaban_essai ? "essay"
+                        : r.jawaban ? "pilgan"
+                            : "unknown",
+        file_url: r.file_jawaban_siswa
+            ? `${req.protocol}://${req.get("host")}${r.file_jawaban_siswa}`
+            : null,
+    })));
 });
 
 

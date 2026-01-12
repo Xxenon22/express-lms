@@ -360,8 +360,7 @@ router.get("/:id", async (req, res) => {
         mp.video_url,
         mp.file_url,
         mp.created_at,
-        mp.bank_soal_id,     
-        k.id AS kelas_id         
+        bs.id AS bank_soal_id   
         FROM kelas k
       LEFT JOIN rombel r ON k.rombel_id = r.id
       LEFT JOIN grade_level gl ON r.grade_id = gl.id
