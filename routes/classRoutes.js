@@ -391,7 +391,7 @@ router.get("/:id", async (req, res) => {
                     }
                     : null,
             modules: rows
-                .filter(r => r.module_id)
+                .filter(r => r.module_id !== null)
                 .map(r => ({
                     id: r.module_id,
                     kelas_id: r.kelas_id,
@@ -400,7 +400,7 @@ router.get("/:id", async (req, res) => {
                     video_url: r.video_url,
                     file_url: r.file_url,
                     created_at: r.created_at,
-                    bank_soal_id: r.bank_soal_id
+                    bank_soal_id: r.bank_soal_id ?? null
                 }))
 
         });
