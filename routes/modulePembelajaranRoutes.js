@@ -321,6 +321,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
             ORDER BY mp.created_at DESC
         `;
 
+        const result = await pool.query(query, [userId]);
         const rows = result.rows.map(row => {
             let rombel = null;
 
