@@ -81,17 +81,14 @@ router.get("/student/dashboard", verifyToken, async (req, res) => {
                 guru_id: row.guru_id,
                 guru_name: row.guru_name,
                 guru_photo: row.guru_photo,
-                rombel: row.colab_class
-                    ? {
-                        type: "collab",
-                        colab_class: row.colab_class
-                    }
-                    : row.name_rombel
+                rombel: base.colab_class
+                    ? { type: "collab", colab_class: base.colab_class }
+                    : base.name_rombel
                         ? {
                             type: "regular",
-                            grade_lvl: row.grade_lvl,
-                            major: row.major,
-                            name_rombel: row.name_rombel
+                            grade_lvl: base.grade_lvl,
+                            major: base.major,
+                            name_rombel: base.name_rombel || null
                         }
                         : null,
                 sudah_diikuti: row.sudah_diikuti
