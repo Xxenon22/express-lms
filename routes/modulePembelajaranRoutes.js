@@ -282,7 +282,7 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
 
                 dm.nama_mapel,
                 u.photo_url AS guru_foto,
-                r.id AS rombel_id,
+                r.colab_class,
                 mj.nama_jurusan AS major,
                 g.grade_lvl,
                 n.number
@@ -321,7 +321,28 @@ router.get("/siswa/:userId", verifyToken, async (req, res) => {
             ORDER BY mp.created_at DESC
         `;
 
-        const { rows } = await pool.query(query, [userId]);
+        const rows = result.rows.map(row => {
+            let rombel = null;
+
+            if (row.colab_class) {
+                rombel = {
+                    type: "collab",
+                    colab_class: row.colab_class
+                };
+            } else if (row.number) {
+                rombel = {
+                    type: "regular",
+                    grade_lvl: row.grade_lvl,
+                    major: row.major,
+                    name_rombel: row.number
+                };
+            }
+
+            return {
+                ...row,
+                rombel
+            };
+        });
         res.json(rows);
 
     } catch (err) {

@@ -380,16 +380,15 @@ router.get("/:id", async (req, res) => {
             guru_name: base.guru_name,
             guru_photo: base.guru_photo,
             link_wallpaper_kelas: base.link_wallpaper_kelas,
-            rombel: base.colab_class
-                ? { type: "collab", colab_class: base.colab_class }
-                : base.name_rombel
-                    ? {
-                        type: "regular",
-                        grade_lvl: base.grade_lvl,
-                        major: base.major,
-                        name_rombel: base.name_rombel || null
-                    }
-                    : null,
+            rombel: base.name_rombel
+                ? {
+                    type: "regular",
+                    grade_lvl: base.grade_lvl,
+                    major: base.major,
+                    name_rombel: base.name_rombel || null,
+                    colab_class: base.colab_class
+                }
+                : null,
             modules: rows
                 .filter(r => r.module_id)
                 .map(r => ({
