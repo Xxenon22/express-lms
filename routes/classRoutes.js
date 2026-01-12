@@ -340,39 +340,39 @@ router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        const { rows } = await pool.query(`
-      SELECT
-        k.id AS kelas_id,
-        k.link_wallpaper_kelas,
-        m.nama_mapel,
+        const { rows } = await pool.query(`        
+        SELECT
+            k.id AS kelas_id,
+            k.link_wallpaper_kelas,
+            m.nama_mapel,
 
-        r.colab_class,
-        gl.grade_lvl,
-        mj.nama_jurusan AS major,
-        nr.number AS name_rombel,
+            r.colab_class,
+            gl.grade_lvl,
+            mj.nama_jurusan AS major,
+            nr.number AS name_rombel,
 
-        u.username AS guru_name,
-        u.photo_url AS guru_photo,
+            u.username AS guru_name,
+            u.photo_url AS guru_photo,
 
-        mp.id AS module_id,
-        mp.judul,
-        mp.deskripsi,
-        mp.video_url,
-        mp.file_url,
-        mp.created_at,
-        bs.id AS bank_soal_id   
-        FROM kelas k
-      LEFT JOIN rombel r ON k.rombel_id = r.id
-      LEFT JOIN grade_level gl ON r.grade_id = gl.id
-      LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
-      LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
-      LEFT JOIN db_mapel m ON k.id_mapel = m.id
-      LEFT JOIN users u ON k.guru_id = u.id
-      LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
-      LEFT JOIN bank_soal bs ON bs.module_id = mp.id
-      WHERE k.id = $1
-      ORDER BY mp.created_at DESC
-    `, [id]);
+            mp.id AS module_id,
+            mp.judul,
+            mp.deskripsi,
+            mp.video_url,
+            mp.file_url,
+            mp.created_at,
+            mp.bank_soal_id
+
+            FROM kelas k
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN grade_level gl ON r.grade_id = gl.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN db_mapel m ON k.id_mapel = m.id
+            LEFT JOIN users u ON k.guru_id = u.id
+            LEFT JOIN module_pembelajaran mp ON mp.kelas_id = k.id
+            WHERE k.id = $1
+            ORDER BY mp.created_at DESC`,
+            [id]);
 
         if (!rows.length) {
             return res.status(404).json({ error: "Class not found" });
@@ -397,7 +397,7 @@ router.get("/:id", async (req, res) => {
                     }
                     : null,
             modules: rows
-                .filter(r => r.module_id)
+                .filter(r => r.id)
                 .map(r => ({
                     id: r.module_id,
                     kelas_id: r.kelas_id,
@@ -415,8 +415,6 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
-
 
 router.use((req, res, next) => {
     console.log(`[KELAS] ${req.method} ${req.originalUrl}`);
