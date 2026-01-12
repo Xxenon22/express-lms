@@ -390,8 +390,6 @@ router.get("/:id", async (req, res) => {
                         colab_class: base.colab_class ?? null
                     }
                     : null,
-
-                : null,
             modules: rows
                 .filter(r => r.module_id)
                 .map(r => ({
