@@ -397,7 +397,7 @@ router.get("/:id", async (req, res) => {
                     }
                     : null,
             modules: rows
-                .filter(r => r.id)
+                .filter(r => r.module_id !== null)
                 .map(r => ({
                     id: r.module_id,
                     kelas_id: r.kelas_id,
