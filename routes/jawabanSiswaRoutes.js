@@ -403,40 +403,6 @@ router.get(
     }
 );
 
-// FILE BY BANK SOAL (GURU)
-router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) => {
-    try {
-        const { bank_soal_id } = req.params;
-
-        const result = await pool.query(
-            `
-            SELECT id, user_id, file_name, file_mime, file_size, created_at
-            FROM jawaban_siswa
-            WHERE bank_soal_id = $1
-              AND file_jawaban_siswa IS NOT NULL
-            ORDER BY created_at DESC
-            `,
-            [bank_soal_id]
-        );
-
-        const files = result.rows.map(row => ({
-            id: row.id,
-            user_id: row.user_id,
-            file_name: row.file_name,
-            file_mime: row.file_mime,
-            url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
-            download_url: `${req.protocol}://${req.get("host")}/api/jawaban-siswa/download/${row.id}`,
-            created_at: row.created_at,
-        }));
-
-        res.json(files);
-    } catch (err) {
-        console.error("Fetch files error:", err);
-        res.status(500).json({ message: "Failed to fetch files" });
-    }
-});
-
-
 /* =========================
    DELETE FILE JAWABAN SISWA
 ========================= */
@@ -564,49 +530,8 @@ router.get("/files-by-bank-guru/:bank_soal_id", verifyToken, async (req, res) =>
         file_name: row.file_name,
         file_mime: row.file_mime,
         url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`, // 🔥 STATIC
-        download_url: `${req.protocol}://${req.get("host")}${row.file_jawaban_siswa}`,
         created_at: row.created_at,
     })));
-});
-
-
-/* =========================
-   DOWNLOAD FILE JAWABAN SISWA UNTUK GURU
-========================= */
-router.get("/download/:token", async (req, res) => {
-    try {
-        const payload = jwt.verify(req.params.token, process.env.FILE_SECRET);
-
-        const result = await pool.query(
-            `
-      SELECT file_jawaban_siswa, file_name, file_mime
-      FROM jawaban_siswa
-      WHERE id = $1
-      `,
-            [payload.fileId]
-        );
-
-        if (!result.rowCount) {
-            return res.status(404).end();
-        }
-
-        const file = result.rows[0];
-        const absolutePath = path.join("/var/www", file.file_jawaban_siswa);
-
-        if (!fs.existsSync(absolutePath)) {
-            return res.status(404).end();
-        }
-
-        res.setHeader("Content-Type", file.file_mime);
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="${file.file_name}"`
-        );
-
-        res.sendFile(absolutePath);
-    } catch {
-        return res.status(403).end();
-    }
 });
 
 export default router;
