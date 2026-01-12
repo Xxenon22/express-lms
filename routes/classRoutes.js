@@ -380,9 +380,9 @@ router.get("/:id", async (req, res) => {
             guru_name: base.guru_name,
             guru_photo: base.guru_photo,
             link_wallpaper_kelas: base.link_wallpaper_kelas,
-            rombel: base.name_rombel
+            rombel: base.rombel
                 ? {
-                    type: "regular",
+                    type: base.colab_class ? "collab" : "regular",
                     grade_lvl: base.grade_lvl,
                     major: base.major,
                     name_rombel: base.name_rombel || null,
