@@ -12,27 +12,65 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
         const guruId = req.params.id;
 
         const result = await pool.query(`
-            SELECT 
-                rpk.*,
-                r.name_rombel,
-                r.colab_class,              -- ✅ FIXED
-                g.grade_lvl,
-                m.nama_jurusan    AS major,
-                dm.nama_mapel    AS subject,
-                p.phase,
-                t.username       AS teacher_name,
-                i.name           AS instructor_name
-            FROM rpk_db rpk
-            LEFT JOIN kelas k         ON rpk.kelas_id = k.id
-            LEFT JOIN rombel r        ON r.id = k.rombel_id
-            LEFT JOIN db_mapel dm     ON dm.id = k.id_mapel
-            LEFT JOIN grade_level g   ON r.grade_id = g.id
-            LEFT JOIN jurusan m       ON r.jurusan_id = m.id
-            LEFT JOIN db_phase p      ON rpk.phase_id = p.id
-            LEFT JOIN users t         ON rpk.guru_id = t.id
-            LEFT JOIN db_guru i       ON rpk.instructor = i.id
-            WHERE rpk.guru_id = $1
-            ORDER BY rpk.created_at DESC
+        SELECT
+            MIN(rpk.id)                 AS rpk_id, -- ambil 1 id utama
+            rpk.tutor,
+            rpk.hari_tanggal,
+            rpk.waktu,
+            rpk.tujuan_pembelajaran,
+            rpk.lintas_disiplin_ilmu,
+            rpk.pemanfaatan_digital,
+            rpk.kemitraan_pembelajaran,
+
+            rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
+            rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
+
+            p.phase,
+            t.username AS teacher_name,
+            i.name     AS instructor_name,
+
+            STRING_AGG(
+            DISTINCT
+            CONCAT(
+                g.grade_lvl, ' ',
+                m.nama_jurusan, ' ',
+                COALESCE(r.name_rombel, ''),
+                ' ',
+                COALESCE(r.colab_class, ''),
+                ' - ',
+                dm.nama_mapel
+            ),
+            ', '
+            ORDER BY g.grade_lvl
+            ) AS kelas_list
+
+        FROM rpk_db rpk
+        LEFT JOIN kelas k       ON rpk.kelas_id = k.id
+        LEFT JOIN rombel r      ON r.id = k.rombel_id
+        LEFT JOIN db_mapel dm   ON dm.id = k.id_mapel
+        LEFT JOIN grade_level g ON r.grade_id = g.id
+        LEFT JOIN jurusan m     ON r.jurusan_id = m.id
+        LEFT JOIN db_phase p    ON rpk.phase_id = p.id
+        LEFT JOIN users t       ON rpk.guru_id = t.id
+        LEFT JOIN db_guru i     ON rpk.instructor = i.id
+
+        WHERE rpk.guru_id = $1
+
+        GROUP BY
+            rpk.tutor,
+            rpk.hari_tanggal,
+            rpk.waktu,
+            rpk.tujuan_pembelajaran,
+            rpk.lintas_disiplin_ilmu,
+            rpk.pemanfaatan_digital,
+            rpk.kemitraan_pembelajaran,
+            rpk.dpl_1, rpk.dpl_2, rpk.dpl_3, rpk.dpl_4,
+            rpk.dpl_5, rpk.dpl_6, rpk.dpl_7, rpk.dpl_8,
+            p.phase,
+            t.username,
+            i.name
+
+        ORDER BY rpk.hari_tanggal DESC;
         `, [guruId]);
 
         res.json(result.rows);
