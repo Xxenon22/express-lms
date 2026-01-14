@@ -144,7 +144,7 @@ router.post("/", verifyToken, async (req, res) => {
             ]);
 
         }
-        res.json(result.rows[0]);
+        res.json({ message: "Classs Learning Plan created successfully" });
     } catch (err) {
         console.error("Error create RPK:", err);
         res.status(500).json({ error: err.message });
