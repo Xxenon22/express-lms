@@ -122,7 +122,7 @@ router.post("/", verifyToken, async (req, res) => {
     try {
         const guruId = req.users.id;
         const {
-            kelas_id,
+            kelas_ids,
             rombel_id,
             hari_tanggal,
             instructor,
@@ -138,7 +138,8 @@ router.post("/", verifyToken, async (req, res) => {
 
         console.log("UPDATE BODY:", req.body);
 
-        const result = await pool.query(`
+        for (const kelasId of kelas_ids) {
+            await pool.query(`
       INSERT INTO rpk_refleksi (
         kelas_id, rombel_id, hari_tanggal, instructor, waktu,
         refleksi_siswa, refleksi_guru, tngkt_pencapaian,
@@ -148,22 +149,23 @@ router.post("/", verifyToken, async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *
     `, [
-            kelas_id,
-            rombel_id,
-            hari_tanggal,
-            instructor,
-            waktu,
-            refleksi_siswa,
-            refleksi_guru,
-            tngkt_pencapaian,
-            desk_pencapaian,
-            follow_up,
-            pendampingan_siswa,
-            keterangan,
-            guruId
-        ]);
+                kelasId,
+                rombel_id,
+                hari_tanggal,
+                instructor,
+                waktu,
+                refleksi_siswa,
+                refleksi_guru,
+                tngkt_pencapaian,
+                desk_pencapaian,
+                follow_up,
+                pendampingan_siswa,
+                keterangan,
+                guruId
+            ]);
 
-        res.json(result.rows[0]);
+        }
+        res.json({ message: "Learning Reflection created successfully" });
     } catch (err) {
         console.error("Insert rpk_refleksi error:", err);
         res.status(500).json({ message: "Insert failed" });
