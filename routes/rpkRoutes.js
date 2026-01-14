@@ -15,13 +15,13 @@ router.get("/all-rpk/:id", verifyToken, async (req, res) => {
             SELECT 
                 rpk.*,
                 r.name_rombel,
-                r.colab_class,              -- ✅ FIXED
+                r.colab_class,
                 g.grade_lvl,
-                m.nama_jurusan    AS major,
-                dm.nama_mapel    AS subject,
+                m.nama_jurusan AS major,
+                dm.nama_mapel AS subject,
                 p.phase,
-                t.username       AS teacher_name,
-                i.name           AS instructor_name
+                t.username AS teacher_name,
+                i.name AS instructor_name
             FROM rpk_db rpk
             LEFT JOIN kelas k         ON rpk.kelas_id = k.id
             LEFT JOIN rombel r        ON r.id = k.rombel_id
@@ -116,32 +116,34 @@ router.post("/", verifyToken, async (req, res) => {
             lintas_disiplin_ilmu, pemanfaatan_digital,
             kemitraan_pembelajaran,
             dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-            phase_id, rombel_id, kelas_id, instructor,
+            phase_id, rombel_id, kelas_ids, instructor,
             memahami_id, mengaplikasikan_id, merefleksi_id
         } = req.body;
 
-        const result = await pool.query(`
-      INSERT INTO rpk_db (
-        tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-        lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-        dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-        phase_id, rombel_id, kelas_id, guru_id, instructor,
-        memahami_id, mengaplikasikan_id, merefleksi_id
-      )
-      VALUES (
-        $1,$2,$3,$4,$5,$6,$7,
-        $8,$9,$10,$11,$12,$13,$14,$15,
-        $16,$17,$18,$19,$20,$21,$22,$23
-        )
-      RETURNING *
-    `, [
-            tutor, hari_tanggal, waktu, tujuan_pembelajaran,
-            lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
-            dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
-            phase_id, rombel_id, kelas_id, guruId, instructor,
-            memahami_id, mengaplikasikan_id, merefleksi_id
-        ]);
+        for (const kelasId of kelas_ids) {
+            await pool.query(`
+                INSERT INTO rpk_db (
+                    tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+                    lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
+                    dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
+                    phase_id, rombel_id, kelas_id, guru_id, instructor,
+                    memahami_id, mengaplikasikan_id, merefleksi_id
+                )
+                VALUES (
+                    $1,$2,$3,$4,$5,$6,$7,
+                    $8,$9,$10,$11,$12,$13,$14,$15,
+                    $16,$17,$18,$19,$20,$21,$22,$23
+                    )
+                RETURNING *
+                `, [
+                tutor, hari_tanggal, waktu, tujuan_pembelajaran,
+                lintas_disiplin_ilmu, pemanfaatan_digital, kemitraan_pembelajaran,
+                dpl_1, dpl_2, dpl_3, dpl_4, dpl_5, dpl_6, dpl_7, dpl_8,
+                phase_id, rombel_id, kelasId, guruId, instructor,
+                memahami_id, mengaplikasikan_id, merefleksi_id
+            ]);
 
+        }
         res.json(result.rows[0]);
     } catch (err) {
         console.error("Error create RPK:", err);

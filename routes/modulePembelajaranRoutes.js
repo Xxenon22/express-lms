@@ -89,8 +89,7 @@ router.post("/", verifyToken, uploadMateriPDF.single("file"), async (req, res) =
         const guru_id = req.users.id;
 
         for (const kelasId of kelas_ids) {
-            await pool.query(
-                `
+            await pool.query(`
                 INSERT INTO module_pembelajaran
                 (materi_uuid, judul, video_url, deskripsi, guru_id,
                  bank_soal_id, judul_penugasan, link_zoom,
