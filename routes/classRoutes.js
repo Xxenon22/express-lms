@@ -208,10 +208,9 @@ router.get("/", verifyToken, async (req, res) => {
 /* ============================================
    GET All kelas (Admin)
 ============================================ */
-router.get("/:guruId", verifyToken, async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
     try {
         const guruId = req.params.id;
-        // const userId = req.users.id;
 
         const result = await pool.query(`
             SELECT 
