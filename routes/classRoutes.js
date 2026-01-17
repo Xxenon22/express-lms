@@ -210,7 +210,7 @@ router.get("/", verifyToken, async (req, res) => {
 ============================================ */
 router.get("/:teacherId", verifyToken, async (req, res) => {
     try {
-        const guruId = req.users.id;
+        const { teacherId } = req.users.id;
 
         const result = await pool.query(`
             SELECT 
@@ -235,7 +235,7 @@ router.get("/:teacherId", verifyToken, async (req, res) => {
             WHERE k.guru_id = $1
             ORDER BY k.id ASC
 
-        `, [guruId]);
+        `, [teacherId]);
 
         res.json(result.rows);
     } catch (err) {
