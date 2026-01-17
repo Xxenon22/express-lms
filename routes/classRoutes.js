@@ -208,10 +208,10 @@ router.get("/", verifyToken, async (req, res) => {
 /* ============================================
    GET All kelas (Admin)
 ============================================ */
-router.get("/:teacherId", verifyToken, async (req, res) => {
+router.get("/:guruId", verifyToken, async (req, res) => {
     try {
-        const { teacherId } = req.params;
-        const userId = req.users.id;
+        const guruId = req.params.id;
+        // const userId = req.users.id;
 
         const result = await pool.query(`
             SELECT 
@@ -236,7 +236,7 @@ router.get("/:teacherId", verifyToken, async (req, res) => {
             WHERE k.guru_id = $1
             ORDER BY k.id ASC
 
-        `, [teacherId, userId]);
+        `, [guruId]);
 
         res.json(result.rows);
     } catch (err) {
