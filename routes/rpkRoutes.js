@@ -106,7 +106,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 
 
 // ===========================
-// CREATE (hapus mapel_id)
+// CREATE 
 // ===========================
 router.post("/", verifyToken, async (req, res) => {
     try {

@@ -86,7 +86,7 @@ router.get("/profile", verifyToken, async (req, res) => {
 router.get("/teacher", async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT id, username, role, teacher_subject, photo_url
+            `SELECT id, username, role, teacher_subject, photo_url, phone_number
        FROM users
        WHERE role = 'teacher'
        ORDER BY id ASC`

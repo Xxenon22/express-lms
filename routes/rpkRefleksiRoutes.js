@@ -136,19 +136,19 @@ router.post("/", verifyToken, async (req, res) => {
             keterangan
         } = req.body;
 
-        console.log("UPDATE BODY:", req.body);
+        // console.log("UPDATE BODY:", req.body);
 
         for (const kelasId of kelas_ids) {
             await pool.query(`
-      INSERT INTO rpk_refleksi (
-        kelas_id, rombel_id, hari_tanggal, instructor, waktu,
-        refleksi_siswa, refleksi_guru, tngkt_pencapaian,
-        desk_pencapaian, follow_up, pendampingan_siswa,
-        keterangan, guru_id
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-      RETURNING *
-    `, [
+                INSERT INTO rpk_refleksi (
+                    kelas_id, rombel_id, hari_tanggal, instructor, waktu,
+                    refleksi_siswa, refleksi_guru, tngkt_pencapaian,
+                    desk_pencapaian, follow_up, pendampingan_siswa,
+                    keterangan, guru_id
+                )
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                RETURNING *
+                `, [
                 kelasId,
                 rombel_id,
                 hari_tanggal,
