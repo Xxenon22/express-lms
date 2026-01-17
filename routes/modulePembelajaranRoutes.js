@@ -66,6 +66,35 @@ router.get("/", verifyToken, async (req, res) => {
     }
 });
 
+/* ================= GET MODULE (Admin) ================= */
+router.get("/:id", verifyToken, async (req, res) => {
+    try {
+        const guruId = req.params.id;
+
+        const { rows } = await pool.query(
+            `
+            SELECT mp.*, 
+                   CONCAT(gl.grade_lvl,' ',mj.nama_jurusan,' ',nr.number,' - ',dm.nama_mapel) AS kelas_nama
+            FROM module_pembelajaran mp
+            LEFT JOIN kelas k ON k.id = mp.kelas_id
+            LEFT JOIN rombel r ON k.rombel_id = r.id
+            LEFT JOIN number_rombel nr ON r.name_rombel = nr.id
+            LEFT JOIN grade_level gl ON r.grade_id = gl.id
+            LEFT JOIN jurusan mj ON r.jurusan_id = mj.id
+            LEFT JOIN db_mapel dm ON k.id_mapel = dm.id
+            WHERE mp.guru_id = $1
+            ORDER BY mp.created_at DESC
+            `,
+            [guruId]
+        );
+
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "failed to retrieve module" });
+    }
+});
+
 /* ================= POST MODULE ================= */
 router.post("/", verifyToken, uploadMateriPDF.single("file"), async (req, res) => {
     try {
