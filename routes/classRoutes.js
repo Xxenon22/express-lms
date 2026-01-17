@@ -208,7 +208,7 @@ router.get("/", verifyToken, async (req, res) => {
 /* ============================================
    GET All kelas (Admin)
 ============================================ */
-router.get("/:id", verifyToken, async (req, res) => {
+router.get("/admin/:id", verifyToken, async (req, res) => {
     try {
         const guruId = req.params.id;
 
