@@ -7,7 +7,6 @@ import path from "path";
 import fs from "fs";
 
 const router = express.Router();
-
 const MATERI_DIR = "/var/www/uploads/materi";
 
 // pastikan folder ADA
@@ -71,7 +70,7 @@ router.get("/:id", verifyToken, async (req, res) => {
     try {
         const guruId = req.params.id;
 
-        const { rows } = await pool.query(
+        const result = await pool.query(
             `
             SELECT mp.*, 
                    CONCAT(gl.grade_lvl,' ',mj.nama_jurusan,' ',nr.number,' - ',dm.nama_mapel) AS kelas_nama
@@ -88,7 +87,7 @@ router.get("/:id", verifyToken, async (req, res) => {
             [guruId]
         );
 
-        res.json(rows);
+        res.json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "failed to retrieve module" });
