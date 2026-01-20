@@ -143,26 +143,63 @@ router.post("/follow/:kelasId", verifyToken, async (req, res) => {
    UNFOLLOW kelas
 ============================================ */
 router.delete("/unfollow/:kelasId", verifyToken, async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const userId = req.users.id;
-        const { kelasId } = req.params;
+        const kelasId = Number(req.params.kelasId);
 
-        const q = `
-            DELETE FROM kelas_diikuti
-            WHERE user_id = $1 AND kelas_id = $2
-            RETURNING *
-        `;
+        await client.query("BEGIN");
 
-        const { rows } = await pool.query(q, [userId, kelasId]);
+        // 1️⃣ Ambil semua materi di kelas ini
+        const materi = await client.query(
+            `SELECT id FROM module_pembelajaran WHERE kelas_id = $1`,
+            [kelasId]
+        );
 
-        if (rows.length === 0)
-            return res.status(404).json({ error: "Not following this class" });
+        const materiIds = materi.rows.map(r => r.id);
 
-        res.json({ message: "Unfollowed", unfollow: rows[0] });
+        if (materiIds.length > 0) {
+            // 2️⃣ Hapus progress materi
+            await client.query(
+                `DELETE FROM progress_materi
+                 WHERE user_id = $1 AND materi_id = ANY($2::int[])`,
+                [userId, materiIds]
+            );
+
+            // 3️⃣ Hapus jawaban siswa
+            await client.query(
+                `DELETE FROM jawaban_siswa
+                 WHERE user_id = $1 AND materi_id = ANY($2::int[])`,
+                [userId, materiIds]
+            );
+        }
+
+        // 4️⃣ Hapus relasi kelas
+        const unfollow = await client.query(
+            `DELETE FROM kelas_diikuti
+             WHERE user_id = $1 AND kelas_id = $2
+             RETURNING *`,
+            [userId, kelasId]
+        );
+
+        if (!unfollow.rowCount) {
+            throw new Error("Not following this class");
+        }
+
+        await client.query("COMMIT");
+
+        res.json({
+            message: "Unfollow success & progress deleted",
+            unfollow: unfollow.rows[0]
+        });
 
     } catch (err) {
-        console.error("Error DELETE /kelas/unfollow:", err);
-        res.status(500).json({ error: "Server error" });
+        await client.query("ROLLBACK");
+        console.error("UNFOLLOW ERROR:", err);
+        res.status(500).json({ message: err.message });
+    } finally {
+        client.release();
     }
 });
 
