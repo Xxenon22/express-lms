@@ -10,25 +10,35 @@ router.post("/", verifyToken, async (req, res) => {
     try {
         console.log("BODY yang dikirim:", req.body);
 
-        const { materi_id, video_selesai, pdf_selesai, langkah_aktif, refleksi } = req.body;
+        const { materi_id, video_selesai, pdf_selesai, langkah_aktif, refleksi, is_submitted = false } = req.body;
         const userId = req.users.id;
 
         // Tentukan otomatis apakah status selesai
-        const status_selesai =
-            langkah_aktif === "4" && video_selesai === true && pdf_selesai === true;
-
+        const status_selesai = is_submitted === true;
         const result = await pool.query(
-            `INSERT INTO progress_materi (user_id, materi_id, video_selesai, pdf_selesai, langkah_aktif, refleksi, status_selesai, updated_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
-             ON CONFLICT (user_id, materi_id) DO UPDATE
-             SET video_selesai  = EXCLUDED.video_selesai,
-                 pdf_selesai    = EXCLUDED.pdf_selesai,
-                 langkah_aktif  = EXCLUDED.langkah_aktif,
-                 refleksi       = EXCLUDED.refleksi,
-                 status_selesai = EXCLUDED.status_selesai,
-                 updated_at     = NOW()
-             RETURNING *`,
-            [userId, materi_id, video_selesai, pdf_selesai, langkah_aktif, refleksi, status_selesai]
+            `INSERT INTO progress_materi
+                (user_id, materi_id, video_selesai, pdf_selesai, langkah_aktif, refleksi, is_submitted, status_selesai, updated_at)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+                ON CONFLICT (user_id, materi_id) DO UPDATE
+                SET
+                    video_selesai  = EXCLUDED.video_selesai,
+                    pdf_selesai    = EXCLUDED.pdf_selesai,
+                    langkah_aktif  = EXCLUDED.langkah_aktif,
+                    refleksi       = EXCLUDED.refleksi,
+                    is_submitted   = EXCLUDED.is_submitted,
+                    status_selesai = EXCLUDED.status_selesai,
+                    updated_at     = NOW()
+                RETURNING *`,
+            [
+                userId,
+                materi_id,
+                video_selesai,
+                pdf_selesai,
+                langkah_aktif,
+                refleksi,
+                is_submitted,
+                status_selesai
+            ]
         );
 
         res.json(result.rows[0]);
