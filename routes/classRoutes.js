@@ -259,6 +259,12 @@ router.get("/admin/:id", verifyToken, async (req, res) => {
                 mj.nama_jurusan AS major,
                 r.colab_class,
 
+                (
+                    SELECT COUNT(*)
+                    FROM kelas_diikuti kd
+                    WHERE kd.kelas_id = k.id
+                ) AS student_count,
+
                 m.nama_mapel,
                 u.username AS guru_name,
                 u.photo_url AS guru_photo
@@ -423,6 +429,12 @@ router.get("/:id", async (req, res) => {
 
             u.username AS guru_name,
             u.photo_url AS guru_photo,
+            
+            (
+                SELECT COUNT(*)
+                FROM kelas_diikuti kd
+                WHERE kd.kelas_id = k.id
+            ) AS student_count,
 
             mp.id AS module_id,
             mp.judul,
@@ -456,6 +468,7 @@ router.get("/:id", async (req, res) => {
             guru_name: base.guru_name,
             guru_photo: base.guru_photo,
             link_wallpaper_kelas: base.link_wallpaper_kelas,
+            student_count: Number(base.student_count),
             rombel:
                 base.colab_class || base.name_rombel
                     ? {
