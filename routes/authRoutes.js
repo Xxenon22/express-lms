@@ -140,7 +140,7 @@ router.get("/student/:id", verifyToken, async (req, res) => {
              LEFT JOIN jurusan j ON u.jurusan_id = j.id
              LEFT JOIN rombel  r ON u.rombel_id = r.id
              LEFT JOIN grade_level g ON u.grade_id = g.id
-             WHERE id = $1
+             WHERE u.id = $1
              LIMIT 1`,
             [studentId]
         );
@@ -151,7 +151,7 @@ router.get("/student/:id", verifyToken, async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error("Error fetch teacher profile by ID :", error);
+        console.error("Error fetch student profile by ID :", error);
         res.status(500).json({ error: error.message });
     }
 });
